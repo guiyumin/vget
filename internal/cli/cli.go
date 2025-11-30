@@ -146,12 +146,7 @@ func selectFormat(formats []extractor.Format, preferred string) *extractor.Forma
 }
 
 func runInit() error {
-	if config.Exists() {
-		path, _ := config.ConfigPath()
-		return fmt.Errorf("%s already exists", path)
-	}
-
-	// Run interactive wizard
+	// Run interactive wizard (loads existing config as defaults if present)
 	cfg, err := config.RunInitWizard()
 	if err != nil {
 		return err
@@ -162,7 +157,7 @@ func runInit() error {
 		return err
 	}
 
-	fmt.Printf("\nCreated %s\n", config.ConfigFileYml)
+	fmt.Printf("\nSaved %s\n", config.ConfigFileYml)
 	return nil
 }
 
