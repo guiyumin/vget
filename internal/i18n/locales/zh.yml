@@ -34,7 +34,7 @@ help:
   confirm: "确认"
   quit: "退出"
 
-terminal:
+download:
   downloading: "下载中"
   extracting: "解析中"
   completed: "完成"

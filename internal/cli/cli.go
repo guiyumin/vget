@@ -9,6 +9,7 @@ import (
 	"github.com/guiyumin/vget/internal/config"
 	"github.com/guiyumin/vget/internal/downloader"
 	"github.com/guiyumin/vget/internal/extractor"
+	"github.com/guiyumin/vget/internal/i18n"
 	"github.com/guiyumin/vget/internal/updater"
 	"github.com/guiyumin/vget/internal/version"
 )
@@ -33,9 +34,13 @@ func Run(args []string) error {
 		}
 	}
 
+	// Load config and get language
+	cfg := config.LoadOrDefault()
+	t := i18n.T(cfg.Language)
+
 	// Check for config file and warn if missing
 	if !config.Exists() {
-		fmt.Fprintf(os.Stderr, "\033[33mWarning: config file not found. Run 'vget init' to create one.\033[0m\n")
+		fmt.Fprintf(os.Stderr, "\033[33m%s. Run 'vget init'.\033[0m\n", t.Errors.ConfigNotFound)
 	}
 
 	opts, err := parseArgs(args)
@@ -56,19 +61,19 @@ func Run(args []string) error {
 	// Find matching extractor
 	ext := extractor.Match(opts.URL)
 	if ext == nil {
-		return fmt.Errorf("no extractor found for URL: %s", opts.URL)
+		return fmt.Errorf("%s: %s", t.Errors.NoExtractor, opts.URL)
 	}
 
-	fmt.Printf("Extracting: %s\n", opts.URL)
+	fmt.Printf("%s: %s\n", t.Download.Extracting, opts.URL)
 
 	// Extract video info
 	info, err := ext.Extract(opts.URL)
 	if err != nil {
-		return fmt.Errorf("extraction failed: %w", err)
+		return fmt.Errorf("%s: %w", t.Errors.ExtractionFailed, err)
 	}
 
-	fmt.Printf("Title: %s\n", info.Title)
-	fmt.Printf("Formats: %d available\n", len(info.Formats))
+	fmt.Printf("ID: %s\n", info.ID)
+	fmt.Printf("Formats: %d\n", len(info.Formats))
 
 	// Info only mode
 	if opts.Info {
@@ -81,10 +86,10 @@ func Run(args []string) error {
 	// Select best format (or by quality flag)
 	format := selectFormat(info.Formats, opts.Quality)
 	if format == nil {
-		return errors.New("no suitable format found")
+		return errors.New(t.Download.NoFormats)
 	}
 
-	fmt.Printf("Selected: %s (%s)\n", format.Quality, format.Ext)
+	fmt.Printf("Format: %s (%s)\n", format.Quality, format.Ext)
 
 	// Determine output filename
 	output := opts.Output
@@ -93,8 +98,8 @@ func Run(args []string) error {
 	}
 
 	// Download
-	dl := downloader.New()
-	return dl.Download(format.URL, output, info.Title)
+	dl := downloader.New(cfg.Language)
+	return dl.Download(format.URL, output, info.ID)
 }
 
 func parseArgs(args []string) (*Options, error) {

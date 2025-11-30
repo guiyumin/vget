@@ -16,7 +16,7 @@ type Translations struct {
 	Config       ConfigTranslations       `yaml:"config"`
 	ConfigReview ConfigReviewTranslations `yaml:"config_review"`
 	Help         HelpTranslations         `yaml:"help"`
-	Terminal     TerminalTranslations     `yaml:"terminal"`
+	Download     DownloadTranslations     `yaml:"download"`
 	Errors       ErrorTranslations        `yaml:"errors"`
 }
 
@@ -57,7 +57,7 @@ type HelpTranslations struct {
 	Quit    string `yaml:"quit"`
 }
 
-type TerminalTranslations struct {
+type DownloadTranslations struct {
 	Downloading  string `yaml:"downloading"`
 	Extracting   string `yaml:"extracting"`
 	Completed    string `yaml:"completed"`

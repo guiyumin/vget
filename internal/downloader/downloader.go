@@ -7,25 +7,30 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/guiyumin/vget/internal/i18n"
 )
 
 // Downloader handles file downloads with progress reporting
 type Downloader struct {
 	client *http.Client
+	lang   string
 }
 
 // New creates a new Downloader
-func New() *Downloader {
+func New(lang string) *Downloader {
 	return &Downloader{
 		client: &http.Client{
 			Timeout: 0, // No timeout for downloads
 		},
+		lang: lang,
 	}
 }
 
 // Download downloads a file from URL to the specified path
-func (d *Downloader) Download(url, output, title string) error {
-	fmt.Printf("Downloading: %s\n", title)
+func (d *Downloader) Download(url, output, videoID string) error {
+	t := i18n.T(d.lang)
+	fmt.Printf("%s: %s\n", t.Download.Downloading, videoID)
 
 	// Create HTTP request
 	req, err := http.NewRequest("GET", url, nil)
@@ -75,7 +80,7 @@ func (d *Downloader) Download(url, output, title string) error {
 	progress.printProgress()
 	fmt.Println()
 
-	fmt.Printf("Downloaded: %s (%s)\n", output, formatBytes(written))
+	fmt.Printf("%s: %s (%s)\n", t.Download.FileSaved, output, formatBytes(written))
 	return nil
 }
 

@@ -34,7 +34,7 @@ help:
   confirm: "확인"
   quit: "종료"
 
-terminal:
+download:
   downloading: "다운로드 중"
   extracting: "추출 중"
   completed: "완료"

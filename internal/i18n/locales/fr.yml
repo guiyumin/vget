@@ -34,7 +34,7 @@ help:
   confirm: "confirmer"
   quit: "quitter"
 
-terminal:
+download:
   downloading: "Téléchargement"
   extracting: "Extraction"
   completed: "Terminé"
