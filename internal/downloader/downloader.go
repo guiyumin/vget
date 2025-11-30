@@ -70,7 +70,9 @@ func (d *Downloader) Download(url, output, title string) error {
 		return fmt.Errorf("download failed: %w", err)
 	}
 
-	// Final newline after progress
+	// Print final 100% progress
+	progress.Current = progress.Total
+	progress.printProgress()
 	fmt.Println()
 
 	fmt.Printf("Downloaded: %s (%s)\n", output, formatBytes(written))
