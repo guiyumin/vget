@@ -4,7 +4,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 
+	"github.com/guiyumin/vget/internal/config"
 	"github.com/guiyumin/vget/internal/downloader"
 	"github.com/guiyumin/vget/internal/extractor"
 	"github.com/guiyumin/vget/internal/version"
@@ -20,6 +22,19 @@ type Options struct {
 }
 
 func Run(args []string) error {
+	// Handle subcommands first
+	if len(args) > 0 {
+		switch args[0] {
+		case "init":
+			return runInit()
+		}
+	}
+
+	// Check for config file and warn if missing
+	if !config.Exists() {
+		fmt.Fprintf(os.Stderr, "\033[33mWarning: config file not found. Run 'vget init' to create one.\033[0m\n")
+	}
+
 	opts, err := parseArgs(args)
 	if err != nil {
 		return err
@@ -127,11 +142,24 @@ func selectFormat(formats []extractor.Format, preferred string) *extractor.Forma
 	return best
 }
 
+func runInit() error {
+	if err := config.Init(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Created %s with default settings.\n", config.ConfigFileYml)
+	return nil
+}
+
 func printUsage() {
-	fmt.Println(`vget - A modern video downloader
+	fmt.Println(`vget - A modern, blazing-fast, cross-platform downloader cli
 
 Usage:
   vget [options] <url>
+  vget <command>
+
+Commands:
+  init           Create a .vget.yml config file
 
 Options:
   -o <file>      Output filename
@@ -141,6 +169,7 @@ Options:
   -h, --help     Show this help
 
 Examples:
+  vget init
   vget https://x.com/user/status/123456789
   vget -o video.mp4 https://x.com/user/status/123456789
   vget --info https://x.com/user/status/123456789`)
