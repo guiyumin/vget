@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -256,23 +257,55 @@ func searchITunes(query string) error {
 
 	// Show spinner while searching
 	done := make(chan bool)
-	var result iTunesSearchResponse
+	var podcastResult, episodeResult iTunesSearchResponse
 	var searchErr error
 
 	go func() {
-		searchURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast&limit=20",
-			url.QueryEscape(query))
+		// Search for both podcasts and episodes in parallel
+		var wg sync.WaitGroup
+		var podcastErr, episodeErr error
 
-		resp, err := http.Get(searchURL)
-		if err != nil {
-			searchErr = err
-			done <- true
-			return
-		}
-		defer resp.Body.Close()
+		wg.Add(2)
 
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			searchErr = err
+		// Fetch podcasts
+		go func() {
+			defer wg.Done()
+			podcastURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast&limit=50",
+				url.QueryEscape(query))
+			resp, err := http.Get(podcastURL)
+			if err != nil {
+				podcastErr = err
+				return
+			}
+			defer resp.Body.Close()
+			if err := json.NewDecoder(resp.Body).Decode(&podcastResult); err != nil {
+				podcastErr = err
+			}
+		}()
+
+		// Fetch episodes
+		go func() {
+			defer wg.Done()
+			episodeURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcastEpisode&limit=200",
+				url.QueryEscape(query))
+			resp, err := http.Get(episodeURL)
+			if err != nil {
+				episodeErr = err
+				return
+			}
+			defer resp.Body.Close()
+			if err := json.NewDecoder(resp.Body).Decode(&episodeResult); err != nil {
+				episodeErr = err
+			}
+		}()
+
+		wg.Wait()
+
+		// Report first error encountered
+		if podcastErr != nil {
+			searchErr = podcastErr
+		} else if episodeErr != nil {
+			searchErr = episodeErr
 		}
 		done <- true
 	}()
@@ -286,30 +319,51 @@ func searchITunes(query string) error {
 		return searchErr
 	}
 
-	if result.ResultCount == 0 {
+	if podcastResult.ResultCount == 0 && episodeResult.ResultCount == 0 {
 		fmt.Println("No results found.")
 		return nil
 	}
 
-	// Build sections for TUI
-	// iTunes search only returns podcasts, so they are selectable
+	// Build sections for TUI - like Xiaoyuzhou, show both podcasts and episodes
 	var sections []SearchSection
 
-	var items []SearchItem
-	for _, p := range result.Results {
-		items = append(items, SearchItem{
-			Title:      p.CollectionName,
-			Subtitle:   fmt.Sprintf("%s | %d episodes | %s", p.ArtistName, p.TrackCount, p.PrimaryGenreName),
-			Selectable: true, // Podcasts selectable since no episodes in search results
-			Type:       ItemTypePodcast,
-			PodcastID:  fmt.Sprintf("%d", p.CollectionID),
-			FeedURL:    p.FeedURL,
+	// Podcasts section
+	if podcastResult.ResultCount > 0 {
+		var items []SearchItem
+		for _, p := range podcastResult.Results {
+			items = append(items, SearchItem{
+				Title:      p.CollectionName,
+				Subtitle:   fmt.Sprintf("%s | %d episodes", p.ArtistName, p.TrackCount),
+				Selectable: true,
+				Type:       ItemTypePodcast,
+				PodcastID:  fmt.Sprintf("%d", p.CollectionID),
+				FeedURL:    p.FeedURL,
+			})
+		}
+		sections = append(sections, SearchSection{
+			Title: t.Search.Podcasts,
+			Items: items,
 		})
 	}
-	sections = append(sections, SearchSection{
-		Title: t.Search.Podcasts + " (Apple Podcasts)",
-		Items: items,
-	})
+
+	// Episodes section
+	if episodeResult.ResultCount > 0 {
+		var items []SearchItem
+		for _, p := range episodeResult.Results {
+			duration := formatEpisodeDuration(p.TrackTimeMillis / 1000)
+			items = append(items, SearchItem{
+				Title:       fmt.Sprintf("%s - %s", p.CollectionName, p.TrackName),
+				Subtitle:    duration,
+				Selectable:  true,
+				Type:        ItemTypeEpisode,
+				DownloadURL: p.EpisodeURL,
+			})
+		}
+		sections = append(sections, SearchSection{
+			Title: t.Search.Episodes,
+			Items: items,
+		})
+	}
 
 	// Run TUI
 	selected, err := RunSearchTUI(sections, query, cfg.Language)
@@ -321,7 +375,7 @@ func searchITunes(query string) error {
 		return nil
 	}
 
-	// Handle selection - will fetch episodes for selected podcasts
+	// Handle selection
 	return handleSelectedItems(selected, "itunes", cfg.Language)
 }
 
