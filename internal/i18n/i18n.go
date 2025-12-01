@@ -84,13 +84,16 @@ type ErrorTranslations struct {
 }
 
 type SearchTranslations struct {
-	ResultsFor string `yaml:"results_for"`
-	Searching  string `yaml:"searching"`
-	Podcasts   string `yaml:"podcasts"`
-	Episodes   string `yaml:"episodes"`
-	SelectHint string `yaml:"select_hint"`
-	Selected   string `yaml:"selected"`
-	Help       string `yaml:"help"`
+	ResultsFor        string `yaml:"results_for"`
+	Searching         string `yaml:"searching"`
+	FetchingEpisodes  string `yaml:"fetching_episodes"`
+	Podcasts          string `yaml:"podcasts"`
+	Episodes          string `yaml:"episodes"`
+	SelectHint        string `yaml:"select_hint"`
+	SelectPodcastHint string `yaml:"select_podcast_hint"`
+	Selected          string `yaml:"selected"`
+	Help              string `yaml:"help"`
+	HelpPodcast       string `yaml:"help_podcast"`
 }
 
 var (

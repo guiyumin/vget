@@ -21,13 +21,25 @@ var (
 	searchContainerStyle = lipgloss.NewStyle().Padding(1, 2)
 )
 
-// SearchItem represents a selectable item (episode)
+// ItemType distinguishes between podcasts and episodes
+type ItemType int
+
+const (
+	ItemTypePodcast ItemType = iota
+	ItemTypeEpisode
+)
+
+// SearchItem represents a selectable item (podcast or episode)
 type SearchItem struct {
 	Title       string
 	Subtitle    string // e.g., "Duration: 45:30 | Plays: 1234"
 	URL         string
-	DownloadURL string // Direct download URL if available
-	Selectable  bool   // false for podcast shows, true for episodes
+	DownloadURL string   // Direct download URL if available
+	Selectable  bool     // Whether this item can be selected
+	Type        ItemType // Podcast or Episode
+	// For podcasts (used to fetch episodes)
+	PodcastID string // iTunes collection ID or Xiaoyuzhou pid
+	FeedURL   string // RSS feed URL (for iTunes)
 }
 
 // SearchSection represents a section (Podcasts or Episodes)
@@ -42,8 +54,9 @@ type searchModel struct {
 	sections      []SearchSection
 	cursor        int // Global cursor across all items
 	totalItems    int
-	selected      map[int]bool // Track selected items by global index
-	selectable    map[int]bool // Track which items are selectable
+	selected      map[int]bool     // Track selected items by global index
+	selectable    map[int]bool     // Track which items are selectable
+	itemTypes     map[int]ItemType // Track item type by global index
 	selectedCount int
 	confirmed     bool
 	keyBindings   searchKeyMap
@@ -90,12 +103,14 @@ func defaultSearchKeyMap() searchKeyMap {
 func newSearchModel(sections []SearchSection, query, lang string) searchModel {
 	total := 0
 	selectable := make(map[int]bool)
+	itemTypes := make(map[int]ItemType)
 	idx := 0
 	for _, s := range sections {
 		for _, item := range s.Items {
 			if item.Selectable {
 				selectable[idx] = true
 			}
+			itemTypes[idx] = item.Type
 			idx++
 		}
 		total += len(s.Items)
@@ -116,6 +131,7 @@ func newSearchModel(sections []SearchSection, query, lang string) searchModel {
 		totalItems:  total,
 		selected:    make(map[int]bool),
 		selectable:  selectable,
+		itemTypes:   itemTypes,
 		keyBindings: defaultSearchKeyMap(),
 		query:       query,
 		lang:        lang,
@@ -154,6 +170,12 @@ func (m *searchModel) adjustScroll() {
 	}
 }
 
+// clearSelections clears all selected items
+func (m *searchModel) clearSelections() {
+	m.selected = make(map[int]bool)
+	m.selectedCount = 0
+}
+
 func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -168,14 +190,24 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keyBindings.Up):
 			if m.cursor > 0 {
+				oldType := m.itemTypes[m.cursor]
 				m.cursor--
 				m.adjustScroll()
+				// Clear selections if moving to different item type
+				if m.itemTypes[m.cursor] != oldType {
+					m.clearSelections()
+				}
 			}
 
 		case key.Matches(msg, m.keyBindings.Down):
 			if m.cursor < m.totalItems-1 {
+				oldType := m.itemTypes[m.cursor]
 				m.cursor++
 				m.adjustScroll()
+				// Clear selections if moving to different item type
+				if m.itemTypes[m.cursor] != oldType {
+					m.clearSelections()
+				}
 			}
 
 		case key.Matches(msg, m.keyBindings.Toggle):
@@ -183,11 +215,21 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.selectable[m.cursor] {
 				break
 			}
+
+			// Determine max selections based on item type
+			// Podcasts: only 1 (to browse episodes)
+			// Episodes: up to 5 (for batch download)
+			currentType := m.itemTypes[m.cursor]
+			maxSel := maxSelections
+			if currentType == ItemTypePodcast {
+				maxSel = 1
+			}
+
 			if m.selected[m.cursor] {
 				// Deselect
 				m.selected[m.cursor] = false
 				m.selectedCount--
-			} else if m.selectedCount < maxSelections {
+			} else if m.selectedCount < maxSel {
 				// Select (only if under limit)
 				m.selected[m.cursor] = true
 				m.selectedCount++
@@ -234,7 +276,7 @@ func (m searchModel) View() string {
 				cursor = searchSelectedStyle.Render("> ")
 			}
 
-			// Only show checkbox for selectable items (episodes)
+			// Show checkbox for selectable items
 			var prefix string
 			if item.Selectable {
 				checkbox := searchUncheckStyle.Render("[ ]")
@@ -243,32 +285,25 @@ func (m searchModel) View() string {
 				}
 				prefix = checkbox + " "
 			} else {
-				prefix = "   " // Indent for non-selectable items
+				prefix = "    " // Indent for non-selectable items (align with checkbox)
 			}
 
-			// Build the line
+			// Build the line based on item type
 			var line string
-			if item.Selectable && item.Subtitle != "" {
-				// Episode: duration in purple + title
+			title := item.Title
+			if globalIdx == m.cursor {
+				title = searchSelectedStyle.Render(title)
+			}
+
+			if item.Type == ItemTypeEpisode && item.Subtitle != "" {
+				// Episode: [duration] title
 				duration := searchDurationStyle.Render(fmt.Sprintf("[%s]", item.Subtitle))
-				title := item.Title
-				if globalIdx == m.cursor {
-					title = searchSelectedStyle.Render(title)
-				}
 				line = fmt.Sprintf("%s %s", duration, title)
 			} else if item.Subtitle != "" {
-				// Podcast: title + subtitle dimmed
-				title := item.Title
-				if globalIdx == m.cursor {
-					title = searchSelectedStyle.Render(title)
-				}
+				// Podcast: title (subtitle dimmed)
 				line = fmt.Sprintf("%s %s", title, searchDimStyle.Render("("+item.Subtitle+")"))
 			} else {
 				// Just title
-				title := item.Title
-				if globalIdx == m.cursor {
-					title = searchSelectedStyle.Render(title)
-				}
 				line = title
 			}
 
@@ -332,13 +367,31 @@ func (m searchModel) View() string {
 		}
 	}
 
-	// Selection count and help
+	// Determine current item type for dynamic hints
+	currentType := m.itemTypes[m.cursor]
+	isPodcast := currentType == ItemTypePodcast && m.selectable[m.cursor]
+
+	// Selection count and help (dynamic based on cursor position)
 	if m.selectedCount > 0 {
-		b.WriteString(fmt.Sprintf("  %s: %d/%d\n", t.Search.Selected, m.selectedCount, maxSelections))
+		maxSel := maxSelections
+		if isPodcast {
+			maxSel = 1
+		}
+		b.WriteString(fmt.Sprintf("  %s: %d/%d\n", t.Search.Selected, m.selectedCount, maxSel))
 	} else {
-		b.WriteString(fmt.Sprintf("  "+t.Search.SelectHint+"\n", maxSelections))
+		if isPodcast {
+			b.WriteString(fmt.Sprintf("  %s\n", t.Search.SelectPodcastHint))
+		} else {
+			b.WriteString(fmt.Sprintf("  "+t.Search.SelectHint+"\n", maxSelections))
+		}
 	}
-	b.WriteString(searchHelpStyle.Render("  " + t.Search.Help))
+
+	// Help text (dynamic based on cursor position)
+	if isPodcast {
+		b.WriteString(searchHelpStyle.Render("  " + t.Search.HelpPodcast))
+	} else {
+		b.WriteString(searchHelpStyle.Render("  " + t.Search.Help))
+	}
 	b.WriteString("\n")
 
 	// Apply container style

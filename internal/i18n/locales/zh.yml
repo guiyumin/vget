@@ -60,8 +60,11 @@ errors:
 search:
   results_for: "搜索结果"
   searching: "搜索中"
+  fetching_episodes: "获取剧集"
   podcasts: "播客节目"
   episodes: "单集"
   select_hint: "最多选择 %d 集"
+  select_podcast_hint: "选择节目查看剧集"
   selected: "已选"
   help: "↑/↓ 移动 • 空格 选择 • 回车 下载 • q 退出"
+  help_podcast: "↑/↓ 移动 • 空格 选择 • 回车 查看剧集 • q 退出"

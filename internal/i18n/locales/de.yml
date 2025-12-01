@@ -60,8 +60,11 @@ errors:
 search:
   results_for: "Suchergebnisse"
   searching: "Suche"
+  fetching_episodes: "Lade Episoden"
   podcasts: "Podcasts"
   episodes: "Episoden"
   select_hint: "Wähle bis zu %d Episoden"
+  select_podcast_hint: "Wähle einen Podcast um Episoden anzuzeigen"
   selected: "Ausgewählt"
   help: "↑/↓ navigieren • Leertaste auswählen • Enter herunterladen • q beenden"
+  help_podcast: "↑/↓ navigieren • Leertaste auswählen • Enter durchsuchen • q beenden"

@@ -60,8 +60,11 @@ errors:
 search:
   results_for: "Search results for"
   searching: "Searching"
+  fetching_episodes: "Fetching episodes for"
   podcasts: "Podcasts"
   episodes: "Episodes"
   select_hint: "Select up to %d episodes"
+  select_podcast_hint: "Select a podcast to browse episodes"
   selected: "Selected"
   help: "↑/↓ navigate • space toggle • enter download • q quit"
+  help_podcast: "↑/↓ navigate • space toggle • enter browse • q quit"

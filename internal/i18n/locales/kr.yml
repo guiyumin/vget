@@ -60,8 +60,11 @@ errors:
 search:
   results_for: "검색 결과"
   searching: "검색 중"
+  fetching_episodes: "에피소드 불러오는 중"
   podcasts: "팟캐스트"
   episodes: "에피소드"
   select_hint: "최대 %d개 선택 가능"
+  select_podcast_hint: "팟캐스트를 선택하여 에피소드 보기"
   selected: "선택됨"
   help: "↑/↓ 이동 • 스페이스 선택 • Enter 다운로드 • q 종료"
+  help_podcast: "↑/↓ 이동 • 스페이스 선택 • Enter 보기 • q 종료"

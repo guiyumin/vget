@@ -3,9 +3,11 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 	"unicode"
@@ -14,6 +16,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/downloader"
 	"github.com/guiyumin/vget/internal/i18n"
 	"github.com/spf13/cobra"
 )
@@ -151,9 +154,13 @@ func searchXiaoyuzhou(query string) error {
 	}
 
 	// Build sections for TUI
+	// All items are always selectable:
+	// - Podcasts: select to browse episodes
+	// - Episodes: select to download
+
 	var sections []SearchSection
 
-	// Podcasts section (not selectable for download, just info)
+	// Podcasts section
 	if len(result.Data.Podcasts) > 0 {
 		var items []SearchItem
 		for _, p := range result.Data.Podcasts {
@@ -161,7 +168,9 @@ func searchXiaoyuzhou(query string) error {
 			items = append(items, SearchItem{
 				Title:      p.Title,
 				Subtitle:   subtitle,
-				Selectable: false,
+				Selectable: true,
+				Type:       ItemTypePodcast,
+				PodcastID:  p.Pid,
 			})
 		}
 		sections = append(sections, SearchSection{
@@ -170,7 +179,7 @@ func searchXiaoyuzhou(query string) error {
 		})
 	}
 
-	// Episodes section (selectable for download)
+	// Episodes section
 	if len(result.Data.Episodes) > 0 {
 		var items []SearchItem
 		for _, e := range result.Data.Episodes {
@@ -181,6 +190,7 @@ func searchXiaoyuzhou(query string) error {
 				URL:         fmt.Sprintf("https://www.xiaoyuzhoufm.com/episode/%s", e.Eid),
 				DownloadURL: e.Enclosure.URL,
 				Selectable:  true,
+				Type:        ItemTypeEpisode,
 			})
 		}
 		sections = append(sections, SearchSection{
@@ -199,8 +209,8 @@ func searchXiaoyuzhou(query string) error {
 		return nil
 	}
 
-	// Download selected episodes
-	return downloadSelectedEpisodes(selected)
+	// Handle selection based on type
+	return handleSelectedItems(selected, "xiaoyuzhou", cfg.Language)
 }
 
 func formatEpisodeDuration(seconds int) string {
@@ -250,7 +260,7 @@ func searchITunes(query string) error {
 	var searchErr error
 
 	go func() {
-		searchURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast",
+		searchURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast&limit=20",
 			url.QueryEscape(query))
 
 		resp, err := http.Get(searchURL)
@@ -282,15 +292,18 @@ func searchITunes(query string) error {
 	}
 
 	// Build sections for TUI
+	// iTunes search only returns podcasts, so they are selectable
 	var sections []SearchSection
 
-	// Podcasts section (not selectable - just for info)
 	var items []SearchItem
 	for _, p := range result.Results {
 		items = append(items, SearchItem{
 			Title:      p.CollectionName,
 			Subtitle:   fmt.Sprintf("%s | %d episodes | %s", p.ArtistName, p.TrackCount, p.PrimaryGenreName),
-			Selectable: false,
+			Selectable: true, // Podcasts selectable since no episodes in search results
+			Type:       ItemTypePodcast,
+			PodcastID:  fmt.Sprintf("%d", p.CollectionID),
+			FeedURL:    p.FeedURL,
 		})
 	}
 	sections = append(sections, SearchSection{
@@ -308,10 +321,221 @@ func searchITunes(query string) error {
 		return nil
 	}
 
-	// For Apple Podcasts, we need to fetch episodes from the selected podcast
-	fmt.Println("\nApple Podcast episode download coming soon.")
+	// Handle selection - will fetch episodes for selected podcasts
+	return handleSelectedItems(selected, "itunes", cfg.Language)
+}
 
-	return nil
+// handleSelectedItems processes selected items based on their type
+func handleSelectedItems(items []SearchItem, source, lang string) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	// Check if selected items are podcasts or episodes
+	firstItem := items[0]
+
+	if firstItem.Type == ItemTypePodcast {
+		// User selected podcasts - fetch episodes for each
+		// For simplicity, only handle first selected podcast
+		podcast := items[0]
+		if len(items) > 1 {
+			fmt.Printf("\nNote: Multiple podcasts selected, showing episodes for: %s\n", podcast.Title)
+		}
+
+		return fetchAndShowEpisodes(podcast, source, lang)
+	}
+
+	// Episodes selected - download them
+	return downloadSelectedEpisodes(items)
+}
+
+// fetchAndShowEpisodes fetches episodes for a podcast and shows TUI
+func fetchAndShowEpisodes(podcast SearchItem, source, lang string) error {
+	t := i18n.T(lang)
+
+	// Show spinner while fetching episodes
+	done := make(chan bool)
+	var episodes []SearchItem
+	var fetchErr error
+
+	go func() {
+		switch source {
+		case "itunes":
+			episodes, fetchErr = fetchITunesEpisodes(podcast.PodcastID)
+		case "xiaoyuzhou":
+			episodes, fetchErr = fetchXiaoyuzhouEpisodes(podcast.PodcastID)
+		default:
+			fetchErr = fmt.Errorf("unknown source: %s", source)
+		}
+		done <- true
+	}()
+
+	// Run spinner with podcast title
+	if err := runFetchEpisodesSpinner(podcast.Title, lang, done); err != nil {
+		return err
+	}
+
+	if fetchErr != nil {
+		return fetchErr
+	}
+
+	if len(episodes) == 0 {
+		fmt.Println("No episodes found.")
+		return nil
+	}
+
+	// Build sections for episode selection TUI
+	sections := []SearchSection{
+		{
+			Title: fmt.Sprintf("%s - %s", t.Search.Episodes, podcast.Title),
+			Items: episodes,
+		},
+	}
+
+	// Run TUI for episode selection
+	selected, err := RunSearchTUI(sections, podcast.Title, lang)
+	if err != nil {
+		return err
+	}
+
+	if len(selected) == 0 {
+		return nil
+	}
+
+	// Download selected episodes
+	return downloadSelectedEpisodes(selected)
+}
+
+// fetchITunesEpisodes fetches episodes for an iTunes podcast
+func fetchITunesEpisodes(podcastID string) ([]SearchItem, error) {
+	// Use iTunes Lookup API to get episodes
+	lookupURL := fmt.Sprintf("https://itunes.apple.com/lookup?id=%s&entity=podcastEpisode&limit=50", podcastID)
+
+	resp, err := http.Get(lookupURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		ResultCount int `json:"resultCount"`
+		Results     []struct {
+			WrapperType          string `json:"wrapperType"`
+			TrackID              int    `json:"trackId"`
+			TrackName            string `json:"trackName"`
+			CollectionName       string `json:"collectionName"`
+			ArtistName           string `json:"artistName"`
+			EpisodeURL           string `json:"episodeUrl"`
+			EpisodeFileExtension string `json:"episodeFileExtension"`
+			TrackTimeMillis      int    `json:"trackTimeMillis"`
+			ReleaseDate          string `json:"releaseDate"`
+		} `json:"results"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	var episodes []SearchItem
+	for _, r := range result.Results {
+		// Skip the podcast itself (first result is usually the podcast info)
+		if r.WrapperType != "podcastEpisode" {
+			continue
+		}
+
+		duration := formatEpisodeDuration(r.TrackTimeMillis / 1000)
+		episodes = append(episodes, SearchItem{
+			Title:       r.TrackName,
+			Subtitle:    duration,
+			URL:         fmt.Sprintf("https://podcasts.apple.com/podcast/id%s?i=%d", "", r.TrackID),
+			DownloadURL: r.EpisodeURL,
+			Selectable:  true,
+			Type:        ItemTypeEpisode,
+		})
+	}
+
+	return episodes, nil
+}
+
+// fetchXiaoyuzhouEpisodes fetches episodes for a Xiaoyuzhou podcast
+func fetchXiaoyuzhouEpisodes(podcastID string) ([]SearchItem, error) {
+	// Fetch podcast page which contains __NEXT_DATA__ with episodes
+	pageURL := fmt.Sprintf("https://www.xiaoyuzhoufm.com/podcast/%s", podcastID)
+
+	resp, err := http.Get(pageURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract __NEXT_DATA__ JSON from the page
+	html := string(body)
+	startMarker := `<script id="__NEXT_DATA__" type="application/json">`
+	endMarker := `</script>`
+
+	startIdx := strings.Index(html, startMarker)
+	if startIdx == -1 {
+		return nil, fmt.Errorf("could not find episode data on page")
+	}
+	startIdx += len(startMarker)
+
+	endIdx := strings.Index(html[startIdx:], endMarker)
+	if endIdx == -1 {
+		return nil, fmt.Errorf("could not parse episode data")
+	}
+
+	jsonData := html[startIdx : startIdx+endIdx]
+
+	// Parse the JSON to extract episodes
+	var nextData struct {
+		Props struct {
+			PageProps struct {
+				Podcast struct {
+					Title    string `json:"title"`
+					Episodes []struct {
+						Eid       string `json:"eid"`
+						Title     string `json:"title"`
+						Duration  int    `json:"duration"`
+						Enclosure struct {
+							URL string `json:"url"`
+						} `json:"enclosure"`
+					} `json:"episodes"`
+				} `json:"podcast"`
+			} `json:"pageProps"`
+		} `json:"props"`
+	}
+
+	if err := json.Unmarshal([]byte(jsonData), &nextData); err != nil {
+		return nil, fmt.Errorf("failed to parse episode data: %v", err)
+	}
+
+	podcast := nextData.Props.PageProps.Podcast
+	if len(podcast.Episodes) == 0 {
+		return nil, fmt.Errorf("no episodes found")
+	}
+
+	podcastTitle := podcast.Title
+	episodes := podcast.Episodes
+
+	var items []SearchItem
+	for _, e := range episodes {
+		duration := formatEpisodeDuration(e.Duration)
+		items = append(items, SearchItem{
+			Title:       fmt.Sprintf("%s - %s", podcastTitle, e.Title),
+			Subtitle:    duration,
+			URL:         fmt.Sprintf("https://www.xiaoyuzhoufm.com/episode/%s", e.Eid),
+			DownloadURL: e.Enclosure.URL,
+			Selectable:  true,
+			Type:        ItemTypeEpisode,
+		})
+	}
+
+	return items, nil
 }
 
 // downloadSelectedEpisodes downloads the selected episodes sequentially
@@ -325,10 +549,16 @@ func downloadSelectedEpisodes(items []SearchItem) error {
 	for i, item := range items {
 		fmt.Printf("[%d/%d] %s\n", i+1, len(items), item.Title)
 
-		// Use the URL to trigger normal download flow
-		if err := runDownload(item.URL); err != nil {
-			fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
-			// Continue with next episode
+		// If we have a direct download URL, use it
+		if item.DownloadURL != "" {
+			if err := runDirectDownload(item.DownloadURL, item.Title); err != nil {
+				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
+			}
+		} else if item.URL != "" {
+			// Use the URL to trigger normal download flow
+			if err := runDownload(item.URL); err != nil {
+				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
+			}
 		}
 		fmt.Println()
 	}
@@ -336,9 +566,57 @@ func downloadSelectedEpisodes(items []SearchItem) error {
 	return nil
 }
 
+// runDirectDownload downloads a file directly from URL
+func runDirectDownload(downloadURL, title string) error {
+	// Use the downloader directly
+	cfg := config.LoadOrDefault()
+
+	// Determine extension from URL
+	ext := "mp3"
+	if strings.Contains(downloadURL, ".m4a") {
+		ext = "m4a"
+	}
+
+	filename := sanitizeFilenameForDownload(title) + "." + ext
+	outputDir := cfg.OutputDir
+	if outputDir == "" {
+		outputDir = "."
+	}
+
+	// Join directory and filename to create full path
+	outputPath := filepath.Join(outputDir, filename)
+
+	d := downloader.New(cfg.Language)
+	return d.Download(downloadURL, outputPath, title)
+}
+
+// sanitizeFilenameForDownload removes invalid characters from filename
+func sanitizeFilenameForDownload(name string) string {
+	// Replace invalid characters
+	replacer := strings.NewReplacer(
+		"/", "-",
+		"\\", "-",
+		":", "-",
+		"*", "",
+		"?", "",
+		"\"", "",
+		"<", "",
+		">", "",
+		"|", "",
+	)
+	result := replacer.Replace(name)
+	// Trim spaces and limit length
+	result = strings.TrimSpace(result)
+	if len(result) > 200 {
+		result = result[:200]
+	}
+	return result
+}
+
 // Search spinner model
 type searchSpinnerModel struct {
 	spinner spinner.Model
+	message string // The action message (e.g., "Searching", "Fetching episodes for")
 	query   string
 	lang    string
 	done    chan bool
@@ -347,12 +625,13 @@ type searchSpinnerModel struct {
 
 type searchTickMsg time.Time
 
-func newSearchSpinnerModel(query, lang string, done chan bool) searchSpinnerModel {
+func newSearchSpinnerModel(message, query, lang string, done chan bool) searchSpinnerModel {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	return searchSpinnerModel{
 		spinner: s,
+		message: message,
 		query:   query,
 		lang:    lang,
 		done:    done,
@@ -395,12 +674,12 @@ func (m searchSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m searchSpinnerModel) View() string {
-	t := i18n.T(m.lang)
-	return fmt.Sprintf("\n  %s %s... %s\n", m.spinner.View(), t.Search.Searching, m.query)
+	return fmt.Sprintf("\n  %s %s... %s\n", m.spinner.View(), m.message, m.query)
 }
 
 func runSearchSpinner(query, lang string, done chan bool) error {
-	model := newSearchSpinnerModel(query, lang, done)
+	t := i18n.T(lang)
+	model := newSearchSpinnerModel(t.Search.Searching, query, lang, done)
 	p := tea.NewProgram(model)
 	finalModel, err := p.Run()
 	if err != nil {
@@ -408,6 +687,20 @@ func runSearchSpinner(query, lang string, done chan bool) error {
 	}
 	if finalModel.(searchSpinnerModel).quit {
 		return fmt.Errorf("search cancelled")
+	}
+	return nil
+}
+
+func runFetchEpisodesSpinner(podcastTitle, lang string, done chan bool) error {
+	t := i18n.T(lang)
+	model := newSearchSpinnerModel(t.Search.FetchingEpisodes, podcastTitle, lang, done)
+	p := tea.NewProgram(model)
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+	if finalModel.(searchSpinnerModel).quit {
+		return fmt.Errorf("cancelled")
 	}
 	return nil
 }

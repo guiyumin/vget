@@ -60,8 +60,11 @@ errors:
 search:
   results_for: "検索結果"
   searching: "検索中"
+  fetching_episodes: "エピソードを取得中"
   podcasts: "ポッドキャスト"
   episodes: "エピソード"
   select_hint: "最大 %d 件まで選択できます"
+  select_podcast_hint: "ポッドキャストを選択してエピソードを表示"
   selected: "選択中"
   help: "↑/↓ 移動 • スペース 選択 • Enter ダウンロード • q 終了"
+  help_podcast: "↑/↓ 移動 • スペース 選択 • Enter 表示 • q 終了"

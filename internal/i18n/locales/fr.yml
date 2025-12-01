@@ -60,8 +60,11 @@ errors:
 search:
   results_for: "Résultats de recherche"
   searching: "Recherche"
+  fetching_episodes: "Chargement des épisodes"
   podcasts: "Podcasts"
   episodes: "Épisodes"
   select_hint: "Sélectionnez jusqu'à %d épisodes"
+  select_podcast_hint: "Sélectionnez un podcast pour voir les épisodes"
   selected: "Sélectionnés"
   help: "↑/↓ naviguer • espace sélectionner • entrée télécharger • q quitter"
+  help_podcast: "↑/↓ naviguer • espace sélectionner • entrée parcourir • q quitter"
