@@ -87,3 +87,9 @@ User config lives in `.vget.yml` (or `.vget.yaml`) in the current directory. The
 ### Self-Update
 
 `internal/updater/` uses go-selfupdate to fetch releases from GitHub (`guiyumin/vget`). Version is set in `internal/version/version.go`.
+
+# My Rules
+
+- BUILD OUTPUT DIRECTORY IS ./build
+- YOU ONLY BUILD IT. I WILL TEST IT BY MYSELF.
+-
