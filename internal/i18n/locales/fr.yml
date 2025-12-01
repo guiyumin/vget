@@ -56,3 +56,11 @@ errors:
   extraction_failed: "Échec de l'extraction"
   download_failed: "Échec du téléchargement"
   no_extractor: "Aucun extracteur trouvé pour cette URL"
+
+search:
+  results_for: "Résultats de recherche"
+  podcasts: "Podcasts"
+  episodes: "Épisodes"
+  select_hint: "Sélectionnez jusqu'à %d épisodes"
+  selected: "Sélectionnés"
+  help: "↑/↓ naviguer • espace sélectionner • entrée télécharger • q quitter"

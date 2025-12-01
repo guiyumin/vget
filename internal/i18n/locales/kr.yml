@@ -56,3 +56,11 @@ errors:
   extraction_failed: "추출 실패"
   download_failed: "다운로드 실패"
   no_extractor: "이 URL에 대한 추출기를 찾을 수 없습니다"
+
+search:
+  results_for: "검색 결과"
+  podcasts: "팟캐스트"
+  episodes: "에피소드"
+  select_hint: "최대 %d개 선택 가능"
+  selected: "선택됨"
+  help: "↑/↓ 이동 • 스페이스 선택 • Enter 다운로드 • q 종료"

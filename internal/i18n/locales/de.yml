@@ -56,3 +56,11 @@ errors:
   extraction_failed: "Extraktion fehlgeschlagen"
   download_failed: "Download fehlgeschlagen"
   no_extractor: "Kein Extraktor für diese URL gefunden"
+
+search:
+  results_for: "Suchergebnisse"
+  podcasts: "Podcasts"
+  episodes: "Episoden"
+  select_hint: "Wähle bis zu %d Episoden"
+  selected: "Ausgewählt"
+  help: "↑/↓ navigieren • Leertaste auswählen • Enter herunterladen • q beenden"

@@ -1,0 +1,285 @@
+package cli
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/guiyumin/vget/internal/i18n"
+)
+
+var (
+	searchTitleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
+	searchSelectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	searchDimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchCheckStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
+	searchUncheckStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchHelpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchContainerStyle = lipgloss.NewStyle().Padding(1, 2)
+)
+
+// SearchItem represents a selectable item (episode)
+type SearchItem struct {
+	Title       string
+	Subtitle    string // e.g., "Duration: 45:30 | Plays: 1234"
+	URL         string
+	DownloadURL string // Direct download URL if available
+	Selectable  bool   // false for podcast shows, true for episodes
+}
+
+// SearchSection represents a section (Podcasts or Episodes)
+type SearchSection struct {
+	Title string
+	Items []SearchItem
+}
+
+const maxSelections = 5
+
+type searchModel struct {
+	sections      []SearchSection
+	cursor        int // Global cursor across all items
+	totalItems    int
+	selected      map[int]bool // Track selected items by global index
+	selectable    map[int]bool // Track which items are selectable
+	selectedCount int
+	confirmed     bool
+	keyBindings   searchKeyMap
+	width         int
+	height        int
+	query         string
+	lang          string
+}
+
+type searchKeyMap struct {
+	Up      key.Binding
+	Down    key.Binding
+	Toggle  key.Binding
+	Confirm key.Binding
+	Quit    key.Binding
+}
+
+func defaultSearchKeyMap() searchKeyMap {
+	return searchKeyMap{
+		Up: key.NewBinding(
+			key.WithKeys("up", "k"),
+			key.WithHelp("↑/k", "up"),
+		),
+		Down: key.NewBinding(
+			key.WithKeys("down", "j"),
+			key.WithHelp("↓/j", "down"),
+		),
+		Toggle: key.NewBinding(
+			key.WithKeys(" ", "x"),
+			key.WithHelp("space/x", "toggle"),
+		),
+		Confirm: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "download"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys("q", "esc", "ctrl+c"),
+			key.WithHelp("q/esc", "quit"),
+		),
+	}
+}
+
+func newSearchModel(sections []SearchSection, query, lang string) searchModel {
+	total := 0
+	selectable := make(map[int]bool)
+	idx := 0
+	for _, s := range sections {
+		for _, item := range s.Items {
+			if item.Selectable {
+				selectable[idx] = true
+			}
+			idx++
+		}
+		total += len(s.Items)
+	}
+
+	// Find first selectable item for initial cursor
+	cursor := 0
+	for i := 0; i < total; i++ {
+		if selectable[i] {
+			cursor = i
+			break
+		}
+	}
+
+	return searchModel{
+		sections:    sections,
+		cursor:      cursor,
+		totalItems:  total,
+		selected:    make(map[int]bool),
+		selectable:  selectable,
+		keyBindings: defaultSearchKeyMap(),
+		query:       query,
+		lang:        lang,
+	}
+}
+
+func (m searchModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.keyBindings.Quit):
+			return m, tea.Quit
+
+		case key.Matches(msg, m.keyBindings.Up):
+			if m.cursor > 0 {
+				m.cursor--
+			}
+
+		case key.Matches(msg, m.keyBindings.Down):
+			if m.cursor < m.totalItems-1 {
+				m.cursor++
+			}
+
+		case key.Matches(msg, m.keyBindings.Toggle):
+			// Only toggle if item is selectable
+			if !m.selectable[m.cursor] {
+				break
+			}
+			if m.selected[m.cursor] {
+				// Deselect
+				m.selected[m.cursor] = false
+				m.selectedCount--
+			} else if m.selectedCount < maxSelections {
+				// Select (only if under limit)
+				m.selected[m.cursor] = true
+				m.selectedCount++
+			}
+
+		case key.Matches(msg, m.keyBindings.Confirm):
+			m.confirmed = true
+			return m, tea.Quit
+		}
+	}
+
+	return m, nil
+}
+
+func (m searchModel) View() string {
+	t := i18n.T(m.lang)
+
+	if m.totalItems == 0 {
+		return "\n  No results found.\n\n"
+	}
+
+	var b strings.Builder
+
+	// Title with query
+	b.WriteString(fmt.Sprintf("  %s: %s\n\n", searchTitleStyle.Render(t.Search.ResultsFor), m.query))
+
+	globalIdx := 0
+	for _, section := range m.sections {
+		if len(section.Items) == 0 {
+			continue
+		}
+
+		// Section title
+		b.WriteString(fmt.Sprintf("  %s\n", searchTitleStyle.Render(section.Title)))
+
+		for _, item := range section.Items {
+			cursor := "  "
+			if globalIdx == m.cursor {
+				cursor = searchSelectedStyle.Render("> ")
+			}
+
+			// Only show checkbox for selectable items (episodes)
+			var prefix string
+			if item.Selectable {
+				checkbox := searchUncheckStyle.Render("[ ]")
+				if m.selected[globalIdx] {
+					checkbox = searchCheckStyle.Render("[x]")
+				}
+				prefix = checkbox + " "
+			} else {
+				prefix = "    " // Indent for non-selectable items
+			}
+
+			// Item title
+			title := item.Title
+			if globalIdx == m.cursor {
+				title = searchSelectedStyle.Render(title)
+			}
+
+			b.WriteString(fmt.Sprintf("%s%s%s\n", cursor, prefix, title))
+
+			// Subtitle (dimmed)
+			if item.Subtitle != "" {
+				indent := "        "
+				if !item.Selectable {
+					indent = "      "
+				}
+				b.WriteString(fmt.Sprintf("%s%s\n", indent, searchDimStyle.Render(item.Subtitle)))
+			}
+
+			globalIdx++
+		}
+		b.WriteString("\n")
+	}
+
+	// Selection count and help
+	if m.selectedCount > 0 {
+		b.WriteString(fmt.Sprintf("  %s: %d/%d\n", t.Search.Selected, m.selectedCount, maxSelections))
+	} else {
+		b.WriteString(fmt.Sprintf("  "+t.Search.SelectHint+"\n", maxSelections))
+	}
+	b.WriteString(searchHelpStyle.Render("  " + t.Search.Help))
+	b.WriteString("\n")
+
+	// Apply container style
+	content := searchContainerStyle.Render(b.String())
+
+	// Make it fullscreen
+	if m.width > 0 && m.height > 0 {
+		content = lipgloss.Place(m.width, m.height, lipgloss.Left, lipgloss.Top, content)
+	}
+
+	return content
+}
+
+// GetSelectedItems returns the selected items
+func (m searchModel) GetSelectedItems() []SearchItem {
+	var items []SearchItem
+	globalIdx := 0
+	for _, section := range m.sections {
+		for _, item := range section.Items {
+			if m.selected[globalIdx] {
+				items = append(items, item)
+			}
+			globalIdx++
+		}
+	}
+	return items
+}
+
+// RunSearchTUI runs the search TUI and returns selected items
+func RunSearchTUI(sections []SearchSection, query, lang string) ([]SearchItem, error) {
+	model := newSearchModel(sections, query, lang)
+	p := tea.NewProgram(model, tea.WithAltScreen())
+
+	finalModel, err := p.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	m := finalModel.(searchModel)
+	if !m.confirmed {
+		return nil, nil // User quit without confirming
+	}
+
+	return m.GetSelectedItems(), nil
+}

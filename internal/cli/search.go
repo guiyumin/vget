@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"unicode"
 
+	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/i18n"
 	"github.com/spf13/cobra"
 )
 
@@ -24,8 +28,17 @@ var searchCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if podcastFlag {
-			if err := searchXiaoyuzhou(args[0]); err != nil {
+		query := args[0]
+
+		// Auto-detect: if query contains Chinese characters, use Xiaoyuzhou
+		// Otherwise use iTunes
+		if containsChinese(query) {
+			if err := searchXiaoyuzhou(query); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			if err := searchITunes(query); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
@@ -36,6 +49,16 @@ var searchCmd = &cobra.Command{
 func init() {
 	searchCmd.Flags().BoolVar(&podcastFlag, "podcast", false, "search for podcasts")
 	rootCmd.AddCommand(searchCmd)
+}
+
+// containsChinese checks if string contains Chinese characters
+func containsChinese(s string) bool {
+	for _, r := range s {
+		if unicode.Is(unicode.Han, r) {
+			return true
+		}
+	}
+	return false
 }
 
 // XiaoyuzhouSearchResponse represents the API response
@@ -73,11 +96,14 @@ type XiaoyuzhouEpisode struct {
 }
 
 func searchXiaoyuzhou(query string) error {
+	cfg := config.LoadOrDefault()
+	t := i18n.T(cfg.Language)
+
 	// Call Xiaoyuzhou search API
-	url := "https://ask.xiaoyuzhoufm.com/api/keyword/search"
+	apiURL := "https://ask.xiaoyuzhoufm.com/api/keyword/search"
 	payload := fmt.Sprintf(`{"query": "%s"}`, query)
 
-	req, err := http.NewRequest("POST", url, strings.NewReader(payload))
+	req, err := http.NewRequest("POST", apiURL, strings.NewReader(payload))
 	if err != nil {
 		return err
 	}
@@ -95,46 +121,62 @@ func searchXiaoyuzhou(query string) error {
 		return err
 	}
 
-	// Display podcasts first
-	if len(result.Data.Podcasts) > 0 {
-		fmt.Println("\n\033[1;36m=== Podcasts ===\033[0m")
-		for i, p := range result.Data.Podcasts {
-			fmt.Printf("\033[1;33m[P%d]\033[0m %s\n", i+1, p.Title)
-			fmt.Printf("     Author: %s | Episodes: %d | Subscribers: %d\n", p.Author, p.EpisodeCount, p.SubscriptionCount)
-			fmt.Printf("     \033[90mhttps://www.xiaoyuzhoufm.com/podcast/%s\033[0m\n", p.Pid)
-			if p.Brief != "" {
-				brief := p.Brief
-				if len(brief) > 80 {
-					brief = brief[:80] + "..."
-				}
-				fmt.Printf("     %s\n", brief)
-			}
-			fmt.Println()
-		}
-	}
-
-	// Display episodes
-	if len(result.Data.Episodes) > 0 {
-		fmt.Println("\033[1;36m=== Episodes ===\033[0m")
-		for i, e := range result.Data.Episodes {
-			duration := formatEpisodeDuration(e.Duration)
-			fmt.Printf("\033[1;33m[E%d]\033[0m %s - %s\n", i+1, e.Podcast.Title, e.Title)
-			fmt.Printf("     Duration: %s | Plays: %d\n", duration, e.PlayCount)
-			fmt.Printf("     \033[90mhttps://www.xiaoyuzhoufm.com/episode/%s\033[0m\n", e.Eid)
-			fmt.Println()
-		}
-	}
-
 	if len(result.Data.Podcasts) == 0 && len(result.Data.Episodes) == 0 {
 		fmt.Println("No results found.")
 		return nil
 	}
 
-	// Show download hint
-	fmt.Println("\033[90m---")
-	fmt.Println("To download, copy the URL and run: vget <url>\033[0m")
+	// Build sections for TUI
+	var sections []SearchSection
 
-	return nil
+	// Podcasts section (not selectable for download, just info)
+	if len(result.Data.Podcasts) > 0 {
+		var items []SearchItem
+		for _, p := range result.Data.Podcasts {
+			subtitle := fmt.Sprintf("%s | %d episodes", p.Author, p.EpisodeCount)
+			items = append(items, SearchItem{
+				Title:      p.Title,
+				Subtitle:   subtitle,
+				Selectable: false,
+			})
+		}
+		sections = append(sections, SearchSection{
+			Title: t.Search.Podcasts,
+			Items: items,
+		})
+	}
+
+	// Episodes section (selectable for download)
+	if len(result.Data.Episodes) > 0 {
+		var items []SearchItem
+		for _, e := range result.Data.Episodes {
+			duration := formatEpisodeDuration(e.Duration)
+			items = append(items, SearchItem{
+				Title:       fmt.Sprintf("%s - %s", e.Podcast.Title, e.Title),
+				Subtitle:    duration,
+				URL:         fmt.Sprintf("https://www.xiaoyuzhoufm.com/episode/%s", e.Eid),
+				DownloadURL: e.Enclosure.URL,
+				Selectable:  true,
+			})
+		}
+		sections = append(sections, SearchSection{
+			Title: t.Search.Episodes,
+			Items: items,
+		})
+	}
+
+	// Run TUI
+	selected, err := RunSearchTUI(sections, query, cfg.Language)
+	if err != nil {
+		return err
+	}
+
+	if len(selected) == 0 {
+		return nil
+	}
+
+	// Download selected episodes
+	return downloadSelectedEpisodes(selected)
 }
 
 func formatEpisodeDuration(seconds int) string {
@@ -148,4 +190,107 @@ func formatEpisodeDuration(seconds int) string {
 		return fmt.Sprintf("%d:%02d:%02d", h, m, s)
 	}
 	return fmt.Sprintf("%d:%02d", m, s)
+}
+
+// iTunes API response structures
+type iTunesSearchResponse struct {
+	ResultCount int             `json:"resultCount"`
+	Results     []iTunesResult  `json:"results"`
+}
+
+type iTunesResult struct {
+	WrapperType          string `json:"wrapperType"`
+	Kind                 string `json:"kind"`
+	CollectionID         int    `json:"collectionId"`
+	TrackID              int    `json:"trackId"`
+	ArtistName           string `json:"artistName"`
+	CollectionName       string `json:"collectionName"`
+	TrackName            string `json:"trackName"`
+	FeedURL              string `json:"feedUrl"`
+	TrackCount           int    `json:"trackCount"`
+	PrimaryGenreName     string `json:"primaryGenreName"`
+	ReleaseDate          string `json:"releaseDate"`
+	TrackTimeMillis      int    `json:"trackTimeMillis"`
+	EpisodeURL           string `json:"episodeUrl"`
+	EpisodeFileExtension string `json:"episodeFileExtension"`
+	ShortDescription     string `json:"shortDescription"`
+}
+
+func searchITunes(query string) error {
+	cfg := config.LoadOrDefault()
+	t := i18n.T(cfg.Language)
+
+	// Search for podcasts
+	searchURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast",
+		url.QueryEscape(query))
+
+	resp, err := http.Get(searchURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var result iTunesSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return err
+	}
+
+	if result.ResultCount == 0 {
+		fmt.Println("No results found.")
+		return nil
+	}
+
+	// Build sections for TUI
+	var sections []SearchSection
+
+	// Podcasts section (not selectable - just for info)
+	var items []SearchItem
+	for _, p := range result.Results {
+		items = append(items, SearchItem{
+			Title:      p.CollectionName,
+			Subtitle:   fmt.Sprintf("%s | %d episodes | %s", p.ArtistName, p.TrackCount, p.PrimaryGenreName),
+			Selectable: false,
+		})
+	}
+	sections = append(sections, SearchSection{
+		Title: t.Search.Podcasts + " (Apple Podcasts)",
+		Items: items,
+	})
+
+	// Run TUI
+	selected, err := RunSearchTUI(sections, query, cfg.Language)
+	if err != nil {
+		return err
+	}
+
+	if len(selected) == 0 {
+		return nil
+	}
+
+	// For Apple Podcasts, we need to fetch episodes from the selected podcast
+	fmt.Println("\nApple Podcast episode download coming soon.")
+
+	return nil
+}
+
+// downloadSelectedEpisodes downloads the selected episodes sequentially
+func downloadSelectedEpisodes(items []SearchItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	fmt.Printf("\nDownloading %d episode(s)...\n\n", len(items))
+
+	for i, item := range items {
+		fmt.Printf("[%d/%d] %s\n", i+1, len(items), item.Title)
+
+		// Use the URL to trigger normal download flow
+		if err := runDownload(item.URL); err != nil {
+			fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
+			// Continue with next episode
+		}
+		fmt.Println()
+	}
+
+	return nil
 }

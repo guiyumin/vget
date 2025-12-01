@@ -56,3 +56,11 @@ errors:
   extraction_failed: "解析失败"
   download_failed: "下载失败"
   no_extractor: "没有找到适用于此URL的解析器"
+
+search:
+  results_for: "搜索结果"
+  podcasts: "播客节目"
+  episodes: "单集"
+  select_hint: "最多选择 %d 集"
+  selected: "已选"
+  help: "↑/↓ 移动 • 空格 选择 • 回车 下载 • q 退出"

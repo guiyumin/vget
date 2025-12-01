@@ -18,6 +18,7 @@ type Translations struct {
 	Help         HelpTranslations         `yaml:"help"`
 	Download     DownloadTranslations     `yaml:"download"`
 	Errors       ErrorTranslations        `yaml:"errors"`
+	Search       SearchTranslations       `yaml:"search"`
 }
 
 type ConfigTranslations struct {
@@ -80,6 +81,15 @@ type ErrorTranslations struct {
 	ExtractionFailed string `yaml:"extraction_failed"`
 	DownloadFailed   string `yaml:"download_failed"`
 	NoExtractor      string `yaml:"no_extractor"`
+}
+
+type SearchTranslations struct {
+	ResultsFor string `yaml:"results_for"`
+	Podcasts   string `yaml:"podcasts"`
+	Episodes   string `yaml:"episodes"`
+	SelectHint string `yaml:"select_hint"`
+	Selected   string `yaml:"selected"`
+	Help       string `yaml:"help"`
 }
 
 var (

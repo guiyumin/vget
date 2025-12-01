@@ -56,3 +56,11 @@ errors:
   extraction_failed: "解析に失敗しました"
   download_failed: "ダウンロードに失敗しました"
   no_extractor: "このURLに対応する解析器がありません"
+
+search:
+  results_for: "検索結果"
+  podcasts: "ポッドキャスト"
+  episodes: "エピソード"
+  select_hint: "最大 %d 件まで選択できます"
+  selected: "選択中"
+  help: "↑/↓ 移動 • スペース 選択 • Enter ダウンロード • q 終了"
