@@ -48,6 +48,18 @@
 - [ ] TikTok
 - [ ] Apple Podcasts
 
+## Tracking (Versatile Get)
+
+- [ ] FedEx tracking
+  - [ ] Scraping (default, no setup)
+  - [ ] API mode (user provides own keys in config.yml)
+- [ ] UPS tracking
+  - [ ] Scraping (default, no setup)
+  - [ ] API mode (user provides own keys in config.yml)
+- [ ] USPS tracking
+  - [ ] Scraping (default, no setup)
+  - [ ] API mode (user provides own keys in config.yml)
+
 ## DevOps
 
 - [ ] GoReleaser + GitHub Actions for tagged releases
