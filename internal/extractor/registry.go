@@ -1,5 +1,7 @@
 package extractor
 
+import "net/url"
+
 // registry holds all registered extractors
 var registry []Extractor
 
@@ -9,9 +11,14 @@ func Register(e Extractor) {
 }
 
 // Match finds the first extractor that can handle the URL
-func Match(url string) Extractor {
+// It parses the URL once and passes the parsed URL to each extractor
+func Match(rawURL string) Extractor {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil
+	}
 	for _, e := range registry {
-		if e.Match(url) {
+		if e.Match(u) {
 			return e
 		}
 	}

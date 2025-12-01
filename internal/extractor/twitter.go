@@ -39,8 +39,13 @@ func (t *TwitterExtractor) Name() string {
 }
 
 // Match checks if URL is a Twitter/X status URL
-func (t *TwitterExtractor) Match(url string) bool {
-	return twitterURLRegex.MatchString(url)
+func (t *TwitterExtractor) Match(u *url.URL) bool {
+	host := u.Hostname()
+	if host != "twitter.com" && host != "www.twitter.com" && host != "x.com" && host != "www.x.com" {
+		return false
+	}
+	// Check path matches /username/status/id pattern
+	return twitterURLRegex.MatchString(u.String())
 }
 
 // Extract retrieves video information from a Twitter/X URL

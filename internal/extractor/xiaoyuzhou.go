@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -16,9 +17,12 @@ func (e *XiaoyuzhouExtractor) Name() string {
 	return "xiaoyuzhou"
 }
 
-func (e *XiaoyuzhouExtractor) Match(url string) bool {
-	return strings.Contains(url, "xiaoyuzhoufm.com/episode/") ||
-		strings.Contains(url, "xiaoyuzhoufm.com/podcast/")
+func (e *XiaoyuzhouExtractor) Match(u *url.URL) bool {
+	host := u.Hostname()
+	if host != "xiaoyuzhoufm.com" && host != "www.xiaoyuzhoufm.com" {
+		return false
+	}
+	return strings.HasPrefix(u.Path, "/episode/") || strings.HasPrefix(u.Path, "/podcast/")
 }
 
 func (e *XiaoyuzhouExtractor) Extract(url string) (*VideoInfo, error) {

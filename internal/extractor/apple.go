@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
-	"strings"
 )
 
 // AppleExtractor handles Apple Podcasts downloads
@@ -19,23 +19,26 @@ func (e *AppleExtractor) Name() string {
 // https://podcasts.apple.com/podcast/id173001861
 // https://podcasts.apple.com/us/podcast/dan-carlins-hardcore-history/id173001861
 // https://podcasts.apple.com/us/podcast/dan-carlins-hardcore-history/id173001861?i=1000682587885
-var applePodcastRegex = regexp.MustCompile(`podcasts\.apple\.com.*?/(?:podcast/)?(?:[^/]+/)?id(\d+)(?:\?i=(\d+))?`)
+var applePodcastRegex = regexp.MustCompile(`/(?:podcast/)?(?:[^/]+/)?id(\d+)`)
 
-func (e *AppleExtractor) Match(url string) bool {
-	return strings.Contains(url, "podcasts.apple.com")
+func (e *AppleExtractor) Match(u *url.URL) bool {
+	host := u.Hostname()
+	return host == "podcasts.apple.com"
 }
 
-func (e *AppleExtractor) Extract(url string) (*VideoInfo, error) {
-	matches := applePodcastRegex.FindStringSubmatch(url)
+func (e *AppleExtractor) Extract(rawURL string) (*VideoInfo, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URL: %w", err)
+	}
+
+	matches := applePodcastRegex.FindStringSubmatch(u.Path)
 	if len(matches) < 2 {
 		return nil, fmt.Errorf("could not extract podcast ID from URL")
 	}
 
 	podcastID := matches[1]
-	var episodeID string
-	if len(matches) >= 3 && matches[2] != "" {
-		episodeID = matches[2]
-	}
+	episodeID := u.Query().Get("i")
 
 	// If episode ID provided, fetch that specific episode
 	if episodeID != "" {

@@ -1,6 +1,9 @@
 package extractor
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 // MediaType represents the type of media being downloaded
 type MediaType string
@@ -21,7 +24,8 @@ type Extractor interface {
 	Name() string
 
 	// Match returns true if this extractor can handle the URL
-	Match(url string) bool
+	// The URL is pre-parsed so extractors can reliably check the host/domain
+	Match(u *url.URL) bool
 
 	// Extract retrieves video information from the URL
 	Extract(url string) (*VideoInfo, error)
