@@ -59,6 +59,7 @@ errors:
 
 search:
   results_for: "검색 결과"
+  searching: "검색 중"
   podcasts: "팟캐스트"
   episodes: "에피소드"
   select_hint: "최대 %d개 선택 가능"

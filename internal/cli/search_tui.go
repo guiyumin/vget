@@ -11,12 +11,13 @@ import (
 )
 
 var (
-	searchTitleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
-	searchSelectedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	searchDimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	searchCheckStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
-	searchUncheckStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	searchHelpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchTitleStyle     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
+	searchSelectedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	searchDimStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchCheckStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
+	searchUncheckStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchHelpStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	searchDurationStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("135")) // purple
 	searchContainerStyle = lipgloss.NewStyle().Padding(1, 2)
 )
 
@@ -50,6 +51,7 @@ type searchModel struct {
 	height        int
 	query         string
 	lang          string
+	scrollOffset  int // For scrolling
 }
 
 type searchKeyMap struct {
@@ -124,6 +126,34 @@ func (m searchModel) Init() tea.Cmd {
 	return nil
 }
 
+const maxVisibleLines = 15 // Max items to show at once
+
+// visibleLines returns how many lines can be displayed
+func (m searchModel) visibleLines() int {
+	if m.height <= 0 {
+		return maxVisibleLines
+	}
+	// Reserve: title (2 lines) + footer (3 lines) + padding
+	available := m.height - 8
+	if available > maxVisibleLines {
+		return maxVisibleLines
+	}
+	if available < 5 {
+		return 5 // minimum
+	}
+	return available
+}
+
+// adjustScroll ensures cursor is visible
+func (m *searchModel) adjustScroll() {
+	visible := m.visibleLines()
+	if m.cursor < m.scrollOffset {
+		m.scrollOffset = m.cursor
+	} else if m.cursor >= m.scrollOffset+visible {
+		m.scrollOffset = m.cursor - visible + 1
+	}
+}
+
 func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -139,11 +169,13 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keyBindings.Up):
 			if m.cursor > 0 {
 				m.cursor--
+				m.adjustScroll()
 			}
 
 		case key.Matches(msg, m.keyBindings.Down):
 			if m.cursor < m.totalItems-1 {
 				m.cursor++
+				m.adjustScroll()
 			}
 
 		case key.Matches(msg, m.keyBindings.Toggle):
@@ -182,6 +214,10 @@ func (m searchModel) View() string {
 	// Title with query
 	b.WriteString(fmt.Sprintf("  %s: %s\n\n", searchTitleStyle.Render(t.Search.ResultsFor), m.query))
 
+	// Build all lines first
+	var lines []string
+	var lineToIdx []int // map line index to global item index
+
 	globalIdx := 0
 	for _, section := range m.sections {
 		if len(section.Items) == 0 {
@@ -189,7 +225,8 @@ func (m searchModel) View() string {
 		}
 
 		// Section title
-		b.WriteString(fmt.Sprintf("  %s\n", searchTitleStyle.Render(section.Title)))
+		lines = append(lines, fmt.Sprintf("  %s", searchTitleStyle.Render(section.Title)))
+		lineToIdx = append(lineToIdx, -1) // section title, not an item
 
 		for _, item := range section.Items {
 			cursor := "  "
@@ -206,29 +243,81 @@ func (m searchModel) View() string {
 				}
 				prefix = checkbox + " "
 			} else {
-				prefix = "    " // Indent for non-selectable items
+				prefix = "   " // Indent for non-selectable items
 			}
 
-			// Item title
-			title := item.Title
-			if globalIdx == m.cursor {
-				title = searchSelectedStyle.Render(title)
-			}
-
-			b.WriteString(fmt.Sprintf("%s%s%s\n", cursor, prefix, title))
-
-			// Subtitle (dimmed)
-			if item.Subtitle != "" {
-				indent := "        "
-				if !item.Selectable {
-					indent = "      "
+			// Build the line
+			var line string
+			if item.Selectable && item.Subtitle != "" {
+				// Episode: duration in purple + title
+				duration := searchDurationStyle.Render(fmt.Sprintf("[%s]", item.Subtitle))
+				title := item.Title
+				if globalIdx == m.cursor {
+					title = searchSelectedStyle.Render(title)
 				}
-				b.WriteString(fmt.Sprintf("%s%s\n", indent, searchDimStyle.Render(item.Subtitle)))
+				line = fmt.Sprintf("%s %s", duration, title)
+			} else if item.Subtitle != "" {
+				// Podcast: title + subtitle dimmed
+				title := item.Title
+				if globalIdx == m.cursor {
+					title = searchSelectedStyle.Render(title)
+				}
+				line = fmt.Sprintf("%s %s", title, searchDimStyle.Render("("+item.Subtitle+")"))
+			} else {
+				// Just title
+				title := item.Title
+				if globalIdx == m.cursor {
+					title = searchSelectedStyle.Render(title)
+				}
+				line = title
 			}
 
+			lines = append(lines, fmt.Sprintf("%s%s%s", cursor, prefix, line))
+			lineToIdx = append(lineToIdx, globalIdx)
 			globalIdx++
 		}
-		b.WriteString("\n")
+		// Add spacing after section
+		lines = append(lines, "")
+		lineToIdx = append(lineToIdx, -1)
+	}
+
+	// Calculate visible range based on cursor position
+	visible := m.visibleLines()
+
+	// Find which line the cursor is on
+	cursorLine := 0
+	for i, idx := range lineToIdx {
+		if idx == m.cursor {
+			cursorLine = i
+			break
+		}
+	}
+
+	// Calculate scroll offset to keep cursor visible
+	startLine := m.scrollOffset
+	if cursorLine < startLine {
+		startLine = cursorLine
+	} else if cursorLine >= startLine+visible {
+		startLine = cursorLine - visible + 1
+	}
+	if startLine < 0 {
+		startLine = 0
+	}
+
+	endLine := startLine + visible
+	if endLine > len(lines) {
+		endLine = len(lines)
+	}
+
+	// Render visible lines
+	for i := startLine; i < endLine; i++ {
+		b.WriteString(lines[i] + "\n")
+	}
+
+	// Show scroll indicator if needed
+	if len(lines) > visible {
+		scrollInfo := fmt.Sprintf(" (%d-%d of %d)", startLine+1, endLine, len(lines))
+		b.WriteString(searchDimStyle.Render(scrollInfo) + "\n")
 	}
 
 	// Selection count and help

@@ -59,6 +59,7 @@ errors:
 
 search:
   results_for: "搜索结果"
+  searching: "搜索中"
   podcasts: "播客节目"
   episodes: "单集"
   select_hint: "最多选择 %d 集"

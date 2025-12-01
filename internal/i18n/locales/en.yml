@@ -59,6 +59,7 @@ errors:
 
 search:
   results_for: "Search results for"
+  searching: "Searching"
   podcasts: "Podcasts"
   episodes: "Episodes"
   select_hint: "Select up to %d episodes"

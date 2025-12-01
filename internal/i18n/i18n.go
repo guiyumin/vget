@@ -85,6 +85,7 @@ type ErrorTranslations struct {
 
 type SearchTranslations struct {
 	ResultsFor string `yaml:"results_for"`
+	Searching  string `yaml:"searching"`
 	Podcasts   string `yaml:"podcasts"`
 	Episodes   string `yaml:"episodes"`
 	SelectHint string `yaml:"select_hint"`

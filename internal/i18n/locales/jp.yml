@@ -59,6 +59,7 @@ errors:
 
 search:
   results_for: "検索結果"
+  searching: "検索中"
   podcasts: "ポッドキャスト"
   episodes: "エピソード"
   select_hint: "最大 %d 件まで選択できます"

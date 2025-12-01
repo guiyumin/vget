@@ -7,8 +7,12 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 	"unicode"
 
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/guiyumin/vget/internal/config"
 	"github.com/guiyumin/vget/internal/i18n"
 	"github.com/spf13/cobra"
@@ -99,26 +103,46 @@ func searchXiaoyuzhou(query string) error {
 	cfg := config.LoadOrDefault()
 	t := i18n.T(cfg.Language)
 
-	// Call Xiaoyuzhou search API
-	apiURL := "https://ask.xiaoyuzhoufm.com/api/keyword/search"
-	payload := fmt.Sprintf(`{"query": "%s"}`, query)
-
-	req, err := http.NewRequest("POST", apiURL, strings.NewReader(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
+	// Show spinner while searching
+	done := make(chan bool)
 	var result XiaoyuzhouSearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	var searchErr error
+
+	go func() {
+		// Call Xiaoyuzhou search API
+		apiURL := "https://ask.xiaoyuzhoufm.com/api/keyword/search"
+		payload := fmt.Sprintf(`{"query": "%s"}`, query)
+
+		req, err := http.NewRequest("POST", apiURL, strings.NewReader(payload))
+		if err != nil {
+			searchErr = err
+			done <- true
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			searchErr = err
+			done <- true
+			return
+		}
+		defer resp.Body.Close()
+
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			searchErr = err
+		}
+		done <- true
+	}()
+
+	// Run spinner
+	if err := runSearchSpinner(query, cfg.Language, done); err != nil {
 		return err
+	}
+
+	if searchErr != nil {
+		return searchErr
 	}
 
 	if len(result.Data.Podcasts) == 0 && len(result.Data.Episodes) == 0 {
@@ -220,19 +244,36 @@ func searchITunes(query string) error {
 	cfg := config.LoadOrDefault()
 	t := i18n.T(cfg.Language)
 
-	// Search for podcasts
-	searchURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast",
-		url.QueryEscape(query))
+	// Show spinner while searching
+	done := make(chan bool)
+	var result iTunesSearchResponse
+	var searchErr error
 
-	resp, err := http.Get(searchURL)
-	if err != nil {
+	go func() {
+		searchURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=podcast&entity=podcast",
+			url.QueryEscape(query))
+
+		resp, err := http.Get(searchURL)
+		if err != nil {
+			searchErr = err
+			done <- true
+			return
+		}
+		defer resp.Body.Close()
+
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			searchErr = err
+		}
+		done <- true
+	}()
+
+	// Run spinner
+	if err := runSearchSpinner(query, cfg.Language, done); err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
-	var result iTunesSearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return err
+	if searchErr != nil {
+		return searchErr
 	}
 
 	if result.ResultCount == 0 {
@@ -292,5 +333,81 @@ func downloadSelectedEpisodes(items []SearchItem) error {
 		fmt.Println()
 	}
 
+	return nil
+}
+
+// Search spinner model
+type searchSpinnerModel struct {
+	spinner spinner.Model
+	query   string
+	lang    string
+	done    chan bool
+	quit    bool
+}
+
+type searchTickMsg time.Time
+
+func newSearchSpinnerModel(query, lang string, done chan bool) searchSpinnerModel {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	return searchSpinnerModel{
+		spinner: s,
+		query:   query,
+		lang:    lang,
+		done:    done,
+	}
+}
+
+func (m searchSpinnerModel) Init() tea.Cmd {
+	return tea.Batch(m.spinner.Tick, m.checkDone())
+}
+
+func (m searchSpinnerModel) checkDone() tea.Cmd {
+	return tea.Tick(50*time.Millisecond, func(t time.Time) tea.Msg {
+		return searchTickMsg(t)
+	})
+}
+
+func (m searchSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" || msg.String() == "q" {
+			m.quit = true
+			return m, tea.Quit
+		}
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
+	case searchTickMsg:
+		select {
+		case <-m.done:
+			return m, tea.Quit
+		default:
+			return m, m.checkDone()
+		}
+	}
+
+	return m, nil
+}
+
+func (m searchSpinnerModel) View() string {
+	t := i18n.T(m.lang)
+	return fmt.Sprintf("\n  %s %s... %s\n", m.spinner.View(), t.Search.Searching, m.query)
+}
+
+func runSearchSpinner(query, lang string, done chan bool) error {
+	model := newSearchSpinnerModel(query, lang, done)
+	p := tea.NewProgram(model)
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+	if finalModel.(searchSpinnerModel).quit {
+		return fmt.Errorf("search cancelled")
+	}
 	return nil
 }
