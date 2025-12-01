@@ -341,7 +341,7 @@ func searchITunes(query string) error {
 			})
 		}
 		sections = append(sections, SearchSection{
-			Title: t.Search.Podcasts,
+			Title: fmt.Sprintf("%s (%d)", t.Search.Podcasts, podcastResult.ResultCount),
 			Items: items,
 		})
 	}
@@ -360,7 +360,7 @@ func searchITunes(query string) error {
 			})
 		}
 		sections = append(sections, SearchSection{
-			Title: t.Search.Episodes,
+			Title: fmt.Sprintf("%s (%d)", t.Search.Episodes, episodeResult.ResultCount),
 			Items: items,
 		})
 	}

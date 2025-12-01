@@ -19,6 +19,10 @@ var (
 	searchHelpStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	searchDurationStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("135")) // purple
 	searchContainerStyle = lipgloss.NewStyle().Padding(1, 2)
+
+	// Tab styles
+	activeTabStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205")).Underline(true)
+	inactiveTabStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
 // ItemType distinguishes between podcasts and episodes
@@ -52,11 +56,10 @@ const maxSelections = 5
 
 type searchModel struct {
 	sections      []SearchSection
-	cursor        int // Global cursor across all items
-	totalItems    int
-	selected      map[int]bool     // Track selected items by global index
-	selectable    map[int]bool     // Track which items are selectable
-	itemTypes     map[int]ItemType // Track item type by global index
+	activeTab     int            // Which tab is active
+	cursors       []int          // Cursor position for each tab
+	scrollOffsets []int          // Scroll offset for each tab
+	selected      map[int]bool   // Track selected items by global index within active tab
 	selectedCount int
 	confirmed     bool
 	keyBindings   searchKeyMap
@@ -64,15 +67,18 @@ type searchModel struct {
 	height        int
 	query         string
 	lang          string
-	scrollOffset  int // For scrolling
 }
 
 type searchKeyMap struct {
-	Up      key.Binding
-	Down    key.Binding
-	Toggle  key.Binding
-	Confirm key.Binding
-	Quit    key.Binding
+	Up       key.Binding
+	Down     key.Binding
+	Left     key.Binding
+	Right    key.Binding
+	Tab      key.Binding
+	ShiftTab key.Binding
+	Toggle   key.Binding
+	Confirm  key.Binding
+	Quit     key.Binding
 }
 
 func defaultSearchKeyMap() searchKeyMap {
@@ -85,13 +91,29 @@ func defaultSearchKeyMap() searchKeyMap {
 			key.WithKeys("down", "j"),
 			key.WithHelp("↓/j", "down"),
 		),
+		Left: key.NewBinding(
+			key.WithKeys("left", "h"),
+			key.WithHelp("←/h", "prev tab"),
+		),
+		Right: key.NewBinding(
+			key.WithKeys("right", "l"),
+			key.WithHelp("→/l", "next tab"),
+		),
+		Tab: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("tab", "next tab"),
+		),
+		ShiftTab: key.NewBinding(
+			key.WithKeys("shift+tab"),
+			key.WithHelp("shift+tab", "prev tab"),
+		),
 		Toggle: key.NewBinding(
 			key.WithKeys(" ", "x"),
 			key.WithHelp("space/x", "toggle"),
 		),
 		Confirm: key.NewBinding(
 			key.WithKeys("enter"),
-			key.WithHelp("enter", "download"),
+			key.WithHelp("enter", "confirm"),
 		),
 		Quit: key.NewBinding(
 			key.WithKeys("q", "esc", "ctrl+c"),
@@ -101,40 +123,19 @@ func defaultSearchKeyMap() searchKeyMap {
 }
 
 func newSearchModel(sections []SearchSection, query, lang string) searchModel {
-	total := 0
-	selectable := make(map[int]bool)
-	itemTypes := make(map[int]ItemType)
-	idx := 0
-	for _, s := range sections {
-		for _, item := range s.Items {
-			if item.Selectable {
-				selectable[idx] = true
-			}
-			itemTypes[idx] = item.Type
-			idx++
-		}
-		total += len(s.Items)
-	}
-
-	// Find first selectable item for initial cursor
-	cursor := 0
-	for i := 0; i < total; i++ {
-		if selectable[i] {
-			cursor = i
-			break
-		}
-	}
+	// Initialize cursors and scroll offsets for each tab
+	cursors := make([]int, len(sections))
+	scrollOffsets := make([]int, len(sections))
 
 	return searchModel{
-		sections:    sections,
-		cursor:      cursor,
-		totalItems:  total,
-		selected:    make(map[int]bool),
-		selectable:  selectable,
-		itemTypes:   itemTypes,
-		keyBindings: defaultSearchKeyMap(),
-		query:       query,
-		lang:        lang,
+		sections:      sections,
+		activeTab:     0,
+		cursors:       cursors,
+		scrollOffsets: scrollOffsets,
+		selected:      make(map[int]bool),
+		keyBindings:   defaultSearchKeyMap(),
+		query:         query,
+		lang:          lang,
 	}
 }
 
@@ -149,8 +150,8 @@ func (m searchModel) visibleLines() int {
 	if m.height <= 0 {
 		return maxVisibleLines
 	}
-	// Reserve: title (2 lines) + footer (3 lines) + padding
-	available := m.height - 8
+	// Reserve: title (2 lines) + tabs (2 lines) + footer (3 lines) + padding
+	available := m.height - 10
 	if available > maxVisibleLines {
 		return maxVisibleLines
 	}
@@ -160,20 +161,40 @@ func (m searchModel) visibleLines() int {
 	return available
 }
 
-// adjustScroll ensures cursor is visible
-func (m *searchModel) adjustScroll() {
-	visible := m.visibleLines()
-	if m.cursor < m.scrollOffset {
-		m.scrollOffset = m.cursor
-	} else if m.cursor >= m.scrollOffset+visible {
-		m.scrollOffset = m.cursor - visible + 1
+// currentSection returns the active section
+func (m searchModel) currentSection() *SearchSection {
+	if m.activeTab >= 0 && m.activeTab < len(m.sections) {
+		return &m.sections[m.activeTab]
 	}
+	return nil
+}
+
+// currentItemType returns the type of items in the current tab
+func (m searchModel) currentItemType() ItemType {
+	section := m.currentSection()
+	if section != nil && len(section.Items) > 0 {
+		return section.Items[0].Type
+	}
+	return ItemTypeEpisode
 }
 
 // clearSelections clears all selected items
 func (m *searchModel) clearSelections() {
 	m.selected = make(map[int]bool)
 	m.selectedCount = 0
+}
+
+// adjustScroll ensures cursor is visible within current tab
+func (m *searchModel) adjustScroll() {
+	visible := m.visibleLines()
+	cursor := m.cursors[m.activeTab]
+	offset := m.scrollOffsets[m.activeTab]
+
+	if cursor < offset {
+		m.scrollOffsets[m.activeTab] = cursor
+	} else if cursor >= offset+visible {
+		m.scrollOffsets[m.activeTab] = cursor - visible + 1
+	}
 }
 
 func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -184,55 +205,61 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		section := m.currentSection()
+		if section == nil {
+			if key.Matches(msg, m.keyBindings.Quit) {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		switch {
 		case key.Matches(msg, m.keyBindings.Quit):
 			return m, tea.Quit
 
+		case key.Matches(msg, m.keyBindings.Left), key.Matches(msg, m.keyBindings.ShiftTab):
+			if m.activeTab > 0 {
+				m.activeTab--
+				m.clearSelections()
+			}
+
+		case key.Matches(msg, m.keyBindings.Right), key.Matches(msg, m.keyBindings.Tab):
+			if m.activeTab < len(m.sections)-1 {
+				m.activeTab++
+				m.clearSelections()
+			}
+
 		case key.Matches(msg, m.keyBindings.Up):
-			if m.cursor > 0 {
-				oldType := m.itemTypes[m.cursor]
-				m.cursor--
+			if m.cursors[m.activeTab] > 0 {
+				m.cursors[m.activeTab]--
 				m.adjustScroll()
-				// Clear selections if moving to different item type
-				if m.itemTypes[m.cursor] != oldType {
-					m.clearSelections()
-				}
 			}
 
 		case key.Matches(msg, m.keyBindings.Down):
-			if m.cursor < m.totalItems-1 {
-				oldType := m.itemTypes[m.cursor]
-				m.cursor++
+			if m.cursors[m.activeTab] < len(section.Items)-1 {
+				m.cursors[m.activeTab]++
 				m.adjustScroll()
-				// Clear selections if moving to different item type
-				if m.itemTypes[m.cursor] != oldType {
-					m.clearSelections()
-				}
 			}
 
 		case key.Matches(msg, m.keyBindings.Toggle):
-			// Only toggle if item is selectable
-			if !m.selectable[m.cursor] {
-				break
-			}
+			cursor := m.cursors[m.activeTab]
+			if cursor >= 0 && cursor < len(section.Items) && section.Items[cursor].Selectable {
+				// Determine max selections based on item type
+				currentType := m.currentItemType()
+				maxSel := maxSelections
+				if currentType == ItemTypePodcast {
+					maxSel = 1
+				}
 
-			// Determine max selections based on item type
-			// Podcasts: only 1 (to browse episodes)
-			// Episodes: up to 5 (for batch download)
-			currentType := m.itemTypes[m.cursor]
-			maxSel := maxSelections
-			if currentType == ItemTypePodcast {
-				maxSel = 1
-			}
-
-			if m.selected[m.cursor] {
-				// Deselect
-				m.selected[m.cursor] = false
-				m.selectedCount--
-			} else if m.selectedCount < maxSel {
-				// Select (only if under limit)
-				m.selected[m.cursor] = true
-				m.selectedCount++
+				if m.selected[cursor] {
+					// Deselect
+					m.selected[cursor] = false
+					m.selectedCount--
+				} else if m.selectedCount < maxSel {
+					// Select (only if under limit)
+					m.selected[cursor] = true
+					m.selectedCount++
+				}
 			}
 
 		case key.Matches(msg, m.keyBindings.Confirm):
@@ -247,7 +274,7 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m searchModel) View() string {
 	t := i18n.T(m.lang)
 
-	if m.totalItems == 0 {
+	if len(m.sections) == 0 {
 		return "\n  No results found.\n\n"
 	}
 
@@ -256,42 +283,67 @@ func (m searchModel) View() string {
 	// Title with query
 	b.WriteString(fmt.Sprintf("  %s: %s\n\n", searchTitleStyle.Render(t.Search.ResultsFor), m.query))
 
-	// Build all lines first
-	var lines []string
-	var lineToIdx []int // map line index to global item index
+	// Render tabs
+	var tabs []string
+	for i, section := range m.sections {
+		tabText := section.Title
+		if i == m.activeTab {
+			tabs = append(tabs, activeTabStyle.Render(tabText))
+		} else {
+			tabs = append(tabs, inactiveTabStyle.Render(tabText))
+		}
+	}
+	b.WriteString("  " + strings.Join(tabs, "  │  ") + "\n\n")
 
-	globalIdx := 0
-	for _, section := range m.sections {
-		if len(section.Items) == 0 {
-			continue
+	// Get current section
+	section := m.currentSection()
+	if section == nil || len(section.Items) == 0 {
+		b.WriteString("  No items in this section.\n")
+	} else {
+		// Build lines for current section
+		visible := m.visibleLines()
+		cursor := m.cursors[m.activeTab]
+		offset := m.scrollOffsets[m.activeTab]
+
+		// Adjust offset if needed
+		if cursor < offset {
+			offset = cursor
+		} else if cursor >= offset+visible {
+			offset = cursor - visible + 1
+		}
+		if offset < 0 {
+			offset = 0
 		}
 
-		// Section title
-		lines = append(lines, fmt.Sprintf("  %s", searchTitleStyle.Render(section.Title)))
-		lineToIdx = append(lineToIdx, -1) // section title, not an item
+		endIdx := offset + visible
+		if endIdx > len(section.Items) {
+			endIdx = len(section.Items)
+		}
 
-		for _, item := range section.Items {
-			cursor := "  "
-			if globalIdx == m.cursor {
-				cursor = searchSelectedStyle.Render("> ")
+		for i := offset; i < endIdx; i++ {
+			item := section.Items[i]
+
+			cursorStr := "  "
+			if i == cursor {
+				cursorStr = searchSelectedStyle.Render("> ")
 			}
 
 			// Show checkbox for selectable items
 			var prefix string
 			if item.Selectable {
 				checkbox := searchUncheckStyle.Render("[ ]")
-				if m.selected[globalIdx] {
+				if m.selected[i] {
 					checkbox = searchCheckStyle.Render("[x]")
 				}
 				prefix = checkbox + " "
 			} else {
-				prefix = "    " // Indent for non-selectable items (align with checkbox)
+				prefix = "    "
 			}
 
 			// Build the line based on item type
 			var line string
 			title := item.Title
-			if globalIdx == m.cursor {
+			if i == cursor {
 				title = searchSelectedStyle.Render(title)
 			}
 
@@ -303,75 +355,25 @@ func (m searchModel) View() string {
 				// Podcast: title (subtitle dimmed)
 				line = fmt.Sprintf("%s %s", title, searchDimStyle.Render("("+item.Subtitle+")"))
 			} else {
-				// Just title
 				line = title
 			}
 
-			lines = append(lines, fmt.Sprintf("%s%s%s", cursor, prefix, line))
-			lineToIdx = append(lineToIdx, globalIdx)
-			globalIdx++
+			b.WriteString(fmt.Sprintf("%s%s%s\n", cursorStr, prefix, line))
 		}
-		// Add spacing after section
-		lines = append(lines, "")
-		lineToIdx = append(lineToIdx, -1)
-	}
 
-	// Calculate visible range based on cursor position
-	visible := m.visibleLines()
-
-	// Find which line the cursor is on
-	cursorLine := 0
-	for i, idx := range lineToIdx {
-		if idx == m.cursor {
-			cursorLine = i
-			break
-		}
-	}
-
-	// Calculate scroll offset to keep cursor visible
-	startLine := m.scrollOffset
-	if cursorLine < startLine {
-		startLine = cursorLine
-	} else if cursorLine >= startLine+visible {
-		startLine = cursorLine - visible + 1
-	}
-	if startLine < 0 {
-		startLine = 0
-	}
-
-	endLine := startLine + visible
-	if endLine > len(lines) {
-		endLine = len(lines)
-	}
-
-	// Render visible lines
-	for i := startLine; i < endLine; i++ {
-		b.WriteString(lines[i] + "\n")
-	}
-
-	// Show scroll indicator if needed (showing item numbers, not line numbers)
-	if len(lines) > visible {
-		// Find first and last visible item indices
-		firstItem, lastItem := -1, -1
-		for i := startLine; i < endLine; i++ {
-			if lineToIdx[i] >= 0 {
-				if firstItem < 0 {
-					firstItem = lineToIdx[i] + 1 // 1-indexed for display
-				}
-				lastItem = lineToIdx[i] + 1
-			}
-		}
-		if firstItem > 0 && lastItem > 0 {
-			scrollInfo := fmt.Sprintf(" (%d-%d of %d)", firstItem, lastItem, m.totalItems)
+		// Show scroll indicator
+		if len(section.Items) > visible {
+			scrollInfo := fmt.Sprintf(" (%d-%d of %d)", offset+1, endIdx, len(section.Items))
 			b.WriteString(searchDimStyle.Render(scrollInfo) + "\n")
 		}
 	}
 
-	// Determine current item type for dynamic hints
-	currentType := m.itemTypes[m.cursor]
-	isPodcast := currentType == ItemTypePodcast && m.selectable[m.cursor]
+	b.WriteString("\n")
 
-	// Selection count and help (dynamic based on cursor position)
+	// Determine current item type for dynamic hints
+	isPodcast := m.currentItemType() == ItemTypePodcast
+
+	// Selection count and help
 	if m.selectedCount > 0 {
 		maxSel := maxSelections
 		if isPodcast {
@@ -386,11 +388,11 @@ func (m searchModel) View() string {
 		}
 	}
 
-	// Help text (dynamic based on cursor position)
+	// Help text with tab switching hint
 	if isPodcast {
-		b.WriteString(searchHelpStyle.Render("  " + t.Search.HelpPodcast))
+		b.WriteString(searchHelpStyle.Render("  ←/→ switch tabs • " + t.Search.HelpPodcast))
 	} else {
-		b.WriteString(searchHelpStyle.Render("  " + t.Search.Help))
+		b.WriteString(searchHelpStyle.Render("  ←/→ switch tabs • " + t.Search.Help))
 	}
 	b.WriteString("\n")
 
@@ -405,16 +407,17 @@ func (m searchModel) View() string {
 	return content
 }
 
-// GetSelectedItems returns the selected items
+// GetSelectedItems returns the selected items from the active tab
 func (m searchModel) GetSelectedItems() []SearchItem {
 	var items []SearchItem
-	globalIdx := 0
-	for _, section := range m.sections {
-		for _, item := range section.Items {
-			if m.selected[globalIdx] {
-				items = append(items, item)
-			}
-			globalIdx++
+	section := m.currentSection()
+	if section == nil {
+		return items
+	}
+
+	for i, item := range section.Items {
+		if m.selected[i] {
+			items = append(items, item)
 		}
 	}
 	return items
