@@ -139,9 +139,10 @@ func SanitizeFilename(name string) string {
 	spaceRegex := regexp.MustCompile(`\s+`)
 	result = spaceRegex.ReplaceAllString(result, " ")
 
-	// Limit length
-	if len(result) > 200 {
-		result = result[:200]
+	// Limit length (use rune count to avoid splitting multi-byte UTF-8 characters)
+	runes := []rune(result)
+	if len(runes) > 200 {
+		result = string(runes[:200])
 	}
 
 	// If result is empty after sanitization, return empty
