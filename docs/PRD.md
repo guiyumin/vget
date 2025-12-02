@@ -482,6 +482,15 @@ cat part*.ts | ffmpeg -i - -c copy out.mp4
 
 ## 7. Future Roadmap
 
+### TODO
+
+- **Optimize download speed for WebDAV/PikPak** - Current multi-stream implementation is significantly slower than rclone. Target: 30MB/s for PikPak. Investigate:
+  - Connection reuse / keep-alive
+  - Chunk size tuning
+  - Number of parallel streams
+  - Buffer sizes
+  - TCP tuning
+
 ### v1 (MVP)
 
 - MP4 / HLS / DASH download
