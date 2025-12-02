@@ -193,9 +193,10 @@ func completeRemoteFiles(toComplete string) ([]string, cobra.ShellCompDirective)
 	}
 
 	// Limit completions to avoid zsh prompt redraw issue with large lists
-	// zsh redraws prompt when showing too many completions (threshold ~40-50)
-	// Limit to 30 for safe margin; users can type more chars to filter
-	const maxCompletions = 30
+	// zsh redraws prompt when showing too many completions (threshold varies)
+	// Limit to 15 for safe margin; users can type more chars to filter
+	// or press Enter to open the TUI browser for full navigation
+	const maxCompletions = 15
 	if len(completions) > maxCompletions {
 		completions = completions[:maxCompletions]
 	}
