@@ -19,9 +19,9 @@ The exact threshold may vary based on terminal size or zsh configuration, but ap
 
 ## Solution
 
-Limit the number of completions returned to 30 items. This provides a safe margin below the threshold.
+Limit the number of completions returned to 15 items. This provides a safe margin below the threshold.
 
-Users with directories containing more than 30 files can simply type a few additional characters to filter the results before pressing Tab.
+Users with directories containing more than 15 files can simply type a few additional characters to filter the results before pressing Tab.
 
 ## Code Change
 
@@ -29,9 +29,9 @@ Users with directories containing more than 30 files can simply type a few addit
 // internal/cli/completion.go
 
 // Limit completions to avoid zsh prompt redraw issue with large lists
-// zsh redraws prompt when showing too many completions (threshold ~40-50)
-// Limit to 30 for safe margin; users can type more chars to filter
-const maxCompletions = 30
+// zsh redraws prompt when showing too many completions (threshold varies)
+// Limit to 15 for safe margin; users can type more chars to filter
+const maxCompletions = 15
 if len(completions) > maxCompletions {
     completions = completions[:maxCompletions]
 }
@@ -40,6 +40,6 @@ if len(completions) > maxCompletions {
 ## Testing
 
 1. `pikpak:/` (root) - works, shows directories
-2. `pikpak:/电影/` (68 files) - now shows first 30, cursor stays on line
+2. `pikpak:/电影/` (68 files) - now shows first 15, cursor stays on line
 3. `pikpak:/鱿鱼游戏/` (7 files) - works, shows all files
 4. Type partial name + Tab filters and completes correctly
