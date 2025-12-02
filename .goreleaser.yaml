@@ -80,18 +80,3 @@ release:
   draft: false
   prerelease: auto
   name_template: "v{{.Version}}"
-
-brews:
-  - repository:
-      owner: guiyumin
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    folder: Formula
-    homepage: "https://github.com/guiyumin/vget"
-    description: "Versatile command-line toolkit for downloading audio, video, podcasts, and more"
-    license: "MIT"
-    install: |
-      bin.install "vget"
-    test: |
-      system "#{bin}/vget", "--version"
-    skip_upload: auto
