@@ -48,6 +48,7 @@ Download `vget-windows-amd64.exe` from [Releases](https://github.com/guiyumin/vg
 ```bash
 vget https://twitter.com/user/status/123456789
 vget https://www.xiaoyuzhoufm.com/episode/abc123
+vget https://www.xiaohongshu.com/explore/abc123  # XHS video/image
 vget https://example.com/video -o my_video.mp4
 vget --info https://example.com/video
 vget search --podcast "tech news"
@@ -62,6 +63,7 @@ vget ls pikpak:/Movies                     # List remote directory
 | Twitter/X      | Video           | Supported |
 | Xiaoyuzhou FM  | Audio (Podcast) | Supported |
 | Apple Podcasts | Audio (Podcast) | Supported |
+| Xiaohongshu    | Video/Image     | Supported |
 
 ## Configuration
 

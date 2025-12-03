@@ -73,6 +73,9 @@ Extractors are auto-registered via `init()` functions. See `xiaoyuzhou.go` or `t
 - `vget init` - Interactive config wizard
 - `vget update` - Self-update to latest version
 - `vget search --podcast <query>` - Search Xiaoyuzhou podcasts
+- `vget ls <remote>:<path>` - List WebDAV remote directory
+- `vget config show` - Show current configuration
+- `vget config webdav ...` - Manage WebDAV servers
 
 ### i18n
 
@@ -82,7 +85,18 @@ Access translations via `i18n.T(langCode)` which returns a `*Translations` struc
 
 ### Config
 
-User config lives in `.vget.yml` (or `.vget.yaml`) in the current directory. The `vget init` command runs an interactive Bubbletea wizard to create it.
+User config lives in `~/.config/vget/config.yml`. The `vget init` command runs an interactive Bubbletea wizard to create it.
+
+### Xiaohongshu (XHS) Extractor
+
+The XHS extractor (`internal/extractor/xiaohongshu.go`) uses browser automation:
+
+- **Browser**: Rod's auto-downloaded Chromium (NOT system Chrome)
+- **Binary location**: `~/.cache/rod/browser/`
+- **User data**: `~/.config/vget/xhs-browser/` (persistent between runs)
+- **Stealth**: Uses `go-rod/stealth` for anti-bot detection
+
+**Important**: Never use system Chrome profiles with browser automation - it can corrupt session data.
 
 ### Self-Update
 

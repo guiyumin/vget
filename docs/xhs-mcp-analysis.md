@@ -147,43 +147,67 @@ if data, err := cookieLoader.LoadCookies(); err == nil {
 | `xiaohongshu/login.go` | QR code login flow |
 | `service.go` | High-level service orchestration |
 
-## Implementation Notes for vget
+## vget Implementation (Completed)
 
-### Minimal Extractor Approach
+The Xiaohongshu extractor has been implemented in vget. See `internal/extractor/xiaohongshu.go`.
 
-1. **Add Rod dependency:**
-   ```bash
-   go get github.com/go-rod/rod
-   ```
+### Architecture
 
-2. **Match URL pattern:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    XiaohongshuExtractor                     │
+├─────────────────────────────────────────────────────────────┤
+│  Browser: Rod's auto-downloaded Chromium                    │
+│  Data Dir: ~/.config/vget/xhs-browser/ (persistent)         │
+│  Stealth: go-rod/stealth for anti-detection                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Features
+
+1. **Isolated Browser** - Uses Rod's Chromium, NOT system Chrome
+   - Browser binary: `~/.cache/rod/browser/`
+   - User data: `~/.config/vget/xhs-browser/`
+   - No interference with user's Chrome profiles
+
+2. **Login Wait** - If content requires login:
+   - Shows prompt in terminal
+   - Waits up to 2 minutes for QR code scan
+   - Saves cookies for future sessions
+
+3. **Persistent Sessions** - Browser data persists between runs
+   - Login state preserved
+   - No need to re-login each time
+
+4. **URL Support:**
    ```
    https://www.xiaohongshu.com/explore/{noteId}
    https://www.xiaohongshu.com/discovery/item/{noteId}
-   https://xhslink.com/{shortCode}
+   https://xhslink.com/{shortCode} (auto-resolved)
    ```
 
-3. **Extract media from `__INITIAL_STATE__`:**
+5. **Media Extraction:**
    - Images: `noteDetailMap[noteId].note.imageList[].urlDefault`
-   - Videos: Need to inspect DOM or network requests for video URL
+   - Videos: `noteDetailMap[noteId].note.video.media.stream.h264[0].masterUrl`
 
-### Challenges
+### Usage
 
-1. **Login requirement:** Some content requires authentication
-2. **Anti-bot detection:** May need stealth mode
-3. **Video URLs:** Not directly in `__INITIAL_STATE__`, may need:
-   - DOM inspection for `<video>` elements
-   - Network request interception
-4. **Rate limiting:** Xiaohongshu may block frequent requests
+```bash
+# Download XHS video/images
+vget https://www.xiaohongshu.com/explore/abc123
 
-### Recommended Approach
+# Short URL also works
+vget https://xhslink.com/xyz
+```
 
-For vget, consider:
+### Important: Browser Isolation
 
-1. **Headless=false for first run** - Let user log in manually
-2. **Save cookies** - Reuse session for subsequent downloads
-3. **Use system Chrome** - Leverage existing profile/cookies
-4. **Stealth mode** - Use `go-rod/stealth` to avoid detection
+**WARNING:** Never use system Chrome profiles with browser automation tools. This can corrupt session data.
+
+The current implementation is safe:
+- Uses Rod's separate Chromium binary
+- Stores data in `~/.config/vget/xhs-browser/`
+- Completely isolated from system Chrome
 
 ## Rod vs chromedp Comparison
 
