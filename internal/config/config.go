@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -150,7 +151,7 @@ func Save(cfg *Config) error {
 
 	// Ensure config directory exists
 	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -158,7 +159,7 @@ func Save(cfg *Config) error {
 	header := "# vget configuration file\n# Run 'vget init' to regenerate with defaults\n\n"
 	content := header + string(data)
 
-	return os.WriteFile(configPath, []byte(content), 0644)
+	return os.WriteFile(configPath, []byte(content), 0o644)
 }
 
 // SavePath returns the path where config will be saved
@@ -182,7 +183,29 @@ func Init() error {
 func LoadOrDefault() *Config {
 	cfg, err := Load()
 	if err != nil {
-		return DefaultConfig()
+		cfg = DefaultConfig()
 	}
+	loadEnvProxy(cfg)
 	return cfg
+}
+
+// loadEnvProxy loads proxy settings from environment
+func loadEnvProxy(cfg *Config) {
+	findProxy := func(name string) string {
+		proxy := os.Getenv(name)
+		p := strings.ToLower(proxy)
+		if strings.HasPrefix(p, "http://") ||
+			strings.HasPrefix(p, "https://") ||
+			strings.HasPrefix(p, "socks5://") {
+			return proxy
+		}
+		return ""
+	}
+	for _, name := range []string{"ALL_PROXY", "HTTPS_PROXY", "HTTP_PROXY"} {
+		if proxy := findProxy(name); proxy != "" {
+			cfg.Proxy = proxy
+		} else if proxy := findProxy(strings.ToLower(name)); proxy != "" {
+			cfg.Proxy = proxy
+		}
+	}
 }
