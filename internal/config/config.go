@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -191,7 +193,47 @@ func Init() error {
 func LoadOrDefault() *Config {
 	cfg, err := Load()
 	if err != nil {
-		return DefaultConfig()
+		cfg = DefaultConfig()
 	}
+	loadEnvProxy(cfg)
 	return cfg
+}
+
+// loadEnvProxy checks environment variables for proxy settings and applies them to cfg.
+// It checks in order: HTTPS_PROXY, https_proxy, HTTP_PROXY, http_proxy, ALL_PROXY, all_proxy.
+// The first valid proxy URL found is used.
+// Supported schemes: http, https, socks5. Scheme-less values are assumed to be http.
+func loadEnvProxy(cfg *Config) {
+	if cfg == nil {
+		return
+	}
+
+	// Precedence: HTTPS_PROXY > https_proxy > HTTP_PROXY > http_proxy > ALL_PROXY > all_proxy
+	envKeys := []string{
+		"HTTPS_PROXY", "https_proxy",
+		"HTTP_PROXY", "http_proxy",
+		"ALL_PROXY", "all_proxy",
+	}
+
+	for _, key := range envKeys {
+		value := strings.TrimSpace(os.Getenv(key))
+		if value == "" {
+			continue
+		}
+
+		u, err := url.Parse(value)
+		if err != nil || u.Host == "" {
+			// If parsing failed or no host, try adding http:// prefix
+			u, err = url.Parse("http://" + value)
+			if err != nil || u.Host == "" {
+				continue
+			}
+		}
+
+		switch strings.ToLower(u.Scheme) {
+		case "http", "https", "socks5":
+			cfg.Proxy = value
+			return
+		}
+	}
 }
