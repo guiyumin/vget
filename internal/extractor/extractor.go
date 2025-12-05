@@ -54,12 +54,13 @@ func (v *VideoMedia) Type() MediaType     { return MediaTypeVideo }
 
 // VideoFormat represents a single video quality option
 type VideoFormat struct {
-	URL     string
-	Quality string // "1080p", "720p", etc.
-	Ext     string // "mp4", "m3u8", "ts"
-	Width   int
-	Height  int
-	Bitrate int
+	URL      string
+	AudioURL string // Separate audio stream URL (for adaptive formats that need merging)
+	Quality  string // "1080p", "720p", etc.
+	Ext      string // "mp4", "m3u8", "ts"
+	Width    int
+	Height   int
+	Bitrate  int
 }
 
 // QualityLabel returns a human-readable quality label

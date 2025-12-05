@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/guiyumin/vget/internal/config"
 	"github.com/guiyumin/vget/internal/downloader"
@@ -232,7 +234,11 @@ func downloadVideo(m *extractor.VideoMedia, dl *downloader.Downloader, t *i18n.T
 	// Info only mode
 	if info {
 		for i, f := range m.Formats {
-			fmt.Printf("  [%d] %s %dx%d (%s)\n", i, f.Quality, f.Width, f.Height, f.Ext)
+			audioInfo := ""
+			if f.AudioURL != "" {
+				audioInfo = " [+audio]"
+			}
+			fmt.Printf("  [%d] %s %dx%d (%s)%s\n", i, f.Quality, f.Width, f.Height, f.Ext, audioInfo)
 		}
 		return nil
 	}
@@ -266,7 +272,47 @@ func downloadVideo(m *extractor.VideoMedia, dl *downloader.Downloader, t *i18n.T
 		return downloader.RunHLSDownloadTUI(format.URL, outputFile, m.ID, lang)
 	}
 
+	// Handle video+audio as separate downloads
+	if format.AudioURL != "" {
+		return downloadVideoAndAudio(format, outputFile, m.ID, dl)
+	}
+
 	return dl.Download(format.URL, outputFile, m.ID)
+}
+
+// downloadVideoAndAudio downloads video and audio as separate files
+func downloadVideoAndAudio(format *extractor.VideoFormat, outputFile, videoID string, dl *downloader.Downloader) error {
+	// Determine audio extension based on video format
+	audioExt := "m4a"
+	if format.Ext == "webm" {
+		audioExt = "opus"
+	}
+
+	// Build filenames
+	ext := filepath.Ext(outputFile)
+	baseName := strings.TrimSuffix(outputFile, ext)
+	videoFile := outputFile // keep original name for video
+	audioFile := baseName + "." + audioExt
+
+	// Download video
+	fmt.Println("  Downloading video stream...")
+	if err := dl.Download(format.URL, videoFile, videoID+"-video"); err != nil {
+		return fmt.Errorf("failed to download video: %w", err)
+	}
+
+	// Download audio
+	fmt.Println("  Downloading audio stream...")
+	if err := dl.Download(format.AudioURL, audioFile, videoID+"-audio"); err != nil {
+		return fmt.Errorf("failed to download audio: %w", err)
+	}
+
+	fmt.Printf("\n  Downloaded:\n")
+	fmt.Printf("    Video: %s\n", videoFile)
+	fmt.Printf("    Audio: %s\n", audioFile)
+	fmt.Printf("\n  To merge with ffmpeg:\n")
+	fmt.Printf("    ffmpeg -i \"%s\" -i \"%s\" -c copy \"%s\"\n", videoFile, audioFile, baseName+"_merged.mp4")
+
+	return nil
 }
 
 func downloadAudio(m *extractor.AudioMedia, dl *downloader.Downloader) error {
@@ -343,9 +389,43 @@ func selectVideoFormat(formats []extractor.VideoFormat, preferred string) *extra
 				return &formats[i]
 			}
 		}
+		// Also try partial match (e.g., "1080" matches "1080p60")
+		for i := range formats {
+			if strings.Contains(formats[i].Quality, preferred) {
+				return &formats[i]
+			}
+		}
 	}
 
-	// Otherwise return highest bitrate
+	// Prefer highest quality adaptive format with audio (will download both files)
+	var bestWithAudio *extractor.VideoFormat
+	for i := range formats {
+		f := &formats[i]
+		if f.AudioURL != "" {
+			if bestWithAudio == nil || f.Bitrate > bestWithAudio.Bitrate {
+				bestWithAudio = f
+			}
+		}
+	}
+	if bestWithAudio != nil {
+		return bestWithAudio
+	}
+
+	// Then prefer combined formats (has audio, no separate download)
+	for i := range formats {
+		if formats[i].AudioURL == "" && formats[i].Bitrate > 0 && formats[i].Ext != "m3u8" {
+			return &formats[i]
+		}
+	}
+
+	// Fall back to HLS if nothing else
+	for i := range formats {
+		if formats[i].Ext == "m3u8" {
+			return &formats[i]
+		}
+	}
+
+	// Fall back to highest bitrate (may need ffmpeg merge)
 	best := &formats[0]
 	for i := range formats {
 		if formats[i].Bitrate > best.Bitrate {
