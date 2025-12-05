@@ -155,9 +155,10 @@ func detectMediaType(contentType, urlStr string) (MediaType, string) {
 	// Audio types
 	case strings.HasPrefix(contentType, "audio/"):
 		ext := strings.TrimPrefix(contentType, "audio/")
-		if ext == "mpeg" {
+		switch ext {
+		case "mpeg":
 			ext = "mp3"
-		} else if ext == "mp4" || ext == "x-m4a" {
+		case "mp4", "x-m4a":
 			ext = "m4a"
 		}
 		return MediaTypeAudio, ext

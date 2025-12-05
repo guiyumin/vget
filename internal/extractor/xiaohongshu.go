@@ -322,9 +322,6 @@ func (e *XiaohongshuExtractor) extractImages(id, title, uploader string, detail 
 	}, nil
 }
 
-// Default user agent to mimic a real Chrome browser
-const defaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-
 func (e *XiaohongshuExtractor) createLauncher(headless bool) *launcher.Launcher {
 	// Use Rod's auto-downloaded Chromium with persistent user data
 	// This keeps login state between runs
