@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -72,24 +73,26 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	page := stealth.MustPage(browser)
 	defer page.MustClose()
 
-	// Set up request interception
+	// Set up request interception using Network events (more reliable than Hijack)
 	var captured *capturedRequest
 	var mu sync.Mutex
 	done := make(chan struct{})
 
-	// Enable network events
-	router := page.HijackRequests()
-	defer router.Stop()
+	// Enable network domain to listen for requests
+	err = proto.NetworkEnable{}.Call(page)
+	if err != nil {
+		return nil, fmt.Errorf("failed to enable network events: %w", err)
+	}
 
-	router.MustAdd("*", func(ctx *rod.Hijack) {
-		reqURL := ctx.Request.URL().String()
+	// Listen for network requests
+	go page.EachEvent(func(ev *proto.NetworkRequestWillBeSent) {
+		reqURL := ev.Request.URL
+		lowerURL := strings.ToLower(reqURL)
 
 		// Check if this is the type we're looking for
-		if strings.Contains(strings.ToLower(reqURL), targetExt) {
+		if strings.Contains(lowerURL, targetExt) {
 			mu.Lock()
 			if captured == nil {
-				// Use the page URL as Referer and Origin
-				// (browser auto-sets these but hijacking may not expose them)
 				headers := map[string]string{
 					"Referer": rawURL,
 					"Origin":  pageOrigin,
@@ -99,16 +102,12 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 					url:     reqURL,
 					headers: headers,
 				}
-				fmt.Printf("Captured %s URL!\n", e.site.Type)
+				fmt.Printf("Captured %s URL: %s\n", e.site.Type, reqURL)
 				close(done)
 			}
 			mu.Unlock()
 		}
-
-		ctx.ContinueRequest(&proto.FetchContinueRequest{})
-	})
-
-	go router.Run()
+	})()
 
 	// Navigate to page
 	fmt.Printf("Loading page: %s\n", rawURL)
@@ -121,13 +120,42 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	select {
 	case <-done:
 		// Got it!
-	case <-time.After(30 * time.Second):
+	case <-time.After(10 * time.Second):
+		// Not captured via event listener, try alternative methods
 		mu.Lock()
-		if captured == nil {
-			mu.Unlock()
-			return nil, fmt.Errorf("timeout: no %s request found after 30 seconds", e.site.Type)
-		}
+		alreadyCaptured := captured != nil
 		mu.Unlock()
+
+		if !alreadyCaptured {
+			// Check Performance API for requests we might have missed
+			if m3u8URL := e.findM3U8InPerformance(page, targetExt); m3u8URL != "" {
+				mu.Lock()
+				captured = &capturedRequest{
+					url:     m3u8URL,
+					headers: map[string]string{},
+				}
+				mu.Unlock()
+			}
+		}
+
+		mu.Lock()
+		alreadyCaptured = captured != nil
+		mu.Unlock()
+
+		if !alreadyCaptured {
+			// Fallback: search page source
+			html, err := page.HTML()
+			if err == nil {
+				if m3u8URL := e.findM3U8InSource(html); m3u8URL != "" {
+					mu.Lock()
+					captured = &capturedRequest{
+						url:     m3u8URL,
+						headers: map[string]string{},
+					}
+					mu.Unlock()
+				}
+			}
+		}
 	}
 
 	mu.Lock()
@@ -172,6 +200,76 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 			},
 		},
 	}, nil
+}
+
+// findM3U8InPerformance uses the browser's Performance API to find resource requests
+func (e *BrowserExtractor) findM3U8InPerformance(page *rod.Page, targetExt string) string {
+	// Query the Performance API for all resource entries
+	result, err := page.Eval(`() => {
+		return performance.getEntriesByType('resource')
+			.map(r => r.name)
+			.filter(url => url.toLowerCase().includes('.m3u8') || url.toLowerCase().includes('.ts'));
+	}`)
+	if err != nil {
+		return ""
+	}
+
+	// Parse the result
+	arr := result.Value.Arr()
+	for _, v := range arr {
+		url := v.String()
+		if strings.Contains(strings.ToLower(url), targetExt) {
+			return url
+		}
+	}
+
+	return ""
+}
+
+// findM3U8InSource searches for m3u8 URLs in page HTML/JavaScript source
+func (e *BrowserExtractor) findM3U8InSource(html string) string {
+	// Common patterns for m3u8 URLs in page source
+	patterns := []string{
+		// Direct m3u8 URL patterns
+		`https?://[^"'\s<>]+\.m3u8[^"'\s<>]*`,
+		// URL in quotes
+		`["']([^"']*\.m3u8[^"']*)["']`,
+		// source attribute
+		`src\s*[=:]\s*["']([^"']*\.m3u8[^"']*)["']`,
+		// file/url parameter
+		`(?:file|url|source|src)\s*[=:]\s*["']([^"']+)["']`,
+	}
+
+	for _, pattern := range patterns {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindAllStringSubmatch(html, -1)
+		for _, match := range matches {
+			var url string
+			if len(match) > 1 {
+				url = match[1]
+			} else {
+				url = match[0]
+			}
+
+			// Must contain m3u8
+			if !strings.Contains(strings.ToLower(url), ".m3u8") {
+				continue
+			}
+
+			// Skip data URLs and invalid URLs
+			if strings.HasPrefix(url, "data:") {
+				continue
+			}
+
+			// Clean up the URL
+			url = strings.TrimSpace(url)
+			if url != "" {
+				return url
+			}
+		}
+	}
+
+	return ""
 }
 
 func (e *BrowserExtractor) createLauncher(headless bool) *launcher.Launcher {
