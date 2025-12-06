@@ -57,11 +57,7 @@ vget ls pikpak:/Movies                     # Remote-Verzeichnis auflisten
 
 ## Unterstützte Quellen
 
-| Quelle         | Typ             | Status       |
-| -------------- | --------------- | ------------ |
-| Twitter/X      | Video           | Unterstützt  |
-| Xiaoyuzhou FM  | Audio (Podcast) | Unterstützt  |
-| Apple Podcasts | Audio (Podcast) | Unterstützt  |
+Siehe [sites.md](sites.md) für die vollständige Liste der unterstützten Seiten.
 
 ### Twitter/X Altersbeschränkte Inhalte
 

@@ -57,11 +57,7 @@ vget ls pikpak:/Movies                     # Lister un répertoire distant
 
 ## Sources prises en charge
 
-| Source         | Type            | Statut     |
-| -------------- | --------------- | ---------- |
-| Twitter/X      | Vidéo           | Supporté   |
-| Xiaoyuzhou FM  | Audio (Podcast) | Supporté   |
-| Apple Podcasts | Audio (Podcast) | Supporté   |
+Consultez [sites.md](sites.md) pour la liste complète des sites pris en charge.
 
 ### Contenu Twitter/X réservé aux adultes
 

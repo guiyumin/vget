@@ -58,12 +58,7 @@ vget ls pikpak:/Movies                     # List remote directory
 
 ## Supported Sources
 
-| Source         | Type            | Status    |
-| -------------- | --------------- | --------- |
-| Twitter/X      | Video           | Supported |
-| Xiaoyuzhou FM  | Audio (Podcast) | Supported |
-| Apple Podcasts | Audio (Podcast) | Supported |
-| Xiaohongshu    | Video/Image     | Supported |
+See [sites.md](sites.md) for the full list of supported sites.
 
 ### Twitter/X Age-Restricted Content
 
