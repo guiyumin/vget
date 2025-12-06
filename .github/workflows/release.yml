@@ -30,3 +30,28 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Prepare latest zips
+        run: |
+          mkdir -p latest
+          cp dist/vget_${{ steps.version.outputs.VERSION }}_darwin_amd64.zip latest/vget-darwin-amd64.zip
+          cp dist/vget_${{ steps.version.outputs.VERSION }}_darwin_arm64.zip latest/vget-darwin-arm64.zip
+          cp dist/vget_${{ steps.version.outputs.VERSION }}_linux_amd64.zip latest/vget-linux-amd64.zip
+          cp dist/vget_${{ steps.version.outputs.VERSION }}_linux_arm64.zip latest/vget-linux-arm64.zip
+          cp dist/vget_${{ steps.version.outputs.VERSION }}_windows_amd64.zip latest/vget-windows-amd64.zip
+
+      - name: Upload latest zips
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            latest/vget-darwin-amd64.zip
+            latest/vget-darwin-arm64.zip
+            latest/vget-linux-amd64.zip
+            latest/vget-linux-arm64.zip
+            latest/vget-windows-amd64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

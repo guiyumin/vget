@@ -9,22 +9,24 @@
 ### macOS
 
 ```bash
-curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-darwin-arm64 -o vget
-chmod +x vget
+curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-darwin-arm64.zip -o vget.zip
+unzip vget.zip
 sudo mv vget /usr/local/bin/
+rm vget.zip
 ```
 
 ### Linux / WSL
 
 ```bash
-curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-linux-amd64 -o vget
-chmod +x vget
+curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-linux-amd64.zip -o vget.zip
+unzip vget.zip
 sudo mv vget /usr/local/bin/
+rm vget.zip
 ```
 
 ### Windows
 
-从 [Releases](https://github.com/guiyumin/vget/releases/latest) 下载 `vget-windows-amd64.exe` 并添加到系统 PATH。
+从 [Releases](https://github.com/guiyumin/vget/releases/latest) 下载 `vget-windows-amd64.zip`，解压后添加到系统 PATH。
 
 ## 命令
 

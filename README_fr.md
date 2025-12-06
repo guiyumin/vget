@@ -9,22 +9,24 @@ Outil en ligne de commande polyvalent pour télécharger audio, vidéo, podcasts
 ### macOS
 
 ```bash
-curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-darwin-arm64 -o vget
-chmod +x vget
+curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-darwin-arm64.zip -o vget.zip
+unzip vget.zip
 sudo mv vget /usr/local/bin/
+rm vget.zip
 ```
 
 ### Linux / WSL
 
 ```bash
-curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-linux-amd64 -o vget
-chmod +x vget
+curl -fsSL https://github.com/guiyumin/vget/releases/latest/download/vget-linux-amd64.zip -o vget.zip
+unzip vget.zip
 sudo mv vget /usr/local/bin/
+rm vget.zip
 ```
 
 ### Windows
 
-Téléchargez `vget-windows-amd64.exe` depuis [Releases](https://github.com/guiyumin/vget/releases/latest) et ajoutez-le au PATH.
+Téléchargez `vget-windows-amd64.zip` depuis [Releases](https://github.com/guiyumin/vget/releases/latest), extrayez-le et ajoutez-le au PATH.
 
 ## Commandes
 
