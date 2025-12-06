@@ -59,19 +59,6 @@ vget ls pikpak:/Movies                     # Listar directorio remoto
 
 Consulta [sites.md](sites.md) para la lista completa de sitios compatibles.
 
-### Contenido con restricción de edad de Twitter/X
-
-Para descargar contenido con restricción de edad (NSFW) de Twitter/X, necesitas configurar tu auth token:
-
-1. Abre x.com en tu navegador e inicia sesión
-2. Abre DevTools (F12) → Application → Cookies → x.com
-3. Encuentra `auth_token` y copia su valor
-4. Ejecuta:
-   ```bash
-   vget config twitter set
-   # pega tu auth_token cuando se solicite
-   ```
-
 ## Configuración
 
 Ubicación del archivo de configuración:

@@ -60,19 +60,6 @@ vget ls pikpak:/Movies                     # 列出远程目录
 
 查看 [sites.md](sites.md) 获取完整的支持网站列表。
 
-### Twitter/X 年龄限制内容
-
-要下载 Twitter/X 上的年龄限制（NSFW）内容，需要设置 auth token：
-
-1. 在浏览器中打开 x.com 并登录
-2. 打开开发者工具（F12）→ Application → Cookies → x.com
-3. 找到 `auth_token` 并复制其值
-4. 运行：
-   ```bash
-   vget config twitter set
-   # 按提示粘贴 auth_token
-   ```
-
 ## 配置
 
 配置文件位置：
