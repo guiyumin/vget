@@ -19,12 +19,13 @@ import (
 
 // BrowserExtractor uses browser automation to intercept media URLs
 type BrowserExtractor struct {
-	site *config.Site
+	site    *config.Site
+	visible bool
 }
 
 // NewBrowserExtractor creates a new browser extractor for the given site
-func NewBrowserExtractor(site *config.Site) *BrowserExtractor {
-	return &BrowserExtractor{site: site}
+func NewBrowserExtractor(site *config.Site, visible bool) *BrowserExtractor {
+	return &BrowserExtractor{site: site, visible: visible}
 }
 
 func (e *BrowserExtractor) Name() string {
@@ -59,7 +60,7 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	fmt.Printf("Looking for %s requests...\n", e.site.Type)
 
 	// Launch browser
-	l := e.createLauncher(true) // headless
+	l := e.createLauncher(!e.visible) // headless unless --visible flag
 	defer l.Cleanup()
 
 	u, err := l.Launch()
@@ -73,96 +74,29 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	page := stealth.MustPage(browser)
 	defer page.MustClose()
 
-	// Set up request interception using Network events (more reliable than Hijack)
-	var captured *capturedRequest
-	var mu sync.Mutex
-	done := make(chan struct{})
-
-	// Enable network domain to listen for requests
-	err = proto.NetworkEnable{}.Call(page)
-	if err != nil {
-		return nil, fmt.Errorf("failed to enable network events: %w", err)
+	// Try multiple strategies in order
+	strategies := []struct {
+		name string
+		fn   func() string
+	}{
+		{"fetch_intercept", func() string { return e.strategyFetchIntercept(page, rawURL, targetExt) }},
+		{"network_hijack", func() string { return e.strategyNetworkHijack(page, rawURL, pageOrigin, targetExt) }},
+		{"video_player", func() string { return e.findM3U8FromVideoPlayer(page) }},
+		{"performance_api", func() string { return e.findM3U8InPerformance(page, targetExt) }},
+		{"page_source", func() string { html, _ := page.HTML(); return e.findM3U8InSource(html) }},
 	}
 
-	// Listen for network requests
-	go page.EachEvent(func(ev *proto.NetworkRequestWillBeSent) {
-		reqURL := ev.Request.URL
-		lowerURL := strings.ToLower(reqURL)
-
-		// Check if this is the type we're looking for
-		if strings.Contains(lowerURL, targetExt) {
-			mu.Lock()
-			if captured == nil {
-				headers := map[string]string{
-					"Referer": rawURL,
-					"Origin":  pageOrigin,
-				}
-
-				captured = &capturedRequest{
-					url:     reqURL,
-					headers: headers,
-				}
-				fmt.Printf("Captured %s URL: %s\n", e.site.Type, reqURL)
-				close(done)
-			}
-			mu.Unlock()
-		}
-	})()
-
-	// Navigate to page
-	fmt.Printf("Loading page: %s\n", rawURL)
-	err = page.Navigate(rawURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to navigate: %w", err)
-	}
-
-	// Wait for either capture or timeout
-	select {
-	case <-done:
-		// Got it!
-	case <-time.After(10 * time.Second):
-		// Not captured via event listener, try alternative methods
-		mu.Lock()
-		alreadyCaptured := captured != nil
-		mu.Unlock()
-
-		if !alreadyCaptured {
-			// Check Performance API for requests we might have missed
-			if m3u8URL := e.findM3U8InPerformance(page, targetExt); m3u8URL != "" {
-				mu.Lock()
-				captured = &capturedRequest{
-					url:     m3u8URL,
-					headers: map[string]string{},
-				}
-				mu.Unlock()
-			}
-		}
-
-		mu.Lock()
-		alreadyCaptured = captured != nil
-		mu.Unlock()
-
-		if !alreadyCaptured {
-			// Fallback: search page source
-			html, err := page.HTML()
-			if err == nil {
-				if m3u8URL := e.findM3U8InSource(html); m3u8URL != "" {
-					mu.Lock()
-					captured = &capturedRequest{
-						url:     m3u8URL,
-						headers: map[string]string{},
-					}
-					mu.Unlock()
-				}
-			}
+	var mediaURL string
+	for _, strategy := range strategies {
+		fmt.Printf("Trying strategy: %s\n", strategy.name)
+		mediaURL = strategy.fn()
+		if mediaURL != "" {
+			fmt.Printf("Found via %s: %s\n", strategy.name, mediaURL)
+			break
 		}
 	}
 
-	mu.Lock()
-	result := captured
-	mu.Unlock()
-
-	if result == nil {
+	if mediaURL == "" {
 		return nil, fmt.Errorf("no %s request captured", e.site.Type)
 	}
 
@@ -170,7 +104,6 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	title := page.MustEval(`() => document.title`).String()
 	title = strings.TrimSpace(title)
 	if title == "" {
-		// Fallback to URL path
 		pageURL, _ := url.Parse(rawURL)
 		title = filepath.Base(pageURL.Path)
 		if title == "" || title == "/" {
@@ -179,7 +112,7 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	}
 
 	// Generate ID from URL
-	parsedURL, _ := url.Parse(result.url)
+	parsedURL, _ := url.Parse(mediaURL)
 	id := filepath.Base(parsedURL.Path)
 	if idx := strings.LastIndex(id, "."); idx > 0 {
 		id = id[:idx]
@@ -193,13 +126,131 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 		Title: title,
 		Formats: []VideoFormat{
 			{
-				URL:     result.url,
+				URL:     mediaURL,
 				Quality: "best",
 				Ext:     e.site.Type,
-				Headers: result.headers,
+				Headers: map[string]string{"Referer": rawURL, "Origin": pageOrigin},
 			},
 		},
 	}, nil
+}
+
+// strategyFetchIntercept injects a fetch interceptor before page loads
+func (e *BrowserExtractor) strategyFetchIntercept(page *rod.Page, rawURL, targetExt string) string {
+	// Inject script to intercept fetch calls before any JS runs
+	page.MustEvalOnNewDocument(`
+		window.__capturedM3U8 = [];
+		const originalFetch = window.fetch;
+		window.fetch = function(...args) {
+			const url = args[0]?.url || args[0] || '';
+			if (url.toLowerCase().includes('.m3u8')) {
+				window.__capturedM3U8.push(url);
+			}
+			return originalFetch.apply(this, args);
+		};
+		// Also intercept XMLHttpRequest
+		const originalOpen = XMLHttpRequest.prototype.open;
+		XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+			if (url.toLowerCase().includes('.m3u8')) {
+				window.__capturedM3U8.push(url);
+			}
+			return originalOpen.call(this, method, url, ...rest);
+		};
+	`)
+
+	_ = page.Navigate(rawURL)
+	_ = page.WaitLoad()
+	time.Sleep(3 * time.Second) // Wait for video player to init
+
+	// Get captured URLs
+	result, err := page.Eval(`() => window.__capturedM3U8 || []`)
+	if err != nil {
+		return ""
+	}
+
+	arr := result.Value.Arr()
+	for _, v := range arr {
+		url := v.String()
+		if strings.Contains(strings.ToLower(url), targetExt) {
+			return url
+		}
+	}
+
+	return ""
+}
+
+// strategyNetworkHijack uses HijackRequests to intercept network requests
+func (e *BrowserExtractor) strategyNetworkHijack(page *rod.Page, rawURL, _, targetExt string) string {
+	var result string
+	var mu sync.Mutex
+	done := make(chan struct{})
+	closed := false
+
+	router := page.HijackRequests()
+
+	router.MustAdd("*", func(ctx *rod.Hijack) {
+		reqURL := ctx.Request.URL().String()
+		if strings.Contains(strings.ToLower(reqURL), targetExt) {
+			mu.Lock()
+			if result == "" {
+				result = reqURL
+				if !closed {
+					closed = true
+					close(done)
+				}
+			}
+			mu.Unlock()
+		}
+		ctx.ContinueRequest(&proto.FetchContinueRequest{})
+	})
+
+	go router.Run()
+
+	// Wait a moment for hijack to be ready
+	time.Sleep(100 * time.Millisecond)
+
+	_ = page.Navigate(rawURL)
+	_ = page.WaitLoad()
+
+	select {
+	case <-done:
+	case <-time.After(15 * time.Second):
+	}
+
+	router.Stop()
+	return result
+}
+
+// strategyNetworkEvents uses Network domain events to capture requests
+func (e *BrowserExtractor) strategyNetworkEvents(page *rod.Page, browser *rod.Browser, rawURL, pageOrigin, targetExt string) string {
+	var result string
+	var mu sync.Mutex
+	done := make(chan struct{})
+
+	_ = proto.NetworkEnable{}.Call(page)
+
+	wait := browser.EachEvent(func(ev *proto.NetworkRequestWillBeSent) {
+		reqURL := ev.Request.URL
+		if strings.Contains(strings.ToLower(reqURL), targetExt) {
+			mu.Lock()
+			if result == "" {
+				result = reqURL
+				close(done)
+			}
+			mu.Unlock()
+		}
+	})
+
+	go wait()
+
+	_ = page.Reload()
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+	}
+
+	return result
 }
 
 // findM3U8InPerformance uses the browser's Performance API to find resource requests
@@ -208,7 +259,7 @@ func (e *BrowserExtractor) findM3U8InPerformance(page *rod.Page, targetExt strin
 	result, err := page.Eval(`() => {
 		return performance.getEntriesByType('resource')
 			.map(r => r.name)
-			.filter(url => url.toLowerCase().includes('.m3u8') || url.toLowerCase().includes('.ts'));
+			.filter(url => url.toLowerCase().includes('.m3u8') || url.toLowerCase().includes('.ts') || url.toLowerCase().includes('hls'));
 	}`)
 	if err != nil {
 		return ""
@@ -270,6 +321,55 @@ func (e *BrowserExtractor) findM3U8InSource(html string) string {
 	}
 
 	return ""
+}
+
+// extractM3U8FromJSON extracts m3u8 URL from JSON response body
+func extractM3U8FromJSON(body string) string {
+	// Look for m3u8 URLs in the JSON
+	re := regexp.MustCompile(`https?://[^"'\s]+\.m3u8[^"'\s]*`)
+	matches := re.FindAllString(body, -1)
+	for _, match := range matches {
+		// Clean up any trailing quotes or escaped chars
+		match = strings.TrimRight(match, `"'\`)
+		if strings.Contains(match, ".m3u8") {
+			return match
+		}
+	}
+	return ""
+}
+
+// findM3U8FromVideoPlayer queries the video player for its source URL
+func (e *BrowserExtractor) findM3U8FromVideoPlayer(page *rod.Page) string {
+	// Try to get the source from various video player APIs
+	result, err := page.Eval(`() => {
+		// Check for HLS.js
+		if (window.Hls && window.hls) {
+			return window.hls.url || '';
+		}
+		// Check for video.js
+		const vjsPlayer = document.querySelector('.video-js');
+		if (vjsPlayer && vjsPlayer.player) {
+			const src = vjsPlayer.player.currentSrc();
+			if (src && src.includes('.m3u8')) return src;
+		}
+		// Check video element sources
+		const video = document.querySelector('video');
+		if (video) {
+			if (video.src && video.src.includes('.m3u8')) return video.src;
+			const source = video.querySelector('source[src*=".m3u8"]');
+			if (source) return source.src;
+		}
+		// Check for any global player variable
+		if (window.player && window.player.src) {
+			const src = typeof window.player.src === 'function' ? window.player.src() : window.player.src;
+			if (src && src.includes('.m3u8')) return src;
+		}
+		return '';
+	}`)
+	if err != nil {
+		return ""
+	}
+	return result.Value.String()
 }
 
 func (e *BrowserExtractor) createLauncher(headless bool) *launcher.Launcher {

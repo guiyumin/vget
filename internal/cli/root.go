@@ -21,6 +21,7 @@ var (
 	quality   string
 	info      bool
 	inputFile string
+	visible   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -54,6 +55,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&quality, "quality", "q", "", "preferred quality (e.g., 1080p, 720p)")
 	rootCmd.Flags().BoolVar(&info, "info", false, "show video info without downloading")
 	rootCmd.Flags().StringVarP(&inputFile, "file", "f", "", "read URLs from file (one per line)")
+	rootCmd.Flags().BoolVar(&visible, "visible", false, "show browser window (for debugging)")
 }
 
 func Execute() error {
@@ -89,7 +91,7 @@ func runDownload(url string) error {
 		if site == nil {
 			return fmt.Errorf("%s: %s\n\033[33m%s\033[0m", t.Errors.NoExtractor, url, t.Errors.SiteNotInYml)
 		}
-		ext = extractor.NewBrowserExtractor(site)
+		ext = extractor.NewBrowserExtractor(site, visible)
 	}
 
 	// Configure Twitter extractor with auth if available
