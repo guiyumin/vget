@@ -1,13 +1,13 @@
 package extractor
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -44,6 +44,9 @@ func (e *BrowserExtractor) Match(u *url.URL) bool {
 	return true // Called only when site matches
 }
 
+// extractionStrategy defines a method for finding media URLs
+type extractionStrategy func(page *rod.Page, targetExt string) string
+
 func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	if e.site == nil {
 		return nil, fmt.Errorf("no site configuration provided")
@@ -56,10 +59,10 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	}
 	pageOrigin := fmt.Sprintf("%s://%s", pageURL.Scheme, pageURL.Host)
 
-	// Determine what extension to look for
-	targetExt := "." + e.site.Type // e.g., ".m3u8", ".mp4"
+	// Normalize extension to lowercase once for consistent matching
+	targetExt := strings.ToLower("." + e.site.Type) // e.g., ".m3u8", ".mp4"
 
-	fmt.Printf("Detecting %s stream...\n", e.site.Type)
+	fmt.Printf("  Trying to detecting %s stream...\n", e.site.Type)
 
 	// Launch browser
 	l := e.createLauncher(!e.visible) // headless unless --visible flag
@@ -76,85 +79,23 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	page := stealth.MustPage(browser)
 	defer page.MustClose()
 
-	// Enable Network domain to capture requests
-	_ = proto.NetworkEnable{}.Call(page)
+	// Try network interception first, then fallback strategies
+	mediaURL := e.captureFromNetwork(page, rawURL, targetExt)
 
-	// Also enable Fetch domain to intercept at lower level
-	_ = proto.FetchEnable{
-		Patterns: []*proto.FetchRequestPattern{
-			{URLPattern: "*"},
-		},
-	}.Call(page)
-
-	var mediaURL string
-	var mu sync.Mutex
-	done := make(chan struct{})
-	closed := false
-	listenerReady := make(chan struct{})
-
-	// Listen for network requests at CDP level
-	go func() {
-		wait := page.EachEvent(
-			func(e *proto.NetworkRequestWillBeSent) {
-				reqURL := e.Request.URL
-				if strings.Contains(strings.ToLower(reqURL), targetExt) {
-					mu.Lock()
-					if mediaURL == "" {
-						mediaURL = reqURL
-						if !closed {
-							closed = true
-							close(done)
-						}
-					}
-					mu.Unlock()
-				}
-			},
-			func(e *proto.FetchRequestPaused) {
-				reqURL := e.Request.URL
-				// Continue the request
-				_ = proto.FetchContinueRequest{RequestID: e.RequestID}.Call(page)
-				if strings.Contains(strings.ToLower(reqURL), targetExt) {
-					mu.Lock()
-					if mediaURL == "" {
-						mediaURL = reqURL
-						if !closed {
-							closed = true
-							close(done)
-						}
-					}
-					mu.Unlock()
-				}
-			},
-		)
-		close(listenerReady) // Signal that listener is registered
-		wait()               // Block until page closes
-	}()
-
-	// Wait for listener to be ready before navigating
-	<-listenerReady
-
-	// Navigate
-	_ = page.Navigate(rawURL)
-	_ = page.WaitLoad()
-
-	// Wait for capture or timeout
-	select {
-	case <-done:
-		// Found
-	case <-time.After(15 * time.Second):
-		// Timeout
-	}
-
-	// If not found via interception, try fallback methods
+	// Fallback strategies if network capture didn't find anything
 	if mediaURL == "" {
-		mediaURL = e.findM3U8InPerformance(page, targetExt)
-	}
-	if mediaURL == "" {
-		mediaURL = e.findM3U8FromVideoPlayer(page)
-	}
-	if mediaURL == "" {
-		html, _ := page.HTML()
-		mediaURL = e.findM3U8InSource(html)
+		strategies := []extractionStrategy{
+			e.findInPerformanceAPI,
+			e.findInVideoPlayer,
+			e.findInPageSource,
+		}
+
+		for _, strategy := range strategies {
+			if found := strategy(page, targetExt); found != "" {
+				mediaURL = found
+				break
+			}
+		}
 	}
 
 	if mediaURL == "" {
@@ -198,13 +139,92 @@ func (e *BrowserExtractor) Extract(rawURL string) (Media, error) {
 	}, nil
 }
 
-// findM3U8InPerformance uses the browser's Performance API to find resource requests
-func (e *BrowserExtractor) findM3U8InPerformance(page *rod.Page, targetExt string) string {
-	result, err := page.Eval(`() => {
+// captureFromNetwork intercepts network requests to find media URLs
+func (e *BrowserExtractor) captureFromNetwork(page *rod.Page, rawURL, targetExt string) string {
+	// Enable Network domain to capture requests
+	_ = proto.NetworkEnable{}.Call(page)
+
+	// Also enable Fetch domain to intercept at lower level
+	_ = proto.FetchEnable{
+		Patterns: []*proto.FetchRequestPattern{
+			{URLPattern: "*"},
+		},
+	}.Call(page)
+
+	// Use channel for thread-safe communication
+	foundURL := make(chan string, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// Separate context for the listener so we can stop it independently
+	listenerCtx, stopListener := context.WithCancel(context.Background())
+	listenerDone := make(chan struct{})
+
+	// Listen for network requests at CDP level
+	go func() {
+		defer close(listenerDone)
+		page.Context(listenerCtx).EachEvent(
+			func(ev *proto.NetworkRequestWillBeSent) {
+				reqURL := ev.Request.URL
+				if strings.Contains(strings.ToLower(reqURL), targetExt) {
+					select {
+					case foundURL <- reqURL:
+					default:
+						// Already found one, ignore
+					}
+				}
+			},
+			func(ev *proto.FetchRequestPaused) {
+				reqURL := ev.Request.URL
+				// Continue the request regardless
+				_ = proto.FetchContinueRequest{RequestID: ev.RequestID}.Call(page)
+				if strings.Contains(strings.ToLower(reqURL), targetExt) {
+					select {
+					case foundURL <- reqURL:
+					default:
+						// Already found one, ignore
+					}
+				}
+			},
+		)()
+	}()
+
+	// Navigate with timeout to prevent hanging on slow/broken pages
+	navCtx, navCancel := context.WithTimeout(ctx, 10*time.Second)
+	_ = page.Context(navCtx).Navigate(rawURL)
+	_ = page.Context(navCtx).WaitLoad()
+	navCancel()
+
+	// Wait for capture or timeout
+	var result string
+	select {
+	case url := <-foundURL:
+		result = url
+	case <-ctx.Done():
+		// Timeout: check one more time in case URL arrived just as we timed out
+		select {
+		case url := <-foundURL:
+			result = url
+		default:
+			// No URL found
+		}
+	}
+
+	// Stop the listener and wait for it to finish
+	stopListener()
+	<-listenerDone
+
+	return result
+}
+
+// findInPerformanceAPI uses the browser's Performance API to find resource requests
+func (e *BrowserExtractor) findInPerformanceAPI(page *rod.Page, targetExt string) string {
+	// Pass targetExt to JavaScript for filtering (already lowercase)
+	result, err := page.Eval(`(ext) => {
 		return performance.getEntriesByType('resource')
 			.map(r => r.name)
-			.filter(url => url.toLowerCase().includes('.m3u8') || url.toLowerCase().includes('.ts') || url.toLowerCase().includes('hls'));
-	}`)
+			.filter(url => url.toLowerCase().includes(ext));
+	}`, targetExt)
 	if err != nil {
 		return ""
 	}
@@ -220,73 +240,90 @@ func (e *BrowserExtractor) findM3U8InPerformance(page *rod.Page, targetExt strin
 	return ""
 }
 
-// findM3U8InSource searches for m3u8 URLs in page HTML/JavaScript source
-func (e *BrowserExtractor) findM3U8InSource(html string) string {
-	patterns := []string{
-		`https?://[^"'\s<>]+\.m3u8[^"'\s<>]*`,
-		`["']([^"']*\.m3u8[^"']*)["']`,
-		`src\s*[=:]\s*["']([^"']*\.m3u8[^"']*)["']`,
-		`(?:file|url|source|src)\s*[=:]\s*["']([^"']+)["']`,
-	}
-
-	for _, pattern := range patterns {
-		re := regexp.MustCompile(pattern)
-		matches := re.FindAllStringSubmatch(html, -1)
-		for _, match := range matches {
-			var url string
-			if len(match) > 1 {
-				url = match[1]
-			} else {
-				url = match[0]
-			}
-
-			if !strings.Contains(strings.ToLower(url), ".m3u8") {
-				continue
-			}
-
-			if strings.HasPrefix(url, "data:") {
-				continue
-			}
-
-			url = strings.TrimSpace(url)
-			if url != "" {
-				return url
-			}
-		}
-	}
-
-	return ""
-}
-
-// findM3U8FromVideoPlayer queries the video player for its source URL
-func (e *BrowserExtractor) findM3U8FromVideoPlayer(page *rod.Page) string {
-	result, err := page.Eval(`() => {
+// findInVideoPlayer queries the video player for its source URL
+func (e *BrowserExtractor) findInVideoPlayer(page *rod.Page, targetExt string) string {
+	// targetExt is already lowercase
+	result, err := page.Eval(`(ext) => {
 		// Check for video.js
 		const vjsPlayer = document.querySelector('.video-js');
 		if (vjsPlayer && vjsPlayer.player) {
 			const src = vjsPlayer.player.currentSrc();
-			if (src && src.includes('.m3u8')) return src;
+			if (src && src.toLowerCase().includes(ext)) return src;
 		}
 
 		// Check video element sources
 		const video = document.querySelector('video');
 		if (video) {
-			if (video.src && video.src.includes('.m3u8')) return video.src;
-			const source = video.querySelector('source[src*=".m3u8"]');
-			if (source) return source.src;
+			if (video.src && video.src.toLowerCase().includes(ext)) return video.src;
+			const sources = video.querySelectorAll('source');
+			for (const source of sources) {
+				if (source.src && source.src.toLowerCase().includes(ext)) return source.src;
+			}
 		}
 
 		// Check for any global player variable
 		if (window.player && window.player.src) {
 			const src = typeof window.player.src === 'function' ? window.player.src() : window.player.src;
-			if (src && src.includes('.m3u8')) return src;
+			if (src && src.toLowerCase().includes(ext)) return src;
 		}
 		return '';
-	}`)
+	}`, targetExt)
 	if err != nil {
 		return ""
 	}
 	return result.Value.String()
+}
+
+// findInPageSource searches for media URLs in page HTML/JavaScript source
+func (e *BrowserExtractor) findInPageSource(page *rod.Page, targetExt string) string {
+	html, err := page.HTML()
+	if err != nil {
+		return ""
+	}
+
+	// Escape special regex characters in targetExt (already lowercase)
+	escapedExt := regexp.QuoteMeta(targetExt)
+
+	// Case-insensitive patterns
+	patterns := []string{
+		// Full URL with extension
+		`(?i)https?://[^"'\s<>]+` + escapedExt + `[^"'\s<>]*`,
+		// Quoted string containing extension
+		`(?i)["']([^"']*` + escapedExt + `[^"']*)["']`,
+		// src attribute with extension
+		`(?i)src\s*[=:]\s*["']([^"']*` + escapedExt + `[^"']*)["']`,
+	}
+
+	for _, pattern := range patterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			continue
+		}
+		matches := re.FindAllStringSubmatch(html, -1)
+		for _, match := range matches {
+			var foundURL string
+			if len(match) > 1 {
+				foundURL = match[1]
+			} else {
+				foundURL = match[0]
+			}
+
+			if !strings.Contains(strings.ToLower(foundURL), targetExt) {
+				continue
+			}
+
+			if strings.HasPrefix(foundURL, "data:") {
+				continue
+			}
+
+			foundURL = strings.TrimSpace(foundURL)
+			if foundURL != "" {
+				return foundURL
+			}
+		}
+	}
+
+	return ""
 }
 
 func (e *BrowserExtractor) createLauncher(headless bool) *launcher.Launcher {
