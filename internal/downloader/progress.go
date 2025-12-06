@@ -298,8 +298,11 @@ func downloadWithProgress(client *http.Client, url, output string, state *downlo
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Set common headers
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+	// Use iOS User-Agent to match the Innertube API request
+	// YouTube stream URLs are tied to the client that requested them
+	req.Header.Set("User-Agent", "com.google.ios.youtube/20.11.6 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X;)")
+	req.Header.Set("Referer", "https://www.youtube.com/")
+	req.Header.Set("Origin", "https://www.youtube.com")
 
 	// Execute request
 	resp, err := client.Do(req)
