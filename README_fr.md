@@ -57,6 +57,12 @@ vget pikpak:/path/to/file.mp4              # Téléchargement WebDAV
 vget ls pikpak:/Movies                     # Lister un répertoire distant
 ```
 
+## Captures d'écran
+
+### Progression du téléchargement
+
+![Progression du téléchargement](screenshots/pikpak_download.png)
+
 ## Sources prises en charge
 
 Consultez [sites.md](sites.md) pour la liste complète des sites pris en charge.

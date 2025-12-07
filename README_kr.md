@@ -57,6 +57,12 @@ vget pikpak:/path/to/file.mp4              # WebDAV 다운로드
 vget ls pikpak:/Movies                     # 원격 디렉토리 목록
 ```
 
+## 스크린샷
+
+### 다운로드 진행률
+
+![다운로드 진행률](screenshots/pikpak_download.png)
+
 ## 지원 소스
 
 지원 사이트 전체 목록은 [sites.md](sites.md)를 참조하세요.

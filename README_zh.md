@@ -58,6 +58,12 @@ vget pikpak:/path/to/file.mp4              # WebDAV 下载
 vget ls pikpak:/Movies                     # 列出远程目录
 ```
 
+## 截图
+
+### 下载进度
+
+![下载进度](screenshots/pikpak_download.png)
+
 ## 支持的来源
 
 查看 [sites.md](sites.md) 获取完整的支持网站列表。

@@ -77,6 +77,11 @@ func runDownload(url string) error {
 		return runWebDAVDownload(url, cfg.Language)
 	}
 
+	// Handle Telegram URLs specially (requires authenticated client context for download)
+	if isTelegramURL(url) {
+		return runTelegramDownload(url, output)
+	}
+
 	// Find matching extractor
 	ext := extractor.Match(url)
 	if ext == nil {
@@ -456,4 +461,32 @@ func selectVideoFormat(formats []extractor.VideoFormat, preferred string) *extra
 		}
 	}
 	return best
+}
+
+// isTelegramURL checks if the URL is a Telegram message URL
+func isTelegramURL(urlStr string) bool {
+	return strings.Contains(urlStr, "t.me/") || strings.Contains(urlStr, "telegram.me/")
+}
+
+// runTelegramDownload handles Telegram media downloads with TUI progress
+func runTelegramDownload(urlStr, outputPath string) error {
+	fmt.Println("  Connecting to Telegram...")
+
+	cfg := config.LoadOrDefault()
+	lang := cfg.Language
+
+	// Wrapper to convert extractor result to downloader result type
+	downloadFn := func(url, output string, progressFn func(int64, int64)) (*downloader.TelegramDownloadResult, error) {
+		result, err := extractor.TelegramDownload(url, output, progressFn)
+		if err != nil {
+			return nil, err
+		}
+		return &downloader.TelegramDownloadResult{
+			Title:    result.Title,
+			Filename: result.Filename,
+			Size:     result.Size,
+		}, nil
+	}
+
+	return downloader.RunTelegramDownloadTUI(urlStr, outputPath, lang, downloadFn)
 }

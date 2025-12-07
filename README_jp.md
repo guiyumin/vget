@@ -57,6 +57,12 @@ vget pikpak:/path/to/file.mp4              # WebDAV ダウンロード
 vget ls pikpak:/Movies                     # リモートディレクトリを一覧表示
 ```
 
+## スクリーンショット
+
+### ダウンロード進捗
+
+![ダウンロード進捗](screenshots/pikpak_download.png)
+
 ## 対応ソース
 
 対応サイトの一覧は [sites.md](sites.md) をご覧ください。

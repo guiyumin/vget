@@ -30,20 +30,20 @@ Download `vget-windows-amd64.zip` from [Releases](https://github.com/guiyumin/vg
 
 ## Commands
 
-| Command                          | Description                           |
-|----------------------------------|---------------------------------------|
-| `vget [url]`                     | Download media (`-o`, `-q`, `--info`) |
-| `vget ls <remote>:<path>`        | List remote directory (`--json`)      |
-| `vget init`                      | Interactive config wizard             |
-| `vget update`                    | Self-update (use `sudo` on Mac/Linux) |
-| `vget search --podcast <query>`  | Search podcasts                       |
-| `vget completion [shell]`        | Generate shell completion script      |
-| `vget config show`               | Show config                           |
-| `vget config path`               | Show config file path                 |
-| `vget config webdav list`        | List configured WebDAV servers        |
-| `vget config webdav add <name>`  | Add a WebDAV server                   |
-| `vget config webdav show <name>` | Show server details                   |
-| `vget config webdav delete <name>` | Delete a server                     |
+| Command                            | Description                           |
+| ---------------------------------- | ------------------------------------- |
+| `vget [url]`                       | Download media (`-o`, `-q`, `--info`) |
+| `vget ls <remote>:<path>`          | List remote directory (`--json`)      |
+| `vget init`                        | Interactive config wizard             |
+| `vget update`                      | Self-update (use `sudo` on Mac/Linux) |
+| `vget search --podcast <query>`    | Search podcasts                       |
+| `vget completion [shell]`          | Generate shell completion script      |
+| `vget config show`                 | Show config                           |
+| `vget config path`                 | Show config file path                 |
+| `vget config webdav list`          | List configured WebDAV servers        |
+| `vget config webdav add <name>`    | Add a WebDAV server                   |
+| `vget config webdav show <name>`   | Show server details                   |
+| `vget config webdav delete <name>` | Delete a server                       |
 
 ### Examples
 
@@ -57,6 +57,12 @@ vget search --podcast "tech news"
 vget pikpak:/path/to/file.mp4              # WebDAV download
 vget ls pikpak:/Movies                     # List remote directory
 ```
+
+## Screenshots
+
+### Download Progress
+
+![Download Progress](screenshots/pikpak_download.png)
 
 ## Supported Sources
 
@@ -82,11 +88,13 @@ language: en # en, zh, jp, kr, es, fr, de
 To update vget to the latest version:
 
 **macOS / Linux:**
+
 ```bash
 sudo vget update
 ```
 
 **Windows (run PowerShell as Administrator):**
+
 ```powershell
 vget update
 ```

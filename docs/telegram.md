@@ -6,7 +6,9 @@ Implementation plan for Telegram media download support in vget.
 
 vget aims to be an all-in-one media downloader. Telegram support is part of this vision, even though `tdl` (6k+ stars) exists as a dedicated tool.
 
-**Approach**: Desktop session import only, using Telegram Desktop's API credentials.
+**Current**: Desktop session import using Telegram Desktop's API credentials.
+
+**Future**: Full CLI Telegram client capabilities (phone login, QR login, etc.).
 
 ## Technical Background
 
@@ -23,28 +25,30 @@ user session       =  identifies THE USER's account
 
 ### API Credentials
 
-Two sets of credentials for different login methods:
+Currently using Telegram Desktop's public credentials:
 
 ```go
 const (
-    // vget's own registered credentials (for phone login)
-    VgetAppID   = XXXXXXX  // TODO: fill in registered api_id
-    VgetAppHash = "..."    // TODO: fill in registered api_hash
-
-    // Telegram Desktop's credentials (for desktop session import)
     TelegramDesktopAppID   = 2040
     TelegramDesktopAppHash = "b18441a1ff607e10a989891a5462e627"
 )
 ```
 
+These are safe to use:
+- Already public (used by Telegram Desktop itself)
+- Used by many third-party tools (tdl, etc.)
+- Telegram cannot revoke without breaking Desktop app
+
+Future: Register vget's own credentials for `--phone` login method.
+
 ### Login Methods & Ban Risk
 
 | Method | API Credentials | Ban Risk | Why |
 |--------|-----------------|----------|-----|
-| Phone + SMS | vget's own | **Zero** | Fresh session with registered app |
-| Desktop import | Desktop's (2040) | Low | Reusing session, same app identity |
-
-Recommended: Phone login for maximum safety.
+| `--import-desktop` | Desktop's (2040) | Low | Reusing session, same app identity |
+| `--phone` (future) | vget's own | **Zero** | Fresh session with registered app |
+| `--qr` (future) | vget's own | **Zero** | Fresh session with registered app |
+| `--bot-token` (future) | N/A | **Zero** | Bot tokens are inherently safe |
 
 ## Dependencies
 
@@ -53,35 +57,71 @@ github.com/gotd/td                    // Pure Go MTProto 2.0 implementation
 github.com/gotd/td/session/tdesktop   // Desktop session import
 ```
 
-## Implementation Plan
+## Implementation Status
 
-### Phase 1: MVP
+### Phase 1: MVP (Implemented)
 
 #### 1. Session Management Commands
 
 ```bash
-vget telegram login             # Interactive prompt (choose method)
-vget telegram login --cli       # Phone + SMS directly (zero ban risk)
-vget telegram login --desktop   # Import from Desktop directly (low ban risk)
-vget telegram logout            # Clear stored session
-vget telegram status            # Show login state
+vget telegram login                  # Shows available login methods
+vget telegram login --import-desktop # Import from Telegram Desktop
+vget telegram logout                 # Clear stored session
+vget telegram status                 # Show login state
 ```
 
-**Interactive prompt (default):**
+**Desktop import flow (`--import-desktop`):**
+- Reads Desktop's `tdata/` directory
+  - macOS: `~/Library/Application Support/Telegram Desktop/tdata/`
+  - Linux: `~/.local/share/TelegramDesktop/tdata/`
+  - Windows: `%APPDATA%/Telegram Desktop/tdata/`
+- Imports session using Desktop's API credentials (2040)
+- Session stored in `~/.config/vget/telegram/desktop-session.json`
 
+#### Session Storage & Multi-Account
+
+**Session file layout:**
 ```
-? How would you like to login?
-
-  > [1] Phone + SMS (recommended)
-        Uses vget's registered API credentials
-        Ban risk: None
-
-    [2] Import from Telegram Desktop
-        Requires Telegram Desktop installed and logged in
-        Ban risk: Low (reuses existing session)
+~/.config/vget/telegram/
+├── desktop-session.json        # Imported from Telegram Desktop (current)
+└── cli-sessions/               # Future: phone/QR login sessions
+    ├── account1.json
+    └── account2.json
 ```
 
-**Phone login flow (`--cli`):**
+**Current behavior:**
+- Desktop import stores session at `desktop-session.json`
+- If Desktop has multiple accounts, vget imports the **first/primary** account
+- Re-importing **overwrites** the previous session
+
+**Multi-account workflow (current):**
+1. Switch to desired account in Telegram Desktop
+2. Run `vget telegram login --import-desktop`
+3. vget now uses that account
+4. To switch: repeat steps 1-2
+
+**Future (full CLI client):**
+```bash
+# Phone login creates named session in cli-sessions/
+vget telegram login --phone --name work
+vget telegram login --phone --name personal
+
+# Use specific account
+vget --account work https://t.me/channel/123
+```
+
+For now, Telegram Desktop manages multi-account; vget imports whichever is active.
+
+#### Future Login Methods
+
+| Flag | Description | Status |
+|------|-------------|--------|
+| `--import-desktop` | Import from Telegram Desktop | Implemented |
+| `--phone` | Phone + SMS/code verification | Planned |
+| `--qr` | QR code login (scan with mobile) | Planned |
+| `--bot-token` | Bot authentication | Planned |
+
+**Phone login flow (`--phone`):**
 1. User enters phone number
 2. Telegram sends verification code:
    - **Primary**: In-app message to existing Telegram sessions (Desktop/mobile)
@@ -90,14 +130,16 @@ vget telegram status            # Show login state
 4. (Optional) Enters 2FA password if enabled
 5. Session created with vget's API credentials
 
-**Desktop import flow (`--desktop`):**
-- Read Desktop's `tdata/` directory
-  - macOS: `~/Library/Application Support/Telegram Desktop/tdata/`
-  - Linux: `~/.local/share/TelegramDesktop/tdata/`
-  - Windows: `%APPDATA%/Telegram Desktop/tdata/`
-- Import session with Desktop's API credentials
+**QR login flow (`--qr`):**
+1. vget displays QR code in terminal
+2. User scans with Telegram mobile app
+3. Session created automatically
+4. No phone number or code needed
 
-**Session storage:** `~/.config/vget/telegram/`
+**Bot token flow (`--bot-token`):**
+1. User provides bot token from @BotFather
+2. Authenticate as bot (limited permissions)
+3. Useful for downloading from public channels only
 
 #### 2. URL Parsing
 
@@ -142,12 +184,17 @@ MediaTypePhoto     // .jpg (lower priority)
 
 ```
 internal/extractor/
-├── telegram.go          # Extractor implementation
-├── telegram_auth.go     # Session import/management
-├── telegram_parser.go   # URL parsing
+├── telegram.go              # Thin wrapper, registers extractor, re-exports
+├── telegram/
+│   ├── telegram.go          # Package constants (API credentials)
+│   ├── parser.go            # URL parsing
+│   ├── session.go           # Session path/exists helpers
+│   ├── media.go             # Media extraction helpers
+│   ├── extractor.go         # Extractor implementation
+│   └── download.go          # Download functionality
 
 internal/cli/
-├── telegram.go          # login/logout/status commands
+├── telegram.go              # login/logout/status commands
 ```
 
 ## vget vs tdl

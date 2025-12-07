@@ -57,6 +57,12 @@ vget pikpak:/path/to/file.mp4              # Descarga WebDAV
 vget ls pikpak:/Movies                     # Listar directorio remoto
 ```
 
+## Capturas de pantalla
+
+### Progreso de descarga
+
+![Progreso de descarga](screenshots/pikpak_download.png)
+
 ## Fuentes compatibles
 
 Consulta [sites.md](sites.md) para la lista completa de sitios compatibles.
