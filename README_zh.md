@@ -28,6 +28,16 @@ rm vget.zip
 
 从 [Releases](https://github.com/guiyumin/vget/releases/latest) 下载 `vget-windows-amd64.zip`，解压后添加到系统 PATH。
 
+## 截图
+
+### 下载进度
+
+![下载进度](screenshots/pikpak_download.png)
+
+## 支持的来源
+
+查看 [sites.md](sites.md) 获取完整的支持网站列表。
+
 ## 命令
 
 | 命令                               | 描述                                  |
@@ -44,6 +54,7 @@ rm vget.zip
 | `vget config webdav add <name>`    | 添加 WebDAV 服务器                    |
 | `vget config webdav show <name>`   | 显示服务器详情                        |
 | `vget config webdav delete <name>` | 删除服务器                            |
+| `vget telegram login --import-desktop` | 从桌面应用导入 Telegram 会话      |
 
 ### 示例
 
@@ -57,16 +68,6 @@ vget search --podcast "科技"
 vget pikpak:/path/to/file.mp4              # WebDAV 下载
 vget ls pikpak:/Movies                     # 列出远程目录
 ```
-
-## 截图
-
-### 下载进度
-
-![下载进度](screenshots/pikpak_download.png)
-
-## 支持的来源
-
-查看 [sites.md](sites.md) 获取完整的支持网站列表。
 
 ## 配置
 

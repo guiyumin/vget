@@ -28,6 +28,16 @@ rm vget.zip
 
 [Releases](https://github.com/guiyumin/vget/releases/latest)에서 `vget-windows-amd64.zip`을 다운로드하고 압축을 푼 후 PATH에 추가하세요.
 
+## 스크린샷
+
+### 다운로드 진행률
+
+![다운로드 진행률](screenshots/pikpak_download.png)
+
+## 지원 소스
+
+지원 사이트 전체 목록은 [sites.md](sites.md)를 참조하세요.
+
 ## 명령어
 
 | 명령어                             | 설명                                  |
@@ -44,6 +54,7 @@ rm vget.zip
 | `vget config webdav add <name>`    | WebDAV 서버 추가                      |
 | `vget config webdav show <name>`   | 서버 상세 정보 표시                   |
 | `vget config webdav delete <name>` | 서버 삭제                             |
+| `vget telegram login --import-desktop` | 데스크톱 앱에서 Telegram 세션 가져오기 |
 
 ### 예시
 
@@ -56,16 +67,6 @@ vget search --podcast "tech news"
 vget pikpak:/path/to/file.mp4              # WebDAV 다운로드
 vget ls pikpak:/Movies                     # 원격 디렉토리 목록
 ```
-
-## 스크린샷
-
-### 다운로드 진행률
-
-![다운로드 진행률](screenshots/pikpak_download.png)
-
-## 지원 소스
-
-지원 사이트 전체 목록은 [sites.md](sites.md)를 참조하세요.
 
 ## 설정
 

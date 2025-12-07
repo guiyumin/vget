@@ -28,6 +28,16 @@ rm vget.zip
 
 [Releases](https://github.com/guiyumin/vget/releases/latest) から `vget-windows-amd64.zip` をダウンロードし、解凍して PATH に追加してください。
 
+## スクリーンショット
+
+### ダウンロード進捗
+
+![ダウンロード進捗](screenshots/pikpak_download.png)
+
+## 対応ソース
+
+対応サイトの一覧は [sites.md](sites.md) をご覧ください。
+
 ## コマンド
 
 | コマンド                           | 説明                                  |
@@ -44,6 +54,7 @@ rm vget.zip
 | `vget config webdav add <name>`    | WebDAV サーバーを追加                 |
 | `vget config webdav show <name>`   | サーバー詳細を表示                    |
 | `vget config webdav delete <name>` | サーバーを削除                        |
+| `vget telegram login --import-desktop` | デスクトップアプリから Telegram セッションをインポート |
 
 ### 例
 
@@ -56,16 +67,6 @@ vget search --podcast "tech news"
 vget pikpak:/path/to/file.mp4              # WebDAV ダウンロード
 vget ls pikpak:/Movies                     # リモートディレクトリを一覧表示
 ```
-
-## スクリーンショット
-
-### ダウンロード進捗
-
-![ダウンロード進捗](screenshots/pikpak_download.png)
-
-## 対応ソース
-
-対応サイトの一覧は [sites.md](sites.md) をご覧ください。
 
 ## 設定
 

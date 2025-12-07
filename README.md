@@ -28,6 +28,16 @@ rm vget.zip
 
 Download `vget-windows-amd64.zip` from [Releases](https://github.com/guiyumin/vget/releases/latest), extract it, and add to your PATH.
 
+## Screenshots
+
+### Download Progress
+
+![Download Progress](screenshots/pikpak_download.png)
+
+## Supported Sources
+
+See [sites.md](sites.md) for the full list of supported sites.
+
 ## Commands
 
 | Command                            | Description                           |
@@ -44,6 +54,7 @@ Download `vget-windows-amd64.zip` from [Releases](https://github.com/guiyumin/vg
 | `vget config webdav add <name>`    | Add a WebDAV server                   |
 | `vget config webdav show <name>`   | Show server details                   |
 | `vget config webdav delete <name>` | Delete a server                       |
+| `vget telegram login --import-desktop` | Import Telegram session from desktop app |
 
 ### Examples
 
@@ -57,16 +68,6 @@ vget search --podcast "tech news"
 vget pikpak:/path/to/file.mp4              # WebDAV download
 vget ls pikpak:/Movies                     # List remote directory
 ```
-
-## Screenshots
-
-### Download Progress
-
-![Download Progress](screenshots/pikpak_download.png)
-
-## Supported Sources
-
-See [sites.md](sites.md) for the full list of supported sites.
 
 ## Configuration
 
