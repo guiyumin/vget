@@ -212,7 +212,7 @@ func searchXiaoyuzhou(query string) error {
 		}
 
 		// Handle selection based on type
-		err = handleSelectedItems(selected, "xiaoyuzhou", cfg.Language, sections, query)
+		err = handleSelectedItems(selected, "xiaoyuzhou", cfg.Language)
 		if err == errGoBack {
 			continue // Go back to podcast list
 		}
@@ -383,7 +383,7 @@ func searchITunes(query string) error {
 		}
 
 		// Handle selection
-		err = handleSelectedItems(selected, "itunes", cfg.Language, sections, query)
+		err = handleSelectedItems(selected, "itunes", cfg.Language)
 		if err == errGoBack {
 			continue // Go back to podcast list
 		}
@@ -392,7 +392,7 @@ func searchITunes(query string) error {
 }
 
 // handleSelectedItems processes selected items based on their type
-func handleSelectedItems(items []SearchItem, source, lang string, originalSections []SearchSection, query string) error {
+func handleSelectedItems(items []SearchItem, source, lang string) error {
 	if len(items) == 0 {
 		return nil
 	}
@@ -408,7 +408,7 @@ func handleSelectedItems(items []SearchItem, source, lang string, originalSectio
 			fmt.Printf("\nNote: Multiple podcasts selected, showing episodes for: %s\n", podcast.Title)
 		}
 
-		return fetchAndShowEpisodes(podcast, source, lang, originalSections, query)
+		return fetchAndShowEpisodes(podcast, source, lang)
 	}
 
 	// Episodes selected - download them
@@ -416,7 +416,7 @@ func handleSelectedItems(items []SearchItem, source, lang string, originalSectio
 }
 
 // fetchAndShowEpisodes fetches episodes for a podcast and shows TUI
-func fetchAndShowEpisodes(podcast SearchItem, source, lang string, originalSections []SearchSection, query string) error {
+func fetchAndShowEpisodes(podcast SearchItem, source, lang string) error {
 	t := i18n.T(lang)
 
 	// Show spinner while fetching episodes
