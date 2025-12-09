@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// DefaultUserAgent is the default User-Agent header used for downloads
+const DefaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
 // Downloader handles file downloads with progress reporting
 type Downloader struct {
 	lang string

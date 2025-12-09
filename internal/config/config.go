@@ -57,12 +57,30 @@ type Config struct {
 
 	// Twitter/X configuration
 	Twitter TwitterConfig `yaml:"twitter,omitempty"`
+
+	// Server configuration for `vget serve`
+	Server ServerConfig `yaml:"server,omitempty"`
 }
 
 // TwitterConfig holds Twitter/X authentication settings
 type TwitterConfig struct {
 	// AuthToken is the auth_token cookie value from browser (for NSFW content)
 	AuthToken string `yaml:"auth_token,omitempty"`
+}
+
+// ServerConfig holds HTTP server settings for `vget serve`
+type ServerConfig struct {
+	// Port is the HTTP listen port (default: 8080)
+	Port int `yaml:"port,omitempty"`
+
+	// OutputDir is where downloaded files are saved
+	OutputDir string `yaml:"output_dir,omitempty"`
+
+	// MaxConcurrent is the max number of concurrent downloads (default: 3)
+	MaxConcurrent int `yaml:"max_concurrent,omitempty"`
+
+	// APIKey for authentication (optional, if set all requests must include X-API-Key header)
+	APIKey string `yaml:"api_key,omitempty"`
 }
 
 // WebDAVServer represents a WebDAV server configuration
