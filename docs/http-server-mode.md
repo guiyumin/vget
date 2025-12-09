@@ -7,6 +7,7 @@ HTTP server mode that accepts download requests via API, with an embedded WebUI 
 **Command:** `vget serve [-p port] [-o output_dir] [-d]`
 
 **Examples:**
+
 ```bash
 vget serve              # Foreground, port 8080
 vget serve -d           # Background daemon, port 8080
@@ -41,6 +42,7 @@ Access at `http://localhost:8080/` when server is running.
 | `-d, --daemon` | false | Run in background |
 
 **Config file (`~/.config/vget/config.yml`):**
+
 ```yaml
 server:
   port: 8080
@@ -56,6 +58,7 @@ CLI flags override config values.
 ### Response Structure
 
 All endpoints return a consistent JSON structure:
+
 ```json
 {
   "code": 200,
@@ -67,6 +70,7 @@ All endpoints return a consistent JSON structure:
 ### Endpoints
 
 #### `GET /health`
+
 ```json
 {
   "code": 200,
@@ -79,6 +83,7 @@ All endpoints return a consistent JSON structure:
 ```
 
 #### `POST /download`
+
 ```json
 // Request
 {
@@ -102,6 +107,7 @@ All endpoints return a consistent JSON structure:
 ```
 
 #### `GET /status/:id`
+
 ```json
 {
   "code": 200,
@@ -116,13 +122,19 @@ All endpoints return a consistent JSON structure:
 ```
 
 #### `GET /jobs`
+
 ```json
 {
   "code": 200,
   "data": {
     "jobs": [
-      {"id": "abc123", "url": "...", "status": "completed"},
-      {"id": "def456", "url": "...", "status": "downloading", "progress": 67.2}
+      { "id": "abc123", "url": "...", "status": "completed" },
+      {
+        "id": "def456",
+        "url": "...",
+        "status": "downloading",
+        "progress": 67.2
+      }
     ]
   },
   "message": "2 jobs found"
@@ -130,10 +142,11 @@ All endpoints return a consistent JSON structure:
 ```
 
 #### `DELETE /jobs/:id`
+
 ```json
 {
   "code": 200,
-  "data": {"id": "def456"},
+  "data": { "id": "def456" },
   "message": "job cancelled"
 }
 ```
@@ -160,11 +173,13 @@ vget serve status          # Check if running
 For UI development with hot reload:
 
 **Terminal 1 - Go server (API on :8080):**
+
 ```bash
 go run ./cmd/vget serve
 ```
 
 **Terminal 2 - Vite dev server (UI on :5173):**
+
 ```bash
 cd ui && npm run dev
 ```
@@ -219,12 +234,14 @@ Auto-cleanup completed jobs after 1 hour
 ## Usage Examples
 
 **Start server:**
+
 ```bash
 vget serve -p 9000 -o ~/Downloads/vget
 vget serve -d  # Run in background
 ```
 
 **Download via API:**
+
 ```bash
 # Queue download
 curl -X POST http://localhost:8080/download \
@@ -250,6 +267,214 @@ curl -X DELETE http://localhost:8080/jobs/abc123
 ## Future Enhancements
 
 - WebSocket for real-time progress updates
-- Download scheduling (cron-like)
 - Webhook notifications on completion
 - Multi-user support with separate queues
+
+---
+
+## Download Scheduling (Planned)
+
+Schedule downloads to run at specific times or on recurring intervals.
+
+### Features
+
+**One-time scheduled downloads:**
+
+- Schedule a download to start at a specific datetime
+- Use case: Queue large downloads for off-peak hours
+
+**Recurring downloads (cron-style):**
+
+- Standard cron expressions for repeat scheduling
+- Use case: Automatically fetch new podcast episodes, YouTube channel updates
+
+**Time-window restrictions:**
+
+- Limit downloads to specific time windows
+- Use case: Bandwidth management, only download during night hours
+
+### API Endpoints
+
+#### `POST /api/v1/schedules`
+
+Create a new schedule.
+
+```json
+// Request
+{
+  "url": "https://example.com/video",
+  "schedule": "0 2 * * *",          // cron expression (2 AM daily)
+  "name": "Daily backup video",      // optional, human-readable name
+  "enabled": true,
+  "options": {
+    "format": "best",
+    "output_dir": "/downloads/scheduled"
+  }
+}
+
+// Response
+{
+  "code": 200,
+  "data": {
+    "id": "sch_abc123",
+    "url": "https://example.com/video",
+    "schedule": "0 2 * * *",
+    "next_run": "2025-01-15T02:00:00Z",
+    "enabled": true
+  },
+  "message": "schedule created"
+}
+```
+
+**Cron expression format:** `minute hour day month weekday`
+| Expression | Description |
+|------------|-------------|
+| `0 2 * * *` | Every day at 2:00 AM |
+| `0 */6 * * *` | Every 6 hours |
+| `0 8 * * 1` | Every Monday at 8:00 AM |
+| `30 22 * * 5` | Every Friday at 10:30 PM |
+
+**One-time schedule:** Use `run_at` instead of `schedule`:
+
+```json
+{
+  "url": "https://example.com/large-file",
+  "run_at": "2025-01-15T03:00:00Z"
+}
+```
+
+#### `GET /api/v1/schedules`
+
+List all schedules.
+
+```json
+{
+  "code": 200,
+  "data": {
+    "schedules": [
+      {
+        "id": "sch_abc123",
+        "name": "Daily podcast",
+        "url": "https://...",
+        "schedule": "0 6 * * *",
+        "next_run": "2025-01-15T06:00:00Z",
+        "last_run": "2025-01-14T06:00:00Z",
+        "last_status": "completed",
+        "enabled": true
+      }
+    ]
+  },
+  "message": "1 schedule found"
+}
+```
+
+#### `GET /api/v1/schedules/:id`
+
+Get schedule details and history.
+
+```json
+{
+  "code": 200,
+  "data": {
+    "id": "sch_abc123",
+    "name": "Daily podcast",
+    "url": "https://...",
+    "schedule": "0 6 * * *",
+    "enabled": true,
+    "next_run": "2025-01-15T06:00:00Z",
+    "history": [
+      {
+        "run_at": "2025-01-14T06:00:00Z",
+        "status": "completed",
+        "job_id": "job_xyz"
+      },
+      {
+        "run_at": "2025-01-13T06:00:00Z",
+        "status": "completed",
+        "job_id": "job_abc"
+      }
+    ]
+  },
+  "message": "schedule found"
+}
+```
+
+#### `PUT /api/v1/schedules/:id`
+
+Update a schedule.
+
+```json
+// Request
+{
+  "schedule": "0 3 * * *",
+  "enabled": false
+}
+
+// Response
+{
+  "code": 200,
+  "data": {"id": "sch_abc123"},
+  "message": "schedule updated"
+}
+```
+
+#### `DELETE /api/v1/schedules/:id`
+
+Delete a schedule.
+
+```json
+{
+  "code": 200,
+  "data": { "id": "sch_abc123" },
+  "message": "schedule deleted"
+}
+```
+
+#### `POST /api/v1/schedules/:id/run`
+
+Trigger a scheduled download immediately (outside of schedule).
+
+```json
+{
+  "code": 200,
+  "data": {
+    "id": "sch_abc123",
+    "job_id": "job_xyz789"
+  },
+  "message": "schedule triggered"
+}
+```
+
+### Configuration
+
+```yaml
+# ~/.config/vget/config.yml
+server:
+  scheduling:
+    enabled: true
+    max_schedules: 50 # max number of schedules
+    history_retention: 30 # days to keep run history
+    time_window: # optional global restriction
+      start: "01:00" # downloads only between 1 AM
+      end: "06:00" # and 6 AM
+```
+
+### Persistence
+
+- Schedules stored in `~/.config/vget/schedules.json`
+- Survives server restarts
+- Run history kept for configured retention period
+
+### WebUI Integration
+
+- New "Schedules" tab in the dashboard
+- Create/edit/delete schedules via UI
+- View upcoming runs and execution history
+- Toggle schedules on/off
+
+### Implementation Notes
+
+- Uses `robfig/cron/v3` library for cron parsing and scheduling
+- Schedules are evaluated on server startup and when modified
+- Scheduled jobs enter the same job queue as manual downloads
+- If server is stopped during scheduled time, missed runs are skipped (no catch-up)
