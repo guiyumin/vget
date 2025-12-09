@@ -87,12 +87,10 @@ func runServe() error {
 		}
 	}
 
-	// Resolve output directory (flag > server config > global config > default)
+	// Resolve output directory (flag > global config > default)
 	outputDir := serveOutputDir
 	if outputDir == "" {
-		if cfg.Server.OutputDir != "" {
-			outputDir = cfg.Server.OutputDir
-		} else if cfg.OutputDir != "" {
+		if cfg.OutputDir != "" {
 			outputDir = cfg.OutputDir
 		} else {
 			outputDir = config.DefaultDownloadDir()

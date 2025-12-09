@@ -73,9 +73,6 @@ type ServerConfig struct {
 	// Port is the HTTP listen port (default: 8080)
 	Port int `yaml:"port,omitempty"`
 
-	// OutputDir is where downloaded files are saved
-	OutputDir string `yaml:"output_dir,omitempty"`
-
 	// MaxConcurrent is the max number of concurrent downloads (default: 3)
 	MaxConcurrent int `yaml:"max_concurrent,omitempty"`
 

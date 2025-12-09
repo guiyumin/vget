@@ -439,7 +439,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 
 			// Save to config file
 			cfg := config.LoadOrDefault()
-			cfg.Server.OutputDir = req.OutputDir
+			cfg.OutputDir = req.OutputDir
 			if err := config.Save(cfg); err != nil {
 				log.Printf("Warning: failed to save config: %v", err)
 			}

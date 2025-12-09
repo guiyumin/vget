@@ -19,15 +19,18 @@ vget serve -d -p 9000 -o ~/downloads
 - `-d` runs as background daemon
 - WebUI available at `http://localhost:8080/`
 - API accepts URLs via HTTP POST
+- Supports video, audio, and image downloads via extractors
 
 ## WebUI
 
 The server includes an embedded React SPA for job monitoring:
 
-- Real-time job status updates (1s polling)
+- Real-time job status updates (polling)
 - Download form to submit URLs
 - Progress bars for active downloads
 - Cancel button for queued/downloading jobs
+- Configuration panel for output directory
+- i18n support (zh, en, jp, kr, es, fr, de)
 - Dark theme
 
 Access at `http://localhost:8080/` when server is running.
@@ -38,20 +41,21 @@ Access at `http://localhost:8080/` when server is running.
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-p, --port` | 8080 | HTTP listen port |
-| `-o, --output` | `./downloads` | Output directory |
+| `-o, --output` | config default or `~/Downloads` | Output directory |
 | `-d, --daemon` | false | Run in background |
 
 **Config file (`~/.config/vget/config.yml`):**
 
 ```yaml
+output_dir: ~/Downloads/vget
+
 server:
   port: 8080
-  output_dir: /path/to/downloads
   max_concurrent: 3
   api_key: "optional-secret-key"
 ```
 
-CLI flags override config values.
+**Priority order for output directory:** CLI flag `-o` > `output_dir` in config > default (`~/Downloads/vget`)
 
 ## API Reference
 
@@ -151,9 +155,58 @@ All endpoints return a consistent JSON structure:
 }
 ```
 
+#### `GET /config`
+
+```json
+{
+  "code": 200,
+  "data": {
+    "output_dir": "/path/to/downloads"
+  },
+  "message": "config retrieved"
+}
+```
+
+#### `PUT /config`
+
+Update server configuration at runtime.
+
+```json
+// Request
+{
+  "output_dir": "/new/path/to/downloads"
+}
+
+// Response
+{
+  "code": 200,
+  "data": {
+    "output_dir": "/new/path/to/downloads"
+  },
+  "message": "config updated"
+}
+```
+
+#### `GET /i18n`
+
+Get UI translations for the configured language.
+
+```json
+{
+  "code": 200,
+  "data": {
+    "language": "zh",
+    "ui": { ... },
+    "server": { ... },
+    "config_exists": true
+  },
+  "message": "translations retrieved"
+}
+```
+
 ### Authentication
 
-Optional API key authentication via header `X-API-Key`. If `api_key` is set in config, all API requests must include it. The WebUI is accessible without authentication.
+Optional API key authentication via header `X-API-Key`. If `api_key` is set in config, all API requests must include it. The WebUI and `/health` endpoint are accessible without authentication.
 
 ## Daemon Mode
 
@@ -203,11 +256,11 @@ go build -o build/vget ./cmd/vget
 ```
 ui/                          # React SPA source
 internal/server/
-├── server.go                # HTTP server, handlers
+├── server.go                # HTTP server, handlers, download logic
 ├── job.go                   # Job queue, worker pool
 ├── embed.go                 # go:embed for UI
 └── dist/                    # Built UI (embedded)
-internal/cli/serve.go        # Cobra command
+internal/cli/serve.go        # Cobra command, daemon management
 internal/config/config.go    # ServerConfig struct
 ```
 
@@ -216,20 +269,32 @@ internal/config/config.go    # ServerConfig struct
 ```
 HTTP Request
     ↓
-Auth middleware (check X-API-Key if configured)
+Logging middleware
+    ↓
+Auth middleware (check X-API-Key if configured, skip for /health and UI)
     ↓
 Route to handler
     ↓
 POST /download → Add job to queue → Return job ID
     ↓
-Worker pool (max_concurrent workers)
+Worker pool (max_concurrent workers, default 3)
     ↓
-Worker picks job → extractor.Match(url) → ext.Extract(url) → download
+Worker picks job → extractor.Match(url) → ext.Extract(url) → download with progress
     ↓
-Update job status (queued → downloading → completed/failed)
+Update job status (queued → downloading → completed/failed/cancelled)
     ↓
-Auto-cleanup completed jobs after 1 hour
+Auto-cleanup completed/failed/cancelled jobs after 1 hour (runs every 10 minutes)
 ```
+
+### Supported Media Types
+
+The server uses the extractor system to handle different media:
+
+- **Video** (Twitter, YouTube, etc.) - Selects best format (prefers with audio, then highest bitrate)
+- **Audio** (podcasts, music)
+- **Images** (downloads first image from multi-image posts)
+
+For unsupported URLs, falls back to `sites.yml` config or generic browser extractor.
 
 ## Usage Examples
 
@@ -262,13 +327,30 @@ curl http://localhost:8080/jobs
 
 # Cancel job
 curl -X DELETE http://localhost:8080/jobs/abc123
+
+# Get/update config
+curl http://localhost:8080/config
+curl -X PUT http://localhost:8080/config \
+  -H "Content-Type: application/json" \
+  -d '{"output_dir": "/new/path"}'
 ```
+
+## Job Queue Details
+
+- Job queue buffer size: 100 jobs
+- Jobs have unique 16-character hex IDs
+- Job statuses: `queued`, `downloading`, `completed`, `failed`, `cancelled`
+- Progress tracking via callback during download
+- Context-based cancellation support
+
+---
 
 ## Future Enhancements
 
-- WebSocket for real-time progress updates
+- WebSocket for real-time progress updates (currently uses polling)
 - Webhook notifications on completion
 - Multi-user support with separate queues
+- Download scheduling (see below)
 
 ---
 
