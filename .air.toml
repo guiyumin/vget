@@ -1,7 +1,7 @@
 #:schema false
 # .air.toml - Hot reload config for development
 # Install: go install github.com/air-verse/air@latest
-# Usage: air -- serve
+# Usage: air -- server start
 
 root = "."
 tmp_dir = "tmp"

@@ -1,21 +1,43 @@
 package cli
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/server"
 	"github.com/spf13/cobra"
 )
 
-// Default service configuration
+// Server command flags
+var (
+	serverPort      int
+	serverOutputDir string
+	serverDaemon    bool
+)
+
+// Install command flags
+var (
+	installYes    bool
+	installPort   int
+	installOutput string
+	installUser   string
+)
+
+// Service constants
 const (
 	defaultServicePort   = 8080
 	defaultServiceUser   = "vget"
@@ -27,17 +49,106 @@ const (
 	configFilePath       = "/etc/vget/config.yml"
 )
 
-var (
-	// Install flags
-	installYes    bool
-	installPort   int
-	installOutput string
-	installUser   string
-)
+// Parent command
+var serverCmd = &cobra.Command{
+	Use:   "server",
+	Short: "Manage the vget HTTP server",
+	Long: `Manage the vget HTTP server for remote downloads.
 
-var installCmd = &cobra.Command{
+Subcommands:
+  start      Start the server
+  stop       Stop the server
+  restart    Restart the server
+  status     Show server status
+  logs       View server logs
+  install    Install as systemd service
+  uninstall  Remove systemd service`,
+}
+
+// vget server start
+var serverStartCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start the HTTP server",
+	Long: `Start the HTTP server for remote downloads.
+
+Examples:
+  vget server start              # Start server in foreground on port 8080
+  vget server start -d           # Start server as background daemon
+  vget server start -p 9000      # Start server on port 9000
+  vget server start -d -o ~/dl   # Daemon with custom output directory`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := runServerStart(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+// vget server stop
+var serverStopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop the server",
+	Long:  `Stop the running vget server daemon.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := stopDaemon(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+// vget server restart
+var serverRestartCmd = &cobra.Command{
+	Use:   "restart",
+	Short: "Restart the server",
+	Long: `Restart the vget server daemon.
+
+Examples:
+  vget server restart            # Restart with same settings
+  vget server restart -d         # Restart as daemon`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := runServerRestart(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+// vget server status
+var serverStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Show server status",
+	Long:  `Check if the vget server daemon is running.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := daemonStatus(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+// vget server logs
+var serverLogsCmd = &cobra.Command{
+	Use:   "logs",
+	Short: "View server logs",
+	Long: `View the vget server log file.
+
+Examples:
+  vget server logs               # Show recent logs
+  vget server logs -f            # Follow logs (tail -f)`,
+	Run: func(cmd *cobra.Command, args []string) {
+		followLogs, _ := cmd.Flags().GetBool("follow")
+		if err := viewLogs(followLogs); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+// vget server install
+var serverInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install vget as a systemd service",
+	Short: "Install as systemd service",
 	Long: `Install vget as a systemd service for running the download server.
 
 This command will:
@@ -49,10 +160,10 @@ This command will:
 Requires root/sudo privileges.
 
 Examples:
-  sudo vget install              # Interactive installation
-  sudo vget install --yes        # Non-interactive with defaults
-  sudo vget install -p 9000      # Custom port
-  sudo vget install -o /data/dl  # Custom output directory`,
+  sudo vget server install              # Interactive installation
+  sudo vget server install -y           # Non-interactive with defaults
+  sudo vget server install -p 9000      # Custom port
+  sudo vget server install -o /data/dl  # Custom output directory`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := runInstall(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -61,9 +172,10 @@ Examples:
 	},
 }
 
-var uninstallCmd = &cobra.Command{
+// vget server uninstall
+var serverUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Remove vget systemd service",
+	Short: "Remove systemd service",
 	Long: `Remove the vget systemd service.
 
 This command will:
@@ -84,13 +196,310 @@ Requires root/sudo privileges.`,
 }
 
 func init() {
-	installCmd.Flags().BoolVarP(&installYes, "yes", "y", false, "skip interactive TUI, use defaults")
-	installCmd.Flags().IntVarP(&installPort, "port", "p", 0, "service port (default: 8080)")
-	installCmd.Flags().StringVarP(&installOutput, "output", "o", "", "output directory (default: /var/lib/vget/downloads)")
-	installCmd.Flags().StringVarP(&installUser, "user", "u", "", "user to run service as (default: vget)")
+	// Start command flags
+	serverStartCmd.Flags().IntVarP(&serverPort, "port", "p", 0, "HTTP listen port (default: 8080)")
+	serverStartCmd.Flags().StringVarP(&serverOutputDir, "output", "o", "", "output directory for downloads")
+	serverStartCmd.Flags().BoolVarP(&serverDaemon, "daemon", "d", false, "run as background daemon")
 
-	rootCmd.AddCommand(installCmd)
-	rootCmd.AddCommand(uninstallCmd)
+	// Restart command flags
+	serverRestartCmd.Flags().IntVarP(&serverPort, "port", "p", 0, "HTTP listen port (default: 8080)")
+	serverRestartCmd.Flags().StringVarP(&serverOutputDir, "output", "o", "", "output directory for downloads")
+	serverRestartCmd.Flags().BoolVarP(&serverDaemon, "daemon", "d", false, "run as background daemon")
+
+	// Logs command flags
+	serverLogsCmd.Flags().BoolP("follow", "f", false, "follow log output")
+
+	// Install command flags
+	serverInstallCmd.Flags().BoolVarP(&installYes, "yes", "y", false, "skip interactive TUI, use defaults")
+	serverInstallCmd.Flags().IntVarP(&installPort, "port", "p", 0, "service port (default: 8080)")
+	serverInstallCmd.Flags().StringVarP(&installOutput, "output", "o", "", "output directory (default: /var/lib/vget/downloads)")
+	serverInstallCmd.Flags().StringVarP(&installUser, "user", "u", "", "user to run service as (default: vget)")
+
+	// Add subcommands to server
+	serverCmd.AddCommand(serverStartCmd)
+	serverCmd.AddCommand(serverStopCmd)
+	serverCmd.AddCommand(serverRestartCmd)
+	serverCmd.AddCommand(serverStatusCmd)
+	serverCmd.AddCommand(serverLogsCmd)
+	serverCmd.AddCommand(serverInstallCmd)
+	serverCmd.AddCommand(serverUninstallCmd)
+
+	// Add server to root
+	rootCmd.AddCommand(serverCmd)
+}
+
+// ============================================================================
+// Server start/stop/restart/status/logs
+// ============================================================================
+
+func runServerStart() error {
+	cfg := config.LoadOrDefault()
+
+	// Resolve port (flag > config > default)
+	port := serverPort
+	if port == 0 {
+		if cfg.Server.Port > 0 {
+			port = cfg.Server.Port
+		} else {
+			port = 8080
+		}
+	}
+
+	// Resolve output directory (flag > global config > default)
+	outputDir := serverOutputDir
+	if outputDir == "" {
+		if cfg.OutputDir != "" {
+			outputDir = cfg.OutputDir
+		} else {
+			outputDir = config.DefaultDownloadDir()
+		}
+	}
+
+	// Expand ~ in path
+	if len(outputDir) >= 2 && outputDir[:2] == "~/" {
+		home, _ := os.UserHomeDir()
+		outputDir = filepath.Join(home, outputDir[2:])
+	}
+
+	// Resolve max concurrent (config > default)
+	maxConcurrent := cfg.Server.MaxConcurrent
+	if maxConcurrent <= 0 {
+		maxConcurrent = 10
+	}
+
+	// Get API key from config
+	apiKey := cfg.Server.APIKey
+
+	// Daemon mode
+	if serverDaemon {
+		return startDaemon(port, outputDir)
+	}
+
+	// Foreground mode
+	return runServer(port, outputDir, apiKey, maxConcurrent)
+}
+
+func runServer(port int, outputDir, apiKey string, maxConcurrent int) error {
+	srv := server.NewServer(port, outputDir, apiKey, maxConcurrent)
+
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		log.Println("Shutting down server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		srv.Stop(ctx)
+	}()
+
+	return srv.Start()
+}
+
+func startDaemon(port int, outputDir string) error {
+	// Check if already running
+	if pid := getDaemonPID(); pid > 0 {
+		// Check if process is actually running
+		if processExists(pid) {
+			return fmt.Errorf("daemon already running (PID %d)", pid)
+		}
+		// Stale PID file, remove it
+		os.Remove(getPIDFilePath())
+	}
+
+	// Get the current executable path
+	executable, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// Build arguments
+	args := []string{"server", "start", "-p", strconv.Itoa(port), "-o", outputDir}
+
+	// Create log file
+	logFile, err := os.OpenFile(getLogFilePath(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create log file: %w", err)
+	}
+
+	// Start the daemon process
+	cmd := exec.Command(executable, args...)
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+	cmd.Stdin = nil
+
+	// Detach from parent
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true,
+	}
+
+	if err := cmd.Start(); err != nil {
+		logFile.Close()
+		return fmt.Errorf("failed to start daemon: %w", err)
+	}
+
+	// Save PID
+	if err := savePID(cmd.Process.Pid); err != nil {
+		cmd.Process.Kill()
+		logFile.Close()
+		return fmt.Errorf("failed to save PID: %w", err)
+	}
+
+	fmt.Printf("vget server started as daemon (PID %d)\n", cmd.Process.Pid)
+	fmt.Printf("  Port: %d\n", port)
+	fmt.Printf("  Output: %s\n", outputDir)
+	fmt.Printf("  Log: %s\n", getLogFilePath())
+	fmt.Printf("\nUse 'vget server stop' to stop the daemon\n")
+
+	return nil
+}
+
+func stopDaemon() error {
+	pid := getDaemonPID()
+	if pid <= 0 {
+		return fmt.Errorf("daemon is not running")
+	}
+
+	// Send SIGTERM
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		os.Remove(getPIDFilePath())
+		return fmt.Errorf("daemon process not found")
+	}
+
+	if err := process.Signal(syscall.SIGTERM); err != nil {
+		os.Remove(getPIDFilePath())
+		return fmt.Errorf("failed to stop daemon: %w", err)
+	}
+
+	// Wait for process to exit
+	for i := 0; i < 30; i++ {
+		if !processExists(pid) {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	os.Remove(getPIDFilePath())
+	fmt.Println("Daemon stopped")
+	return nil
+}
+
+func runServerRestart() error {
+	// Stop if running
+	pid := getDaemonPID()
+	if pid > 0 && processExists(pid) {
+		fmt.Println("Stopping server...")
+		if err := stopDaemon(); err != nil {
+			return err
+		}
+		// Wait a moment for port to be released
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	// Start again
+	fmt.Println("Starting server...")
+	return runServerStart()
+}
+
+func daemonStatus() error {
+	pid := getDaemonPID()
+	if pid <= 0 {
+		fmt.Println("Daemon is not running")
+		return nil
+	}
+
+	if !processExists(pid) {
+		os.Remove(getPIDFilePath())
+		fmt.Println("Daemon is not running (stale PID file removed)")
+		return nil
+	}
+
+	fmt.Printf("Daemon is running (PID %d)\n", pid)
+	fmt.Printf("Log file: %s\n", getLogFilePath())
+	return nil
+}
+
+func viewLogs(follow bool) error {
+	logPath := getLogFilePath()
+
+	// Check if log file exists
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		return fmt.Errorf("log file not found: %s", logPath)
+	}
+
+	var cmd *exec.Cmd
+	if follow {
+		cmd = exec.Command("tail", "-f", logPath)
+	} else {
+		cmd = exec.Command("tail", "-100", logPath)
+	}
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// ============================================================================
+// PID file helpers
+// ============================================================================
+
+func getPIDFilePath() string {
+	configDir, err := config.ConfigDir()
+	if err != nil {
+		return "/tmp/vget-serve.pid"
+	}
+	return filepath.Join(configDir, "serve.pid")
+}
+
+func getLogFilePath() string {
+	configDir, err := config.ConfigDir()
+	if err != nil {
+		return "/tmp/vget-serve.log"
+	}
+	return filepath.Join(configDir, "serve.log")
+}
+
+func savePID(pid int) error {
+	pidFile := getPIDFilePath()
+	dir := filepath.Dir(pidFile)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644)
+}
+
+func getDaemonPID() int {
+	data, err := os.ReadFile(getPIDFilePath())
+	if err != nil {
+		return 0
+	}
+	pid, err := strconv.Atoi(string(data))
+	if err != nil {
+		return 0
+	}
+	return pid
+}
+
+func processExists(pid int) bool {
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	// On Unix, FindProcess always succeeds, so we need to send signal 0 to check
+	err = process.Signal(syscall.Signal(0))
+	return err == nil
+}
+
+// ============================================================================
+// Install/Uninstall
+// ============================================================================
+
+type installConfig struct {
+	Port      int
+	OutputDir string
+	User      string
 }
 
 func runInstall() error {
@@ -261,7 +670,7 @@ server:
 func runUninstall() error {
 	// Check platform support
 	if runtime.GOOS != "linux" {
-		fmt.Println("vget uninstall is only supported on Linux with systemd.")
+		fmt.Println("vget server uninstall is only supported on Linux with systemd.")
 		return nil
 	}
 
@@ -308,7 +717,9 @@ func runUninstall() error {
 	return nil
 }
 
-// Helper functions
+// ============================================================================
+// Install helpers
+// ============================================================================
 
 func hasSystemd() bool {
 	_, err := exec.LookPath("systemctl")
@@ -364,7 +775,7 @@ func copyFile(src, dst string) error {
 
 func generateServiceFile(cfg installConfig) string {
 	return fmt.Sprintf(`# /etc/systemd/system/vget.service
-# Generated by vget install
+# Generated by vget server install
 
 [Unit]
 Description=vget media downloader server
@@ -374,7 +785,7 @@ After=network.target
 Type=simple
 User=%s
 Group=%s
-ExecStart=%s serve --config %s
+ExecStart=%s server start --config %s
 Restart=always
 RestartSec=5
 WorkingDirectory=%s
@@ -393,7 +804,7 @@ WantedBy=multi-user.target
 
 func printUnsupportedPlatform() {
 	fmt.Println()
-	fmt.Println("vget install is only supported on Linux with systemd.")
+	fmt.Println("vget server install is only supported on Linux with systemd.")
 	fmt.Println()
 	fmt.Println("To run vget as a service on macOS, see:")
 	fmt.Println("https://github.com/guiyumin/vget/blob/main/docs/manual-service-setup.md")
@@ -432,18 +843,14 @@ func printSuccessBox(cfg installConfig) {
 	content.WriteString(valueStyle.Render("sudo systemctl stop vget"))
 	content.WriteString("\n")
 	content.WriteString(labelStyle.Render("Remove:   "))
-	content.WriteString(valueStyle.Render("sudo vget uninstall"))
+	content.WriteString(valueStyle.Render("sudo vget server uninstall"))
 
 	fmt.Println(boxStyle.Render(content.String()))
 }
 
+// ============================================================================
 // TUI Model for interactive installation
-
-type installConfig struct {
-	Port      int
-	OutputDir string
-	User      string
-}
+// ============================================================================
 
 type installModel struct {
 	step      int // 0: overview, 1: configure, 2: installing

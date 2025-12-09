@@ -1,18 +1,21 @@
-# HTTP Server Mode (`vget serve`)
+# HTTP Server Mode (`vget server`)
 
 ## Overview
 
 HTTP server mode that accepts download requests via API, with an embedded WebUI for job monitoring.
 
-**Command:** `vget serve [-p port] [-o output_dir] [-d]`
-
-**Examples:**
+**Commands:**
 
 ```bash
-vget serve              # Foreground, port 8080
-vget serve -d           # Background daemon, port 8080
-vget serve -p 9000      # Custom port
-vget serve -d -p 9000 -o ~/downloads
+vget server start              # Foreground, port 8080
+vget server start -d           # Background daemon, port 8080
+vget server start -p 9000      # Custom port
+vget server start -d -p 9000 -o ~/downloads
+vget server stop               # Stop daemon
+vget server restart            # Restart server
+vget server status             # Check if running
+vget server logs               # View recent logs
+vget server logs -f            # Follow logs (tail -f)
 ```
 
 - Listens on port 8080 by default (override with `-p`)
@@ -211,9 +214,11 @@ Optional API key authentication via header `X-API-Key`. If `api_key` is set in c
 ## Daemon Mode
 
 ```bash
-vget serve -d              # Start daemon
-vget serve stop            # Stop daemon
-vget serve status          # Check if running
+vget server start -d       # Start daemon
+vget server stop           # Stop daemon
+vget server restart        # Restart daemon
+vget server status         # Check if running
+vget server logs -f        # Follow logs
 ```
 
 - PID stored in `~/.config/vget/serve.pid`
@@ -228,7 +233,7 @@ For UI development with hot reload:
 **Terminal 1 - Go server (API on :8080):**
 
 ```bash
-go run ./cmd/vget serve
+go run ./cmd/vget server start
 ```
 
 **Terminal 2 - Vite dev server (UI on :5173):**
@@ -260,7 +265,7 @@ internal/server/
 ├── job.go                   # Job queue, worker pool
 ├── embed.go                 # go:embed for UI
 └── dist/                    # Built UI (embedded)
-internal/cli/serve.go        # Cobra command, daemon management
+internal/cli/server.go       # Cobra commands, daemon management, service install
 internal/config/config.go    # ServerConfig struct
 ```
 
@@ -301,8 +306,8 @@ For unsupported URLs, falls back to `sites.yml` config or generic browser extrac
 **Start server:**
 
 ```bash
-vget serve -p 9000 -o ~/Downloads/vget
-vget serve -d  # Run in background
+vget server start -p 9000 -o ~/Downloads/vget
+vget server start -d  # Run in background
 ```
 
 **Download via API:**
@@ -563,21 +568,22 @@ server:
 
 ---
 
-## Service Installation (Planned)
+## Service Installation
 
 One-command installation for NAS and Linux servers.
 
 ### Commands
 
 ```bash
-sudo vget install      # Install as systemd service
-sudo vget uninstall    # Remove service
-vget install --help    # Show options
+sudo vget server install      # Install as systemd service (interactive)
+sudo vget server install -y   # Install with defaults (non-interactive)
+sudo vget server uninstall    # Remove service
+vget server install --help    # Show options
 ```
 
 ### Interactive TUI Flow
 
-When running `sudo vget install`, a Bubbletea TUI guides the user:
+When running `sudo vget server install`, a Bubbletea TUI guides the user:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -622,7 +628,7 @@ When running `sudo vget install`, a Bubbletea TUI guides the user:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### What `vget install` Does
+### What `vget server install` Does
 
 1. **Pre-flight checks**
    - Verify running as root (prompt for sudo if not)
@@ -651,7 +657,7 @@ When running `sudo vget install`, a Bubbletea TUI guides the user:
    │   Status:   sudo systemctl status vget                      │
    │   Logs:     sudo journalctl -u vget -f                      │
    │   Stop:     sudo systemctl stop vget                        │
-   │   Remove:   sudo vget uninstall                             │
+   │   Remove:   sudo vget server uninstall                      │
    │                                                             │
    └─────────────────────────────────────────────────────────────┘
    ```
@@ -668,7 +674,7 @@ After=network.target
 Type=simple
 User=vget
 Group=vget
-ExecStart=/usr/local/bin/vget serve --config /etc/vget/config.yml
+ExecStart=/usr/local/bin/vget server start --config /etc/vget/config.yml
 Restart=always
 RestartSec=5
 
@@ -680,13 +686,13 @@ WantedBy=multi-user.target
 
 ```bash
 # Skip TUI, use defaults
-sudo vget install --yes
+sudo vget server install -y
 
 # Custom configuration
-sudo vget install --port 9000 --output /data/downloads --user root
+sudo vget server install -p 9000 -o /data/downloads -u root
 
 # Uninstall
-sudo vget uninstall
+sudo vget server uninstall
 ```
 
 ### Platform Support
@@ -696,9 +702,9 @@ Currently only Linux with systemd is supported.
 On unsupported platforms, the command exits immediately with a helpful message:
 
 ```
-$ vget install
+$ vget server install
 
-vget install is only supported on Linux with systemd.
+vget server install is only supported on Linux with systemd.
 
 To run vget as a service on macOS, see:
 https://github.com/guiyumin/vget/blob/main/docs/manual-service-setup.md
