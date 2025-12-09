@@ -2,7 +2,7 @@
 
 ## Overview
 
-Add an HTTP server mode to vget that accepts download requests via HTTP API and runs as a background daemon.
+HTTP server mode that accepts download requests via API, with an embedded WebUI for job monitoring.
 
 **Command:** `vget serve [-p port] [-o output_dir] [-d]`
 
@@ -16,39 +16,31 @@ vget serve -d -p 9000 -o ~/downloads
 
 - Listens on port 8080 by default (override with `-p`)
 - `-d` runs as background daemon
-- Accepts URLs via HTTP POST, downloads to designated directory or returns file
+- WebUI available at `http://localhost:8080/`
+- API accepts URLs via HTTP POST
 
-## Architecture Assessment
+## WebUI
 
-**Refactoring Required: Minimal**
+The server includes an embedded React SPA for job monitoring:
 
-The current codebase is modular and well-suited for this feature:
-- Extraction logic is decoupled from CLI
-- Download functions can run without TUI
-- Config system is extensible
-- Existing patterns (WebDAV, Telegram, batch) show precedent
+- Real-time job status updates (1s polling)
+- Download form to submit URLs
+- Progress bars for active downloads
+- Cancel button for queued/downloading jobs
+- Dark theme
 
-**Reusable Components (95% of existing code):**
-- `internal/extractor/*` - All extractors work as-is
-- `internal/downloader/*` - Download logic (skip TUI)
-- `internal/config/*` - Config loading
-- `internal/cli/root.go` - `runDownload()` logic
+Access at `http://localhost:8080/` when server is running.
 
-## Implementation Plan
+## Configuration
 
-**Command:**
-```
-vget serve [-p port] [-o output_dir] [-d]
-```
-
-**Flags:**
+**CLI Flags:**
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-p, --port` | 8080 | HTTP listen port |
 | `-o, --output` | `./downloads` | Output directory |
 | `-d, --daemon` | false | Run in background |
 
-**Config additions to `~/.config/vget/config.yml`:**
+**Config file (`~/.config/vget/config.yml`):**
 ```yaml
 server:
   port: 8080
@@ -57,107 +49,154 @@ server:
   api_key: "optional-secret-key"
 ```
 
-Note: CLI flags override config values.
+CLI flags override config values.
+
+## API Reference
 
 ### Response Structure
 
 All endpoints return a consistent JSON structure:
-```go
-type Response[T any] struct {
-    Code    int    `json:"code"`
-    Data    T      `json:"data"`
-    Message string `json:"message"`
+```json
+{
+  "code": 200,
+  "data": { ... },
+  "message": "description"
 }
 ```
 
 ### Endpoints
 
-1. `GET /health`
-   ```json
-   {
-     "code": 200,
-     "data": {
-       "status": "ok",
-       "version": "v0.7.1"
-     },
-     "message": "everything is good"
-   }
-   ```
+#### `GET /health`
+```json
+{
+  "code": 200,
+  "data": {
+    "status": "ok",
+    "version": "v0.7.1"
+  },
+  "message": "everything is good"
+}
+```
 
-2. `POST /download`
-   ```json
-   // Request
-   {
-     "url": "https://twitter.com/...",
-     "filename": "optional.mp4",
-     "return_file": false
-   }
+#### `POST /download`
+```json
+// Request
+{
+  "url": "https://twitter.com/...",
+  "filename": "optional.mp4",
+  "return_file": false
+}
 
-   // Response (return_file=false)
-   {
-     "code": 200,
-     "data": {
-       "id": "abc123",
-       "status": "queued"
-     },
-     "message": "download started"
-   }
+// Response (return_file=false)
+{
+  "code": 200,
+  "data": {
+    "id": "abc123",
+    "status": "queued"
+  },
+  "message": "download started"
+}
 
-   // Response (return_file=true)
-   // Returns file directly with Content-Disposition header
-   ```
+// Response (return_file=true)
+// Returns file directly with Content-Disposition header
+```
 
-3. `GET /status/:id`
-   ```json
-   {
-     "code": 200,
-     "data": {
-       "id": "abc123",
-       "status": "downloading",
-       "progress": 45.5,
-       "filename": "video.mp4"
-     },
-     "message": "downloading"
-   }
-   ```
+#### `GET /status/:id`
+```json
+{
+  "code": 200,
+  "data": {
+    "id": "abc123",
+    "status": "downloading",
+    "progress": 45.5,
+    "filename": "video.mp4"
+  },
+  "message": "downloading"
+}
+```
 
-   ```json
-   // Error case
-   {
-     "code": 404,
-     "data": null,
-     "message": "job not found"
-   }
-   ```
+#### `GET /jobs`
+```json
+{
+  "code": 200,
+  "data": {
+    "jobs": [
+      {"id": "abc123", "url": "...", "status": "completed"},
+      {"id": "def456", "url": "...", "status": "downloading", "progress": 67.2}
+    ]
+  },
+  "message": "2 jobs found"
+}
+```
 
-4. `GET /jobs`
-   ```json
-   {
-     "code": 200,
-     "data": {
-       "jobs": [
-         {"id": "abc123", "url": "...", "status": "completed"},
-         {"id": "def456", "url": "...", "status": "downloading", "progress": 67.2}
-       ]
-     },
-     "message": "2 jobs found"
-   }
-   ```
-
-5. `DELETE /jobs/:id`
-   ```json
-   {
-     "code": 200,
-     "data": {"id": "def456"},
-     "message": "job cancelled"
-   }
-   ```
+#### `DELETE /jobs/:id`
+```json
+{
+  "code": 200,
+  "data": {"id": "def456"},
+  "message": "job cancelled"
+}
+```
 
 ### Authentication
 
-Optional API key authentication via header `X-API-Key`. If `api_key` is set in config, all requests must include it.
+Optional API key authentication via header `X-API-Key`. If `api_key` is set in config, all API requests must include it. The WebUI is accessible without authentication.
 
-### Internal Architecture
+## Daemon Mode
+
+```bash
+vget serve -d              # Start daemon
+vget serve stop            # Stop daemon
+vget serve status          # Check if running
+```
+
+- PID stored in `~/.config/vget/serve.pid`
+- Logs written to `~/.config/vget/serve.log`
+
+## Development
+
+### Running in Dev Mode
+
+For UI development with hot reload:
+
+**Terminal 1 - Go server (API on :8080):**
+```bash
+go run ./cmd/vget serve
+```
+
+**Terminal 2 - Vite dev server (UI on :5173):**
+```bash
+cd ui && npm run dev
+```
+
+Open `http://localhost:5173` - Vite proxies API calls to the Go server.
+
+### Building
+
+```bash
+# Build UI and Go binary
+make build
+
+# Or manually:
+cd ui && npm install && npm run build
+cp -r ui/dist/* internal/server/dist/
+go build -o build/vget ./cmd/vget
+```
+
+## Architecture
+
+```
+ui/                          # React SPA source
+internal/server/
+├── server.go                # HTTP server, handlers
+├── job.go                   # Job queue, worker pool
+├── embed.go                 # go:embed for UI
+└── dist/                    # Built UI (embedded)
+internal/cli/serve.go        # Cobra command
+internal/config/config.go    # ServerConfig struct
+```
+
+### Internal Flow
 
 ```
 HTTP Request
@@ -177,82 +216,6 @@ Update job status (queued → downloading → completed/failed)
 Auto-cleanup completed jobs after 1 hour
 ```
 
-## File Changes Summary
-
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `internal/server/server.go` | New | HTTP server, handlers, response helpers |
-| `internal/server/job.go` | New | Job struct, queue, worker pool |
-| `internal/cli/serve.go` | New | Cobra command, daemon management |
-| `internal/config/config.go` | Minor | Add `Server` config struct |
-
-**Estimated total:** ~500-700 lines
-
-## Daemon Mode (`-d` flag)
-
-**Implementation Options:**
-
-1. **Simple Background (Recommended for MVP):**
-   - Fork process, redirect stdout/stderr to log file
-   - Store PID in `~/.config/vget/serve.pid`
-   - `vget serve stop` to kill daemon
-
-2. **Systemd Integration (Future):**
-   - Generate systemd unit file
-   - `vget serve install` to install as service
-
-**Daemon Management:**
-```bash
-vget serve -d              # Start daemon
-vget serve stop            # Stop daemon
-vget serve status          # Check if running
-vget serve logs            # Tail log file
-```
-
-## Technical Details
-
-### Download Without TUI
-
-Current download functions use Bubbletea TUI. For server mode:
-
-```go
-// Option 1: Add flag to skip TUI
-func (d *Downloader) Download(url, output, id string, skipTUI bool) error
-
-// Option 2: New method (cleaner)
-func (d *Downloader) DownloadBackground(url, output string,
-    progressFn func(downloaded, total int64)) error
-```
-
-The underlying `downloadWithProgress()` in `progress.go` already handles the HTTP download - just need to bypass `tea.NewProgram()`.
-
-### Concurrency Model
-
-```go
-type Server struct {
-    jobs     map[string]*Job
-    jobsMu   sync.RWMutex
-    queue    chan *Job
-    workers  int
-    outputDir string
-}
-
-func (s *Server) Start() {
-    // Start worker pool
-    for i := 0; i < s.workers; i++ {
-        go s.worker()
-    }
-    // Start HTTP server
-    http.ListenAndServe(...)
-}
-
-func (s *Server) worker() {
-    for job := range s.queue {
-        s.processJob(job)
-    }
-}
-```
-
 ## Usage Examples
 
 **Start server:**
@@ -263,7 +226,7 @@ vget serve -d  # Run in background
 
 **Download via API:**
 ```bash
-# Queue download (saves to server's output directory)
+# Queue download
 curl -X POST http://localhost:8080/download \
   -H "Content-Type: application/json" \
   -d '{"url": "https://twitter.com/user/status/123"}'
@@ -279,34 +242,13 @@ curl http://localhost:8080/status/abc123
 
 # List all jobs
 curl http://localhost:8080/jobs
+
+# Cancel job
+curl -X DELETE http://localhost:8080/jobs/abc123
 ```
-
-## Dependencies
-
-No new dependencies required. Uses standard library:
-- `net/http` - HTTP server
-- `encoding/json` - JSON handling
-- `os/exec` - Daemon fork (for `-d` flag)
-
-## Risks & Mitigations
-
-| Risk | Mitigation |
-|------|------------|
-| Browser automation blocks server | Run Rod extractions in goroutine pool |
-| Memory leak from job history | Auto-cleanup after 1 hour |
-| No auth by default | Add warning on startup, recommend API key |
-| Port conflict | Clear error message, suggest `-p` flag |
-
-## Testing Plan
-
-1. Unit tests for queue/job management
-2. Integration tests for API endpoints
-3. Manual testing with various extractors
-4. Daemon start/stop lifecycle testing
 
 ## Future Enhancements
 
-- WebUI for job monitoring
 - WebSocket for real-time progress updates
 - Download scheduling (cron-like)
 - Webhook notifications on completion
