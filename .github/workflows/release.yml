@@ -20,7 +20,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.25.4"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build UI
+        run: |
+          cd ui && npm install && npm run build
+          rm -rf internal/server/dist/*
+          cp -r ui/dist/* internal/server/dist/
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6

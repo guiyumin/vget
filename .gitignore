@@ -1,6 +1,7 @@
 # Build output
 /build/
 /dist/
+/internal/server/dist/
 
 # Binary
 /vget

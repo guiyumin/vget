@@ -1,0 +1,268 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.version {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.ok {
+  background: #22c55e;
+}
+
+.status-dot.error {
+  background: #ef4444;
+}
+
+/* Download Form */
+.download-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.download-form input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.download-form input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.download-form input::placeholder {
+  color: #666;
+}
+
+.download-form input:disabled {
+  opacity: 0.5;
+}
+
+.download-form button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.download-form button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.download-form button:disabled {
+  background: #333;
+  cursor: not-allowed;
+}
+
+/* Jobs Section */
+.jobs-section h2 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #999;
+  margin: 0;
+}
+
+.jobs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.jobs-header .count {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-state .hint {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Job Card */
+.job-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.job-id {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.job-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.job-url {
+  font-size: 0.875rem;
+  color: #e0e0e0;
+  word-break: break-all;
+  margin: 0 0 0.5rem 0;
+}
+
+.job-filename {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.queued {
+  background: #333;
+  color: #999;
+}
+
+.status-badge.downloading {
+  background: #1e3a5f;
+  color: #60a5fa;
+}
+
+.status-badge.completed {
+  background: #14532d;
+  color: #22c55e;
+}
+
+.status-badge.failed {
+  background: #450a0a;
+  color: #ef4444;
+}
+
+.status-badge.cancelled {
+  background: #333;
+  color: #666;
+}
+
+/* Cancel Button */
+.cancel-btn {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: transparent;
+  color: #666;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.cancel-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Progress Bar */
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  color: #666;
+  min-width: 3rem;
+  text-align: right;
+}
+
+/* Error Message */
+.error-message {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #450a0a;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #fca5a5;
+}

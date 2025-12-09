@@ -1,12 +1,19 @@
-.PHONY: build push version patch minor major
+.PHONY: build build-ui push version patch minor major
 
 BUILD_DIR := ./build
 VERSION_FILE := internal/version/version.go
+UI_DIR := ./ui
+SERVER_DIST := ./internal/server/dist
 
 # Get current version from latest git tag (strips 'v' prefix)
 CURRENT_VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
 
-build:
+build-ui:
+	cd $(UI_DIR) && npm install && npm run build
+	rm -rf $(SERVER_DIST)/*
+	cp -r $(UI_DIR)/dist/* $(SERVER_DIST)/
+
+build: build-ui
 	go build -o $(BUILD_DIR)/vget ./cmd/vget
 
 push:

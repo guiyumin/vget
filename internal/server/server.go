@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -71,11 +72,20 @@ func (s *Server) Start() error {
 
 	// Setup routes
 	mux := http.NewServeMux()
+
+	// API routes
 	mux.HandleFunc("/health", s.handleHealth)
 	mux.HandleFunc("/download", s.handleDownload)
 	mux.HandleFunc("/status/", s.handleStatus)
 	mux.HandleFunc("/jobs", s.handleJobs)
 	mux.HandleFunc("/jobs/", s.handleJobAction)
+
+	// Serve embedded UI if available
+	if distFS := GetDistFS(); distFS != nil {
+		fileServer := http.FileServer(http.FS(distFS))
+		mux.HandleFunc("/", s.handleUI(fileServer, distFS))
+		log.Println("Serving embedded WebUI at /")
+	}
 
 	// Wrap with auth middleware if API key is set
 	var handler http.Handler = mux
@@ -113,8 +123,22 @@ func (s *Server) Stop(ctx context.Context) error {
 
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+
 		// Health endpoint doesn't require auth
-		if r.URL.Path == "/health" {
+		if path == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// UI routes don't require auth (static files and SPA routes)
+		// API routes start with /download, /status, /jobs
+		isAPIRoute := path == "/download" ||
+			strings.HasPrefix(path, "/status/") ||
+			path == "/jobs" ||
+			strings.HasPrefix(path, "/jobs/")
+
+		if !isAPIRoute {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -141,6 +165,33 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 }
 
 // Handlers
+
+// handleUI serves the embedded SPA with fallback to index.html for client-side routing
+func (s *Server) handleUI(fileServer http.Handler, distFS fs.FS) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+
+		// Try to serve the file directly
+		if path != "/" {
+			// Check if file exists
+			cleanPath := strings.TrimPrefix(path, "/")
+			if _, err := fs.Stat(distFS, cleanPath); err == nil {
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		// Fallback to index.html for SPA routing
+		indexFile, err := fs.ReadFile(distFS, "index.html")
+		if err != nil {
+			http.Error(w, "index.html not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(indexFile)
+	}
+}
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
