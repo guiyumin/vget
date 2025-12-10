@@ -83,6 +83,8 @@ Ejecuta `vget init` para crear el archivo de configuración interactivamente, o 
 language: es # en, zh, jp, kr, es, fr, de
 ```
 
+**Nota:** La configuración se lee en cada comando. No se requiere reinicio después de cambios (útil para Docker).
+
 ## Actualización
 
 Para actualizar vget a la última versión:

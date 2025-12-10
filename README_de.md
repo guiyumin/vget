@@ -83,6 +83,8 @@ Führen Sie `vget init` aus, um die Konfigurationsdatei interaktiv zu erstellen,
 language: de # en, zh, jp, kr, es, fr, de
 ```
 
+**Hinweis:** Die Konfiguration wird bei jedem Befehl neu gelesen. Kein Neustart nach Änderungen erforderlich (nützlich für Docker).
+
 ## Aktualisierung
 
 Um vget auf die neueste Version zu aktualisieren:

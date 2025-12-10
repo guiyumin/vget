@@ -84,6 +84,8 @@ vget ls pikpak:/Movies                     # 列出远程目录
 language: zh # en, zh, jp, kr, es, fr, de
 ```
 
+**注意：** 配置文件在每次命令执行时重新读取，修改后无需重启（适用于 Docker）。
+
 ## 更新
 
 将 vget 更新到最新版本：

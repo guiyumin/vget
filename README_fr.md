@@ -83,6 +83,8 @@ Exécutez `vget init` pour créer le fichier de configuration de manière intera
 language: fr # en, zh, jp, kr, es, fr, de
 ```
 
+**Note :** La configuration est lue à chaque commande. Pas de redémarrage nécessaire après modification (utile pour Docker).
+
 ## Mise à jour
 
 Pour mettre à jour vget vers la dernière version :

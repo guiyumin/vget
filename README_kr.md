@@ -83,6 +83,8 @@ vget ls pikpak:/Movies                     # 원격 디렉토리 목록
 language: kr # en, zh, jp, kr, es, fr, de
 ```
 
+**참고:** 설정은 명령 실행 시마다 새로 읽습니다. 변경 후 재시작이 필요 없습니다 (Docker에 유용).
+
 ## 업데이트
 
 vget을 최신 버전으로 업데이트:

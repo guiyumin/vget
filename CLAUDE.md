@@ -87,6 +87,11 @@ Access translations via `i18n.T(langCode)` which returns a `*Translations` struc
 
 User config lives in `~/.config/vget/config.yml`. The `vget init` command runs an interactive Bubbletea wizard to create it.
 
+**IMPORTANT:** Config is read fresh on every command execution (not cached at startup). This is intentional and MUST be preserved:
+- Enables config changes without restart
+- Critical for Docker UX (no container restart needed)
+- Never change this behavior
+
 ### Xiaohongshu (XHS) Extractor
 
 The XHS extractor (`internal/extractor/xiaohongshu.go`) uses browser automation:

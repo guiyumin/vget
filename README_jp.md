@@ -83,6 +83,8 @@ vget ls pikpak:/Movies                     # リモートディレクトリを�
 language: jp # en, zh, jp, kr, es, fr, de
 ```
 
+**注意：** 設定はコマンド実行ごとに読み込まれます。変更後の再起動は不要です（Docker に便利）。
+
 ## 更新
 
 vget を最新バージョンに更新：

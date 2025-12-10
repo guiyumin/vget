@@ -84,6 +84,8 @@ Run `vget init` to create the config file interactively, or create it manually:
 language: en # en, zh, jp, kr, es, fr, de
 ```
 
+**Note:** Config is read fresh on every command. No restart required after changes (useful for Docker).
+
 ## Updating
 
 To update vget to the latest version:

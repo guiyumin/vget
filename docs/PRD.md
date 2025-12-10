@@ -315,6 +315,7 @@ vget --info <url>
         client.go        # WebDAV client with Range request support ✅ NEW
     /config
         config.go        # User configuration & WebDAV servers
+                         # IMPORTANT: Config is read fresh per-command (no restart needed)
     /i18n
         i18n.go          # Internationalization
         /locales/*.yml   # Translation files (en, zh, jp, kr, es, fr, de)
