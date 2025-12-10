@@ -60,6 +60,140 @@ var configPathCmd = &cobra.Command{
 	},
 }
 
+// vget config set KEY VALUE - set a config value
+var configSetCmd = &cobra.Command{
+	Use:   "set <key> <value>",
+	Short: "Set a configuration value",
+	Long: `Set a configuration value in config.yml.
+
+Supported keys:
+  language           Language code (en, zh, jp, kr, es, fr, de)
+  proxy              Proxy URL (e.g., http://127.0.0.1:7890)
+  output_dir         Default download directory
+  format             Preferred format (mp4, webm, best)
+  quality            Default quality (1080p, 720p, best)
+  filename_template  Output filename template
+  twitter.auth_token Twitter auth token for NSFW content
+  server.port        Server listen port
+  server.max_concurrent  Max concurrent downloads
+  server.api_key     Server API key
+
+Examples:
+  vget config set language en
+  vget config set proxy http://127.0.0.1:7890
+  vget config set output_dir ~/Videos
+  vget config set twitter.auth_token YOUR_TOKEN`,
+	Args: cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		key := args[0]
+		value := args[1]
+
+		cfg := config.LoadOrDefault()
+
+		if err := setConfigValue(cfg, key, value); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		if err := config.Save(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to save config: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Set %s = %s\n", key, value)
+	},
+}
+
+// vget config get KEY - get a config value
+var configGetCmd = &cobra.Command{
+	Use:   "get <key>",
+	Short: "Get a configuration value",
+	Long: `Get a configuration value from config.yml.
+
+Examples:
+  vget config get language
+  vget config get proxy
+  vget config get twitter.auth_token`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		key := args[0]
+		cfg := config.LoadOrDefault()
+
+		value, err := getConfigValue(cfg, key)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println(value)
+	},
+}
+
+// setConfigValue sets a config value by key
+func setConfigValue(cfg *config.Config, key, value string) error {
+	switch key {
+	case "language":
+		cfg.Language = value
+	case "proxy":
+		cfg.Proxy = value
+	case "output_dir":
+		cfg.OutputDir = value
+	case "format":
+		cfg.Format = value
+	case "quality":
+		cfg.Quality = value
+	case "filename_template":
+		cfg.FilenameTemplate = value
+	case "twitter.auth_token":
+		cfg.Twitter.AuthToken = value
+	case "server.port":
+		var port int
+		if _, err := fmt.Sscanf(value, "%d", &port); err != nil {
+			return fmt.Errorf("invalid port number: %s", value)
+		}
+		cfg.Server.Port = port
+	case "server.max_concurrent":
+		var n int
+		if _, err := fmt.Sscanf(value, "%d", &n); err != nil {
+			return fmt.Errorf("invalid number: %s", value)
+		}
+		cfg.Server.MaxConcurrent = n
+	case "server.api_key":
+		cfg.Server.APIKey = value
+	default:
+		return fmt.Errorf("unknown config key: %s\nRun 'vget config set --help' to see supported keys", key)
+	}
+	return nil
+}
+
+// getConfigValue gets a config value by key
+func getConfigValue(cfg *config.Config, key string) (string, error) {
+	switch key {
+	case "language":
+		return cfg.Language, nil
+	case "proxy":
+		return cfg.Proxy, nil
+	case "output_dir":
+		return cfg.OutputDir, nil
+	case "format":
+		return cfg.Format, nil
+	case "quality":
+		return cfg.Quality, nil
+	case "filename_template":
+		return cfg.FilenameTemplate, nil
+	case "twitter.auth_token":
+		return cfg.Twitter.AuthToken, nil
+	case "server.port":
+		return fmt.Sprintf("%d", cfg.Server.Port), nil
+	case "server.max_concurrent":
+		return fmt.Sprintf("%d", cfg.Server.MaxConcurrent), nil
+	case "server.api_key":
+		return cfg.Server.APIKey, nil
+	default:
+		return "", fmt.Errorf("unknown config key: %s\nRun 'vget config get --help' to see supported keys", key)
+	}
+}
+
 // --- WebDAV remote management ---
 
 var configWebdavCmd = &cobra.Command{
@@ -475,6 +609,8 @@ func init() {
 	// config subcommands
 	configCmd.AddCommand(configShowCmd)
 	configCmd.AddCommand(configPathCmd)
+	configCmd.AddCommand(configSetCmd)
+	configCmd.AddCommand(configGetCmd)
 
 	// config webdav subcommands
 	configWebdavCmd.AddCommand(configWebdavListCmd)

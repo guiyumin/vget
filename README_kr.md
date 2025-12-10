@@ -49,6 +49,8 @@ rm vget.zip
 | `vget search --podcast <query>`    | 팟캐스트 검색                         |
 | `vget completion [shell]`          | 쉘 자동완성 스크립트 생성             |
 | `vget config show`                 | 설정 표시                             |
+| `vget config set <key> <value>`    | 설정 값 지정 (비대화형)               |
+| `vget config get <key>`            | 설정 값 가져오기                      |
 | `vget config path`                 | 설정 파일 경로 표시                   |
 | `vget config webdav list`          | 설정된 WebDAV 서버 목록               |
 | `vget config webdav add <name>`    | WebDAV 서버 추가                      |

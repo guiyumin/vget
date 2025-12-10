@@ -49,6 +49,8 @@ rm vget.zip
 | `vget search --podcast <query>`    | 搜索播客                              |
 | `vget completion [shell]`          | 生成 shell 补全脚本                   |
 | `vget config show`                 | 显示配置                              |
+| `vget config set <key> <value>`    | 设置配置值（非交互式）                |
+| `vget config get <key>`            | 获取配置值                            |
 | `vget config path`                 | 显示配置文件路径                      |
 | `vget config webdav list`          | 列出已配置的 WebDAV 服务器            |
 | `vget config webdav add <name>`    | 添加 WebDAV 服务器                    |

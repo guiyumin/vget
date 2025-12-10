@@ -49,6 +49,8 @@ rm vget.zip
 | `vget search --podcast <query>`    | ポッドキャスト検索                    |
 | `vget completion [shell]`          | シェル補完スクリプトを生成            |
 | `vget config show`                 | 設定を表示                            |
+| `vget config set <key> <value>`    | 設定値を設定（非対話式）              |
+| `vget config get <key>`            | 設定値を取得                          |
 | `vget config path`                 | 設定ファイルのパスを表示              |
 | `vget config webdav list`          | 設定済み WebDAV サーバー一覧          |
 | `vget config webdav add <name>`    | WebDAV サーバーを追加                 |

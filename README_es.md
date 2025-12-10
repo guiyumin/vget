@@ -49,6 +49,8 @@ Consulta [sites.md](sites.md) para la lista completa de sitios compatibles.
 | `vget search --podcast <query>`    | Buscar podcasts                       |
 | `vget completion [shell]`          | Generar script de autocompletado      |
 | `vget config show`                 | Mostrar configuración                 |
+| `vget config set <key> <value>`    | Establecer valor de config (no interactivo) |
+| `vget config get <key>`            | Obtener valor de configuración        |
 | `vget config path`                 | Mostrar ruta del archivo de config    |
 | `vget config webdav list`          | Listar servidores WebDAV configurados |
 | `vget config webdav add <name>`    | Agregar servidor WebDAV               |

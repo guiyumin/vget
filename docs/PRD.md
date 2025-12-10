@@ -253,6 +253,13 @@ vget -H "Referer: https://xxx" <url>
 
 # Parse only, don't download
 vget --info <url>
+
+# Configuration management
+vget init                           # Interactive config wizard (TUI)
+vget config show                    # Show current config
+vget config set language en         # Set config value (non-interactive)
+vget config set proxy http://...    # Set proxy
+vget config get language            # Get config value
 ```
 
 ### 4.4 TUI (Bubble Tea) Design

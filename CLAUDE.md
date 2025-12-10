@@ -70,11 +70,13 @@ Extractors are auto-registered via `init()` functions. See `xiaoyuzhou.go` or `t
 ### Commands
 
 - `vget <url>` - Download media from URL
-- `vget init` - Interactive config wizard
+- `vget init` - Interactive config wizard (TUI)
 - `vget update` - Self-update to latest version
 - `vget search --podcast <query>` - Search Xiaoyuzhou podcasts
 - `vget ls <remote>:<path>` - List WebDAV remote directory
 - `vget config show` - Show current configuration
+- `vget config set <key> <value>` - Set config value (non-interactive)
+- `vget config get <key>` - Get config value
 - `vget config webdav ...` - Manage WebDAV servers
 
 ### i18n
@@ -85,7 +87,18 @@ Access translations via `i18n.T(langCode)` which returns a `*Translations` struc
 
 ### Config
 
-User config lives in `~/.config/vget/config.yml`. The `vget init` command runs an interactive Bubbletea wizard to create it.
+User config lives in `~/.config/vget/config.yml`. Two ways to configure:
+
+1. **Interactive (TUI):** `vget init` - Bubbletea wizard for first-time setup
+2. **Non-interactive:** `vget config set <key> <value>` - For scripting/Docker
+
+Supported keys for `vget config set`:
+- `language` - Language code (en, zh, jp, kr, es, fr, de)
+- `proxy` - Proxy URL
+- `output_dir` - Default download directory
+- `format` - Preferred format (mp4, webm, best)
+- `quality` - Default quality (1080p, 720p, best)
+- `twitter.auth_token` - Twitter auth for NSFW content
 
 **IMPORTANT:** Config is read fresh on every command execution (not cached at startup). This is intentional and MUST be preserved:
 - Enables config changes without restart
