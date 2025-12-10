@@ -7,7 +7,7 @@ COPY ui/ ./
 RUN npm run build
 
 # Build stage for Go binary
-FROM golang:1.25-alpine AS go-builder
+FROM golang:1.25.3-alpine AS go-builder
 WORKDIR /app
 
 # Install build dependencies
