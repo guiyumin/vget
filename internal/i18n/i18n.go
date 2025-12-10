@@ -130,22 +130,29 @@ type SitesTranslations struct {
 
 // UITranslations holds translations for the web UI
 type UITranslations struct {
-	DownloadTo  string `yaml:"download_to" json:"download_to"`
-	Edit        string `yaml:"edit" json:"edit"`
-	Save        string `yaml:"save" json:"save"`
-	Cancel      string `yaml:"cancel" json:"cancel"`
-	PasteURL    string `yaml:"paste_url" json:"paste_url"`
-	Download    string `yaml:"download" json:"download"`
-	Adding      string `yaml:"adding" json:"adding"`
-	Jobs        string `yaml:"jobs" json:"jobs"`
-	Total       string `yaml:"total" json:"total"`
-	NoDownloads string `yaml:"no_downloads" json:"no_downloads"`
-	PasteHint   string `yaml:"paste_hint" json:"paste_hint"`
-	Queued      string `yaml:"queued" json:"queued"`
-	Downloading string `yaml:"downloading" json:"downloading"`
-	Completed   string `yaml:"completed" json:"completed"`
-	Failed      string `yaml:"failed" json:"failed"`
-	Cancelled   string `yaml:"cancelled" json:"cancelled"`
+	DownloadTo    string `yaml:"download_to" json:"download_to"`
+	Edit          string `yaml:"edit" json:"edit"`
+	Save          string `yaml:"save" json:"save"`
+	Cancel        string `yaml:"cancel" json:"cancel"`
+	PasteURL      string `yaml:"paste_url" json:"paste_url"`
+	Download      string `yaml:"download" json:"download"`
+	Adding        string `yaml:"adding" json:"adding"`
+	Jobs          string `yaml:"jobs" json:"jobs"`
+	Total         string `yaml:"total" json:"total"`
+	NoDownloads   string `yaml:"no_downloads" json:"no_downloads"`
+	PasteHint     string `yaml:"paste_hint" json:"paste_hint"`
+	Queued        string `yaml:"queued" json:"queued"`
+	Downloading   string `yaml:"downloading" json:"downloading"`
+	Completed     string `yaml:"completed" json:"completed"`
+	Failed        string `yaml:"failed" json:"failed"`
+	Cancelled     string `yaml:"cancelled" json:"cancelled"`
+	Settings      string `yaml:"settings" json:"settings"`
+	Language      string `yaml:"language" json:"language"`
+	Format        string `yaml:"format" json:"format"`
+	Quality       string `yaml:"quality" json:"quality"`
+	TwitterAuth   string `yaml:"twitter_auth" json:"twitter_auth"`
+	Configured    string `yaml:"configured" json:"configured"`
+	NotConfigured string `yaml:"not_configured" json:"not_configured"`
 }
 
 // ServerTranslations holds translations for server messages

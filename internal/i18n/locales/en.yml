@@ -112,6 +112,13 @@ ui:
   completed: "completed"
   failed: "failed"
   cancelled: "cancelled"
+  settings: "Settings"
+  language: "Language"
+  format: "Format"
+  quality: "Quality"
+  twitter_auth: "Twitter Auth"
+  configured: "Configured"
+  not_configured: "Not configured"
 
 # Server messages
 server:

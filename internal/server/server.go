@@ -399,16 +399,86 @@ type ConfigRequest struct {
 	OutputDir string `json:"output_dir,omitempty"`
 }
 
+// ConfigSetRequest is the request body for POST /config (set individual key)
+type ConfigSetRequest struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		// Return current server config
+		// Return current config (reload fresh)
+		cfg := config.LoadOrDefault()
 		s.writeJSON(w, http.StatusOK, Response{
 			Code: 200,
 			Data: map[string]interface{}{
-				"output_dir": s.outputDir,
+				"output_dir":         s.outputDir,
+				"language":           cfg.Language,
+				"format":             cfg.Format,
+				"quality":            cfg.Quality,
+				"twitter_auth_token": cfg.Twitter.AuthToken != "",
 			},
 			Message: "config retrieved",
+		})
+
+	case http.MethodPost:
+		// Set individual config key (for Docker/UI usage)
+		var req ConfigSetRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.writeJSON(w, http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "invalid request body",
+			})
+			return
+		}
+
+		if req.Key == "" {
+			s.writeJSON(w, http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "key is required",
+			})
+			return
+		}
+
+		// Load current config, update, save
+		cfg := config.LoadOrDefault()
+		if err := s.setConfigValue(cfg, req.Key, req.Value); err != nil {
+			s.writeJSON(w, http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: err.Error(),
+			})
+			return
+		}
+
+		if err := config.Save(cfg); err != nil {
+			s.writeJSON(w, http.StatusInternalServerError, Response{
+				Code:    500,
+				Data:    nil,
+				Message: fmt.Sprintf("failed to save config: %v", err),
+			})
+			return
+		}
+
+		// Update server's cached config
+		s.cfg = cfg
+
+		// Special handling for output_dir - update runtime values
+		if req.Key == "output_dir" {
+			s.outputDir = req.Value
+			s.jobQueue.outputDir = req.Value
+		}
+
+		s.writeJSON(w, http.StatusOK, Response{
+			Code: 200,
+			Data: map[string]interface{}{
+				"key":   req.Key,
+				"value": req.Value,
+			},
+			Message: fmt.Sprintf("config %s updated", req.Key),
 		})
 
 	case http.MethodPut:
@@ -493,6 +563,27 @@ func (s *Server) handleI18n(w http.ResponseWriter, r *http.Request) {
 }
 
 // Helper functions
+
+// setConfigValue sets a config value by key (mirrors cli/config.go logic)
+func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
+	switch key {
+	case "language":
+		cfg.Language = value
+	case "output_dir":
+		cfg.OutputDir = value
+	case "format":
+		cfg.Format = value
+	case "quality":
+		cfg.Quality = value
+	case "filename_template":
+		cfg.FilenameTemplate = value
+	case "twitter_auth_token", "twitter.auth_token":
+		cfg.Twitter.AuthToken = value
+	default:
+		return fmt.Errorf("unknown config key: %s", key)
+	}
+	return nil
+}
 
 func (s *Server) writeJSON(w http.ResponseWriter, statusCode int, resp Response) {
 	w.Header().Set("Content-Type", "application/json")

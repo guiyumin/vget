@@ -100,6 +100,13 @@ ui:
   completed: "完了"
   failed: "失敗"
   cancelled: "キャンセル済"
+  settings: "設定"
+  language: "言語"
+  format: "フォーマット"
+  quality: "画質"
+  twitter_auth: "Twitter認証"
+  configured: "設定済み"
+  not_configured: "未設定"
 
 # サーバーメッセージ
 server:

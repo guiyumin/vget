@@ -31,6 +31,10 @@ interface HealthData {
 
 interface ConfigData {
   output_dir: string;
+  language: string;
+  format: string;
+  quality: string;
+  twitter_auth_token: boolean;
 }
 
 interface JobsData {
@@ -54,6 +58,13 @@ interface UITranslations {
   completed: string;
   failed: string;
   cancelled: string;
+  settings: string;
+  language: string;
+  format: string;
+  quality: string;
+  twitter_auth: string;
+  configured: string;
+  not_configured: string;
 }
 
 interface ServerTranslations {
@@ -85,6 +96,13 @@ const defaultTranslations: UITranslations = {
   completed: "completed",
   failed: "failed",
   cancelled: "cancelled",
+  settings: "Settings",
+  language: "Language",
+  format: "Format",
+  quality: "Quality",
+  twitter_auth: "Twitter Auth",
+  configured: "Configured",
+  not_configured: "Not configured",
 };
 
 const defaultServerTranslations: ServerTranslations = {
@@ -123,6 +141,18 @@ async function updateConfig(
   return res.json();
 }
 
+async function setConfigValue(
+  key: string,
+  value: string
+): Promise<ApiResponse<{ key: string; value: string }>> {
+  const res = await fetch("/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key, value }),
+  });
+  return res.json();
+}
+
 async function postDownload(
   url: string
 ): Promise<ApiResponse<{ id: string; status: string }>> {
@@ -155,6 +185,12 @@ function App() {
   const [t, setT] = useState<UITranslations>(defaultTranslations);
   const [serverT, setServerT] = useState<ServerTranslations>(defaultServerTranslations);
   const [configExists, setConfigExists] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [configLang, setConfigLang] = useState("");
+  const [configFormat, setConfigFormat] = useState("");
+  const [configQuality, setConfigQuality] = useState("");
+  const [hasTwitterAuth, setHasTwitterAuth] = useState(false);
+  const [savingConfig, setSavingConfig] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -174,7 +210,13 @@ function App() {
       ]);
       if (healthRes.code === 200) setHealth(healthRes.data);
       if (jobsRes.code === 200) setJobs(jobsRes.data.jobs || []);
-      if (configRes.code === 200) setOutputDir(configRes.data.output_dir);
+      if (configRes.code === 200) {
+        setOutputDir(configRes.data.output_dir);
+        setConfigLang(configRes.data.language || "");
+        setConfigFormat(configRes.data.format || "");
+        setConfigQuality(configRes.data.quality || "");
+        setHasTwitterAuth(configRes.data.twitter_auth_token || false);
+      }
       if (i18nRes.code === 200) {
         setT(i18nRes.data.ui);
         setServerT(i18nRes.data.server);
@@ -233,6 +275,18 @@ function App() {
     setNewOutputDir("");
   };
 
+  const handleSaveConfigValue = async (key: string, value: string) => {
+    setSavingConfig(key);
+    try {
+      const res = await setConfigValue(key, value);
+      if (res.code === 200) {
+        refresh();
+      }
+    } finally {
+      setSavingConfig(null);
+    }
+  };
+
   const isConnected = health?.status === "ok";
 
   const sortedJobs = [...jobs].sort((a, b) => {
@@ -259,6 +313,13 @@ function App() {
         </div>
         <div className="header-right">
           <button
+            className="settings-toggle"
+            onClick={() => setShowSettings(!showSettings)}
+            title={t.settings}
+          >
+            ⚙️
+          </button>
+          <button
             className="theme-toggle"
             onClick={() => setDarkMode(!darkMode)}
             title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
@@ -275,6 +336,44 @@ function App() {
           <div className="warning-text">
             <p>{serverT.no_config_warning}</p>
             <p className="warning-hint">{serverT.run_init_hint}</p>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div className="settings-panel">
+          <h2>{t.settings}</h2>
+          <div className="settings-grid">
+            <SettingRow
+              label={t.language}
+              value={configLang}
+              options={["en", "zh", "jp", "kr", "es", "fr", "de"]}
+              saving={savingConfig === "language"}
+              disabled={!isConnected}
+              onSave={(v) => handleSaveConfigValue("language", v)}
+            />
+            <SettingRow
+              label={t.format}
+              value={configFormat}
+              options={["mp4", "webm", "best"]}
+              saving={savingConfig === "format"}
+              disabled={!isConnected}
+              onSave={(v) => handleSaveConfigValue("format", v)}
+            />
+            <SettingRow
+              label={t.quality}
+              value={configQuality}
+              options={["best", "1080p", "720p", "480p"]}
+              saving={savingConfig === "quality"}
+              disabled={!isConnected}
+              onSave={(v) => handleSaveConfigValue("quality", v)}
+            />
+            <div className="setting-row">
+              <span className="setting-label">{t.twitter_auth}</span>
+              <span className={`setting-status ${hasTwitterAuth ? "configured" : ""}`}>
+                {hasTwitterAuth ? t.configured : t.not_configured}
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -409,6 +508,41 @@ function JobCard({
       {job.status === "failed" && job.error && (
         <div className="error-message">{job.error}</div>
       )}
+    </div>
+  );
+}
+
+function SettingRow({
+  label,
+  value,
+  options,
+  saving,
+  disabled,
+  onSave,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  saving: boolean;
+  disabled: boolean;
+  onSave: (value: string) => void;
+}) {
+  return (
+    <div className="setting-row">
+      <span className="setting-label">{label}</span>
+      <select
+        className="setting-select"
+        value={value}
+        onChange={(e) => onSave(e.target.value)}
+        disabled={disabled || saving}
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+      {saving && <span className="saving-indicator">...</span>}
     </div>
   );
 }

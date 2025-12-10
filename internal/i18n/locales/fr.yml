@@ -100,6 +100,13 @@ ui:
   completed: "terminé"
   failed: "échoué"
   cancelled: "annulé"
+  settings: "Paramètres"
+  language: "Langue"
+  format: "Format"
+  quality: "Qualité"
+  twitter_auth: "Auth Twitter"
+  configured: "Configuré"
+  not_configured: "Non configuré"
 
 # Messages du serveur
 server:

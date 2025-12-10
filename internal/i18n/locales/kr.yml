@@ -100,6 +100,13 @@ ui:
   completed: "완료"
   failed: "실패"
   cancelled: "취소됨"
+  settings: "설정"
+  language: "언어"
+  format: "형식"
+  quality: "품질"
+  twitter_auth: "Twitter 인증"
+  configured: "설정됨"
+  not_configured: "설정 안 됨"
 
 # 서버 메시지
 server:

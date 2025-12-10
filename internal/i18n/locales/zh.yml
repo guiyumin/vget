@@ -112,6 +112,13 @@ ui:
   completed: "已完成"
   failed: "失败"
   cancelled: "已取消"
+  settings: "设置"
+  language: "语言"
+  format: "格式"
+  quality: "质量"
+  twitter_auth: "Twitter 认证"
+  configured: "已配置"
+  not_configured: "未配置"
 
 # 服务器消息
 server:
