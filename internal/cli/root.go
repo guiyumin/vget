@@ -155,6 +155,8 @@ func runDownload(url string) error {
 		return downloadAudio(m, dl)
 	case *extractor.ImageMedia:
 		return downloadImages(m, dl)
+	case *extractor.MultiVideoMedia:
+		return downloadMultiVideo(m, dl, t, cfg.Language)
 	default:
 		return fmt.Errorf("unsupported media type")
 	}
@@ -259,6 +261,34 @@ func formatSize(b int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func downloadMultiVideo(m *extractor.MultiVideoMedia, dl *downloader.Downloader, t *i18n.Translations, lang string) error {
+	// Info only mode
+	if info {
+		fmt.Printf("  Videos (%d):\n", len(m.Videos))
+		for i, video := range m.Videos {
+			fmt.Printf("    [%d] %s\n", i+1, video.Title)
+			for j, f := range video.Formats {
+				audioInfo := ""
+				if f.AudioURL != "" {
+					audioInfo = " [+audio]"
+				}
+				fmt.Printf("        [%d.%d] %s %dx%d (%s)%s\n", i+1, j, f.Quality, f.Width, f.Height, f.Ext, audioInfo)
+			}
+		}
+		return nil
+	}
+
+	fmt.Printf("  Downloading %d video(s)...\n", len(m.Videos))
+
+	for i, video := range m.Videos {
+		fmt.Printf("\n  [%d/%d] %s\n", i+1, len(m.Videos), video.Title)
+		if err := downloadVideo(video, dl, t, lang); err != nil {
+			return fmt.Errorf("failed to download video %d: %w", i+1, err)
+		}
+	}
+	return nil
 }
 
 func downloadVideo(m *extractor.VideoMedia, dl *downloader.Downloader, t *i18n.Translations, lang string) error {

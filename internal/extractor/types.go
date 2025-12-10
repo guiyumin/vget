@@ -103,6 +103,19 @@ func (i *ImageMedia) GetTitle() string    { return i.Title }
 func (i *ImageMedia) GetUploader() string { return i.Uploader }
 func (i *ImageMedia) Type() MediaType     { return MediaTypeImage }
 
+// MultiVideoMedia represents multiple videos from a single source (e.g., Twitter multi-video tweets)
+type MultiVideoMedia struct {
+	ID       string
+	Title    string
+	Uploader string
+	Videos   []*VideoMedia
+}
+
+func (m *MultiVideoMedia) GetID() string       { return m.ID }
+func (m *MultiVideoMedia) GetTitle() string    { return m.Title }
+func (m *MultiVideoMedia) GetUploader() string { return m.Uploader }
+func (m *MultiVideoMedia) Type() MediaType     { return MediaTypeVideo }
+
 // Image represents a single image to download
 type Image struct {
 	URL    string

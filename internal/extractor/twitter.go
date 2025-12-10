@@ -376,12 +376,15 @@ func (t *TwitterExtractor) parseSyndicationResponse(data *syndicationResponse, t
 	title := truncateText(data.Text, 100)
 	uploader := data.User.ScreenName
 
-	var videoFormats []VideoFormat
+	// Collect videos separately for each media item
+	var videos []*VideoMedia
 	var images []Image
+	videoIndex := 0
 
 	for _, media := range data.MediaDetails {
 		switch media.Type {
 		case "video", "animated_gif":
+			var formats []VideoFormat
 			for _, variant := range media.VideoInfo.Variants {
 				if variant.ContentType != "video/mp4" {
 					continue
@@ -401,7 +404,25 @@ func (t *TwitterExtractor) parseSyndicationResponse(data *syndicationResponse, t
 					format.Quality = estimateQualityFromBitrate(variant.Bitrate)
 				}
 
-				videoFormats = append(videoFormats, format)
+				formats = append(formats, format)
+			}
+
+			if len(formats) > 0 {
+				// Sort by bitrate (highest first)
+				sort.Slice(formats, func(i, j int) bool {
+					if formats[i].Bitrate != formats[j].Bitrate {
+						return formats[i].Bitrate > formats[j].Bitrate
+					}
+					return formats[i].Height > formats[j].Height
+				})
+
+				videoIndex++
+				videos = append(videos, &VideoMedia{
+					ID:       fmt.Sprintf("%s_%d", tweetID, videoIndex),
+					Title:    title,
+					Uploader: uploader,
+					Formats:  formats,
+				})
 			}
 
 		case "photo":
@@ -422,22 +443,11 @@ func (t *TwitterExtractor) parseSyndicationResponse(data *syndicationResponse, t
 		}
 	}
 
-	// Also check video field directly
-	if data.Video.Variants != nil {
+	// Also check video field directly (for single video tweets)
+	if len(videos) == 0 && data.Video.Variants != nil {
+		var formats []VideoFormat
 		for _, variant := range data.Video.Variants {
 			if variant.Type != "video/mp4" {
-				continue
-			}
-
-			// Check if this URL already exists
-			exists := false
-			for _, f := range videoFormats {
-				if f.URL == variant.Src {
-					exists = true
-					break
-				}
-			}
-			if exists {
 				continue
 			}
 
@@ -452,26 +462,34 @@ func (t *TwitterExtractor) parseSyndicationResponse(data *syndicationResponse, t
 				format.Quality = fmt.Sprintf("%dp", h)
 			}
 
-			videoFormats = append(videoFormats, format)
+			formats = append(formats, format)
+		}
+
+		if len(formats) > 0 {
+			videos = append(videos, &VideoMedia{
+				ID:       tweetID,
+				Title:    title,
+				Uploader: uploader,
+				Formats:  formats,
+			})
 		}
 	}
 
 	// Return appropriate media type
-	if len(videoFormats) > 0 {
-		// Sort by bitrate/height (highest first)
-		sort.Slice(videoFormats, func(i, j int) bool {
-			if videoFormats[i].Bitrate != videoFormats[j].Bitrate {
-				return videoFormats[i].Bitrate > videoFormats[j].Bitrate
-			}
-			return videoFormats[i].Height > videoFormats[j].Height
-		})
-
-		return &VideoMedia{
+	if len(videos) > 1 {
+		// Multiple videos - return MultiVideoMedia
+		return &MultiVideoMedia{
 			ID:       tweetID,
 			Title:    title,
 			Uploader: uploader,
-			Formats:  videoFormats,
+			Videos:   videos,
 		}, nil
+	}
+
+	if len(videos) == 1 {
+		// Single video - return VideoMedia directly
+		videos[0].ID = tweetID // Use original tweet ID for single video
+		return videos[0], nil
 	}
 
 	if len(images) > 0 {
@@ -541,14 +559,16 @@ func (t *TwitterExtractor) parseGraphQLResponse(body []byte, tweetID string) (Me
 		return nil, fmt.Errorf("no media found in tweet")
 	}
 
-	var videoFormats []VideoFormat
+	// Collect videos separately for each media item
+	var videos []*VideoMedia
 	var images []Image
-	var duration int
+	videoIndex := 0
 
 	for _, media := range legacy.ExtendedEntities.Media {
 		switch media.Type {
 		case "video", "animated_gif":
-			duration = media.VideoInfo.DurationMillis / 1000
+			var formats []VideoFormat
+			duration := media.VideoInfo.DurationMillis / 1000
 
 			for _, variant := range media.VideoInfo.Variants {
 				if variant.ContentType != "video/mp4" {
@@ -569,7 +589,23 @@ func (t *TwitterExtractor) parseGraphQLResponse(body []byte, tweetID string) (Me
 					format.Quality = estimateQualityFromBitrate(variant.Bitrate)
 				}
 
-				videoFormats = append(videoFormats, format)
+				formats = append(formats, format)
+			}
+
+			if len(formats) > 0 {
+				// Sort by bitrate (highest first)
+				sort.Slice(formats, func(i, j int) bool {
+					return formats[i].Bitrate > formats[j].Bitrate
+				})
+
+				videoIndex++
+				videos = append(videos, &VideoMedia{
+					ID:       fmt.Sprintf("%s_%d", tweetID, videoIndex),
+					Title:    title,
+					Uploader: uploader,
+					Duration: duration,
+					Formats:  formats,
+				})
 			}
 
 		case "photo":
@@ -591,18 +627,20 @@ func (t *TwitterExtractor) parseGraphQLResponse(body []byte, tweetID string) (Me
 	}
 
 	// Return appropriate media type
-	if len(videoFormats) > 0 {
-		sort.Slice(videoFormats, func(i, j int) bool {
-			return videoFormats[i].Bitrate > videoFormats[j].Bitrate
-		})
-
-		return &VideoMedia{
+	if len(videos) > 1 {
+		// Multiple videos - return MultiVideoMedia
+		return &MultiVideoMedia{
 			ID:       tweetID,
 			Title:    title,
 			Uploader: uploader,
-			Duration: duration,
-			Formats:  videoFormats,
+			Videos:   videos,
 		}, nil
+	}
+
+	if len(videos) == 1 {
+		// Single video - return VideoMedia directly
+		videos[0].ID = tweetID // Use original tweet ID for single video
+		return videos[0], nil
 	}
 
 	if len(images) > 0 {

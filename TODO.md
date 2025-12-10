@@ -2,8 +2,6 @@
 
 ## Tomorrow's Tasks
 
-1. [ ] `vget serve -d` - HTTP server mode
-2. [ ] Dockerfile for NAS deployment
 3. [ ] kuaidi100 - Bring Your Own Key (API is expensive)
 
 ## Features
@@ -32,14 +30,15 @@
 - [ ] Rate limiting
 - [ ] Cookie/auth support
 - [ ] Metadata embedding
-- [ ] `vget serve -d` - HTTP server mode
+- [x] `vget server` - HTTP server mode
   - REST API for remote downloads
-  - Run as background daemon
+  - Run as background daemon (`vget server start -d`)
   - Web UI for submitting URLs
-- [ ] WebDAV client integration
+  - systemd service installation (`vget server install`)
+- [x] WebDAV client integration
   - Connect to PikPak, other WebDAV-compatible cloud storage
-  - Upload downloaded files directly to cloud
-  - Lighter alternative to rclone for single-purpose use
+  - Download files from cloud (`vget <remote>:<path>`)
+  - Browse and select files with TUI (`vget ls <remote>:<path>`)
 
 ## Extractors
 
@@ -48,7 +47,7 @@
   - [x] Episode download
   - [x] Search (`vget search --podcast <query>`)
   - [ ] Podcast listing (all episodes)
-- [ ] YouTube
+- [x] YouTube (Docker only, uses yt-dlp/youtube-dl)
 - [ ] TikTok
 - [x] Apple Podcasts
 - [x] Xiaohongshu (小红书/RED)
@@ -77,7 +76,7 @@
 ## DevOps
 
 - [x] GoReleaser + GitHub Actions for tagged releases
-- [ ] Dockerfile for NAS deployment
+- [x] Dockerfile for NAS deployment
   - Multi-stage build for minimal image
   - Support for Synology/QNAP/TrueNAS
-  - docker-compose.yml example
+  - compose.yml with NAS path examples
