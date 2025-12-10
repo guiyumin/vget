@@ -80,7 +80,10 @@ twitter:
   nsfw_login_required: "年齢制限コンテンツにはログインが必要です。"
   protected_tweet: "保護されたツイートには認証が必要です。"
   tweet_unavailable: "ツイートは利用できません。"
-  auth_hint: "'vget config twitter set' を実行して auth token を設定してください。"
+  auth_hint: "'vget config set twitter.auth_token <value>' を実行して auth token を設定してください。"
+  deprecated_set: "'vget config twitter set' は非推奨です。"
+  deprecated_clear: "'vget config twitter clear' は非推奨です。"
+  deprecated_use_new: "代わりに使用してください：vget config set twitter.auth_token <value>"
 
 # Web UI 翻訳
 ui:

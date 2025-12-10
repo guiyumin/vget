@@ -80,7 +80,10 @@ twitter:
   nsfw_login_required: "年龄限制内容需要登录。"
   protected_tweet: "受保护的推文需要授权。"
   tweet_unavailable: "推文不可用。"
-  auth_hint: "运行 'vget config twitter set' 设置 auth token。"
+  auth_hint: "运行 'vget config set twitter.auth_token <value>' 设置 auth token。"
+  deprecated_set: "'vget config twitter set' 已弃用。"
+  deprecated_clear: "'vget config twitter clear' 已弃用。"
+  deprecated_use_new: "请使用：vget config set twitter.auth_token <value>"
 
 sites:
   configure_site: "配置网站"

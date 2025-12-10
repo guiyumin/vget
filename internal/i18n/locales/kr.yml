@@ -80,7 +80,10 @@ twitter:
   nsfw_login_required: "연령 제한 콘텐츠는 로그인이 필요합니다."
   protected_tweet: "보호된 트윗은 인증이 필요합니다."
   tweet_unavailable: "트윗을 사용할 수 없습니다."
-  auth_hint: "'vget config twitter set'을 실행하여 auth token을 설정하세요."
+  auth_hint: "'vget config set twitter.auth_token <value>'을 실행하여 auth token을 설정하세요."
+  deprecated_set: "'vget config twitter set'은 더 이상 사용되지 않습니다."
+  deprecated_clear: "'vget config twitter clear'는 더 이상 사용되지 않습니다."
+  deprecated_use_new: "대신 사용하세요: vget config set twitter.auth_token <value>"
 
 # Web UI 번역
 ui:

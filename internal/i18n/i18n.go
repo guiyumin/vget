@@ -113,6 +113,9 @@ type TwitterTranslations struct {
 	ProtectedTweet    string `yaml:"protected_tweet"`
 	TweetUnavailable  string `yaml:"tweet_unavailable"`
 	AuthHint          string `yaml:"auth_hint"`
+	DeprecatedSet     string `yaml:"deprecated_set"`
+	DeprecatedClear   string `yaml:"deprecated_clear"`
+	DeprecatedUseNew  string `yaml:"deprecated_use_new"`
 }
 
 type SitesTranslations struct {

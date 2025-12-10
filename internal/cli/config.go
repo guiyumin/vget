@@ -350,26 +350,33 @@ func orDefault(s, def string) string {
 // --- Twitter auth management ---
 
 var configTwitterCmd = &cobra.Command{
-	Use:   "twitter",
-	Short: "Manage Twitter/X authentication",
+	Use:        "twitter",
+	Short:      "Manage Twitter/X authentication (deprecated)",
+	Deprecated: "use 'vget config set twitter.auth_token <value>' instead",
 }
 
 var configTwitterSetCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Set Twitter auth token for NSFW content",
-	Long: `Set Twitter authentication token to download age-restricted content.
+	Use:        "set",
+	Short:      "Set Twitter auth token (deprecated)",
+	Deprecated: "use 'vget config set twitter.auth_token <value>' instead",
+	Long: `DEPRECATED: Use 'vget config set twitter.auth_token <value>' instead.
+
+Set Twitter authentication token to download age-restricted content.
 
 To get your auth_token:
   1. Open x.com in your browser and log in
   2. Open DevTools (F12) → Application → Cookies → x.com
   3. Find 'auth_token' and copy its value
 
-Example:
-  vget config twitter set
-  vget config twitter set --token YOUR_AUTH_TOKEN`,
+New syntax:
+  vget config set twitter.auth_token YOUR_AUTH_TOKEN`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.LoadOrDefault()
 		t := i18n.T(cfg.Language)
+
+		// Show deprecation warning
+		fmt.Fprintf(os.Stderr, "⚠️  %s\n", t.Twitter.DeprecatedSet)
+		fmt.Fprintf(os.Stderr, "   %s\n\n", t.Twitter.DeprecatedUseNew)
 
 		token, _ := cmd.Flags().GetString("token")
 		if token == "" {
@@ -397,11 +404,17 @@ Example:
 }
 
 var configTwitterClearCmd = &cobra.Command{
-	Use:   "clear",
-	Short: "Remove Twitter authentication",
+	Use:        "clear",
+	Short:      "Remove Twitter authentication (deprecated)",
+	Deprecated: "use 'vget config set twitter.auth_token \"\"' instead",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.LoadOrDefault()
 		t := i18n.T(cfg.Language)
+
+		// Show deprecation warning
+		fmt.Fprintf(os.Stderr, "⚠️  %s\n", t.Twitter.DeprecatedClear)
+		fmt.Fprintf(os.Stderr, "   %s\n\n", t.Twitter.DeprecatedUseNew)
+
 		cfg.Twitter.AuthToken = ""
 
 		if err := config.Save(cfg); err != nil {

@@ -80,7 +80,10 @@ twitter:
   nsfw_login_required: "Le contenu réservé aux adultes nécessite une connexion."
   protected_tweet: "Le tweet protégé nécessite une autorisation."
   tweet_unavailable: "Tweet non disponible."
-  auth_hint: "Exécutez 'vget config twitter set' pour configurer votre auth token."
+  auth_hint: "Exécutez 'vget config set twitter.auth_token <value>' pour configurer votre auth token."
+  deprecated_set: "'vget config twitter set' est obsolète."
+  deprecated_clear: "'vget config twitter clear' est obsolète."
+  deprecated_use_new: "Veuillez utiliser : vget config set twitter.auth_token <value>"
 
 # Traductions de l'interface web
 ui:

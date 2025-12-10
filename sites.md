@@ -28,8 +28,7 @@ To download age-restricted (NSFW) content from Twitter/X, you need to set your a
 3. Find `auth_token` and copy its value
 4. Run:
    ```bash
-   vget config twitter set
-   # paste your auth_token when prompted
+   vget config set twitter.auth_token YOUR_AUTH_TOKEN
    ```
 
 ### Twitter/X 年龄限制内容
@@ -41,8 +40,7 @@ To download age-restricted (NSFW) content from Twitter/X, you need to set your a
 3. 找到 `auth_token` 并复制其值
 4. 运行：
    ```bash
-   vget config twitter set
-   # 按提示粘贴 auth_token
+   vget config set twitter.auth_token YOUR_AUTH_TOKEN
    ```
 
 ### Telegram

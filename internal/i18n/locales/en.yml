@@ -80,7 +80,10 @@ twitter:
   nsfw_login_required: "Age-restricted content requires login."
   protected_tweet: "Protected tweet requires authorization."
   tweet_unavailable: "Tweet is unavailable."
-  auth_hint: "Run 'vget config twitter set' to set your auth token."
+  auth_hint: "Run 'vget config set twitter.auth_token <value>' to set your auth token."
+  deprecated_set: "'vget config twitter set' is deprecated."
+  deprecated_clear: "'vget config twitter clear' is deprecated."
+  deprecated_use_new: "Please use: vget config set twitter.auth_token <value>"
 
 sites:
   configure_site: "Configure Site"
