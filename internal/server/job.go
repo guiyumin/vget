@@ -22,14 +22,16 @@ const (
 
 // Job represents a download job
 type Job struct {
-	ID        string    `json:"id"`
-	URL       string    `json:"url"`
-	Filename  string    `json:"filename,omitempty"`
-	Status    JobStatus `json:"status"`
-	Progress  float64   `json:"progress"`
-	Error     string    `json:"error,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         string    `json:"id"`
+	URL        string    `json:"url"`
+	Filename   string    `json:"filename,omitempty"`
+	Status     JobStatus `json:"status"`
+	Progress   float64   `json:"progress"`
+	Downloaded int64     `json:"downloaded"` // bytes downloaded
+	Total      int64     `json:"total"`      // total bytes (-1 if unknown)
+	Error      string    `json:"error,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 
 	// Internal fields (not serialized)
 	cancel context.CancelFunc `json:"-"`
@@ -107,10 +109,7 @@ func (jq *JobQueue) processJob(job *Job) {
 
 	// Create progress callback
 	progressFn := func(downloaded, total int64) {
-		if total > 0 {
-			progress := float64(downloaded) / float64(total) * 100
-			jq.updateJobProgress(job.ID, progress)
-		}
+		jq.updateJobProgressBytes(job.ID, downloaded, total)
 	}
 
 	// Execute download
@@ -289,12 +288,16 @@ func (jq *JobQueue) updateJobStatus(id string, status JobStatus, progress float6
 	}
 }
 
-func (jq *JobQueue) updateJobProgress(id string, progress float64) {
+func (jq *JobQueue) updateJobProgressBytes(id string, downloaded, total int64) {
 	jq.mu.Lock()
 	defer jq.mu.Unlock()
 
 	if job, ok := jq.jobs[id]; ok {
-		job.Progress = progress
+		job.Downloaded = downloaded
+		job.Total = total
+		if total > 0 {
+			job.Progress = float64(downloaded) / float64(total) * 100
+		}
 		job.UpdatedAt = time.Now()
 	}
 }

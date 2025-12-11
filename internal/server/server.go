@@ -339,12 +339,14 @@ func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
 		jobList := make([]map[string]interface{}, len(jobs))
 		for i, job := range jobs {
 			jobList[i] = map[string]interface{}{
-				"id":       job.ID,
-				"url":      job.URL,
-				"status":   job.Status,
-				"progress": job.Progress,
-				"filename": job.Filename,
-				"error":    job.Error,
+				"id":         job.ID,
+				"url":        job.URL,
+				"status":     job.Status,
+				"progress":   job.Progress,
+				"downloaded": job.Downloaded,
+				"total":      job.Total,
+				"filename":   job.Filename,
+				"error":      job.Error,
 			}
 		}
 
@@ -831,8 +833,8 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 
 	switch m := media.(type) {
 	case *extractor.YouTubeDirectDownload:
-		// YouTube: use yt-dlp directly for download
-		return extractor.DownloadWithYtdlp(m.URL, s.outputDir)
+		// YouTube: use yt-dlp directly for download with progress tracking
+		return extractor.DownloadWithYtdlpProgress(ctx, m.URL, s.outputDir, progressFn)
 
 	case *extractor.VideoMedia:
 		if len(m.Formats) == 0 {
@@ -919,7 +921,13 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 		return fmt.Errorf("unsupported media type")
 	}
 
-	// Perform download
+	// Check if this is an HLS stream (m3u8)
+	if strings.HasSuffix(strings.ToLower(downloadURL), ".m3u8") ||
+		strings.Contains(strings.ToLower(downloadURL), ".m3u8?") {
+		return downloader.DownloadHLSWithProgress(ctx, downloadURL, outputPath, headers, progressFn)
+	}
+
+	// Perform regular download
 	return downloadFile(ctx, downloadURL, outputPath, headers, progressFn)
 }
 

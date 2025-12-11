@@ -390,3 +390,97 @@ func decryptAES128(data, key, iv []byte, segmentIndex int) ([]byte, error) {
 
 	return data, nil
 }
+
+// DownloadHLSWithProgress downloads an HLS stream with a progress callback (for server use)
+func DownloadHLSWithProgress(ctx context.Context, m3u8URL, output string, headers map[string]string, progressFn func(downloaded, total int64)) error {
+	config := DefaultHLSConfig()
+
+	// Parse the m3u8 playlist
+	playlist, err := ParseM3U8WithHeaders(m3u8URL, headers)
+	if err != nil {
+		return fmt.Errorf("failed to parse m3u8: %w", err)
+	}
+
+	// If master playlist, get the best variant and parse it
+	if playlist.IsMaster {
+		variant := playlist.SelectBestVariant()
+		if variant == nil {
+			return fmt.Errorf("no variants found in master playlist")
+		}
+		playlist, err = ParseM3U8WithHeaders(variant.URL, headers)
+		if err != nil {
+			return fmt.Errorf("failed to parse variant playlist: %w", err)
+		}
+	}
+
+	if len(playlist.Segments) == 0 {
+		return fmt.Errorf("no segments found in playlist")
+	}
+
+	// Get encryption key if needed
+	var decryptKey []byte
+	var decryptIV []byte
+	if playlist.IsEncrypted && playlist.KeyURL != "" {
+		decryptKey, err = fetchKeyWithHeaders(playlist.KeyURL, headers)
+		if err != nil {
+			return fmt.Errorf("failed to fetch encryption key: %w", err)
+		}
+		if playlist.KeyIV != "" {
+			decryptIV, _ = hex.DecodeString(playlist.KeyIV)
+		}
+	}
+
+	// Create output file
+	file, err := os.Create(output)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer file.Close()
+
+	// Set up progress tracking using segment count
+	totalSegments := int64(len(playlist.Segments))
+	hlsState := &hlsState{totalSegments: totalSegments}
+
+	// Progress updater goroutine
+	progressDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-progressDone:
+				return
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if progressFn != nil {
+					downloaded, total := hlsState.getProgress()
+					bytes := hlsState.getBytes()
+					// Report actual bytes with estimated total based on segment progress
+					if downloaded > 0 && bytes > 0 && total > 0 {
+						estimatedTotal := bytes * total / downloaded
+						progressFn(bytes, estimatedTotal)
+					} else {
+						// No estimate yet, report bytes downloaded with unknown total
+						progressFn(bytes, -1)
+					}
+				}
+			}
+		}
+	}()
+	defer close(progressDone)
+
+	// Download segments
+	err = downloadSegmentsOrdered(ctx, playlist.Segments, file, decryptKey, decryptIV, hlsState, config, headers)
+	if err != nil {
+		return err
+	}
+
+	// Final progress update - download complete
+	if progressFn != nil {
+		finalBytes := hlsState.getBytes()
+		progressFn(finalBytes, finalBytes)
+	}
+
+	return nil
+}

@@ -1,10 +1,14 @@
 package extractor
 
 import (
+	"bufio"
+	"context"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -60,28 +64,88 @@ func (e *ytdlpExtractor) Extract(urlStr string) (Media, error) {
 
 // DownloadWithYtdlp downloads a YouTube video using yt-dlp directly
 func DownloadWithYtdlp(url, outputDir string) error {
-	// Try yt-dlp first
+	return DownloadWithYtdlpProgress(context.Background(), url, outputDir, nil)
+}
+
+// DownloadWithYtdlpProgress downloads a YouTube video using yt-dlp with progress callback
+func DownloadWithYtdlpProgress(ctx context.Context, url, outputDir string, progressFn func(downloaded, total int64)) error {
 	outputTemplate := filepath.Join(outputDir, "%(title)s.%(ext)s")
 
-	cmd := exec.Command("yt-dlp",
+	cmd := exec.CommandContext(ctx, "yt-dlp",
 		"-f", "bv*+ba/b", // best video + best audio, or best combined
 		"--merge-output-format", "mp4",
 		"--no-playlist",
+		"--newline",                         // Output progress on new lines for parsing
 		"--remote-components", "ejs:github", // download JS challenge solver
 		"-o", outputTemplate,
-		"--progress",
 		url,
 	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	// If no progress callback, just run normally
+	if progressFn == nil {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err == nil {
+			return nil
+		}
+		// Fallback to youtube-dl
+		return downloadWithYoutubeDL(ctx, url, outputDir)
+	}
+
+	// Parse progress from stderr
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return downloadWithYoutubeDL(ctx, url, outputDir)
+	}
+
+	// Parse yt-dlp progress output
+	// Format: [download]  45.2% of  150.00MiB at  5.00MiB/s ETA 00:15
+	progressRe := regexp.MustCompile(`\[download\]\s+(\d+\.?\d*)%\s+of\s+~?(\d+\.?\d*)(Ki|Mi|Gi)?B`)
+
+	scanner := bufio.NewScanner(stderr)
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := progressRe.FindStringSubmatch(line)
+		if len(matches) >= 3 {
+			percent, _ := strconv.ParseFloat(matches[1], 64)
+			size, _ := strconv.ParseFloat(matches[2], 64)
+
+			// Convert size to bytes
+			multiplier := int64(1)
+			if len(matches) >= 4 {
+				switch matches[3] {
+				case "Ki":
+					multiplier = 1024
+				case "Mi":
+					multiplier = 1024 * 1024
+				case "Gi":
+					multiplier = 1024 * 1024 * 1024
+				}
+			}
+
+			totalBytes := int64(size * float64(multiplier))
+			downloadedBytes := int64(float64(totalBytes) * percent / 100)
+			progressFn(downloadedBytes, totalBytes)
+		}
+	}
+
+	err = cmd.Wait()
 	if err == nil {
 		return nil
 	}
 
 	// Fallback to youtube-dl
-	cmd = exec.Command("youtube-dl",
+	return downloadWithYoutubeDL(ctx, url, outputDir)
+}
+
+func downloadWithYoutubeDL(ctx context.Context, url, outputDir string) error {
+	outputTemplate := filepath.Join(outputDir, "%(title)s.%(ext)s")
+	cmd := exec.CommandContext(ctx, "youtube-dl",
 		"-f", "bestvideo+bestaudio/best",
 		"--merge-output-format", "mp4",
 		"--no-playlist",
@@ -90,7 +154,6 @@ func DownloadWithYtdlp(url, outputDir string) error {
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
 	return cmd.Run()
 }
 

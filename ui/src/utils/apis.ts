@@ -12,6 +12,8 @@ export interface Job {
   url: string;
   status: JobStatus;
   progress: number;
+  downloaded: number;
+  total: number;
   filename?: string;
   error?: string;
 }

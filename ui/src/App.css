@@ -508,10 +508,32 @@ body {
   transition: width 0.3s ease;
 }
 
+.progress-fill.indeterminate {
+  background: linear-gradient(
+    90deg,
+    var(--accent-blue) 0%,
+    var(--accent-blue) 40%,
+    rgba(59, 130, 246, 0.4) 50%,
+    var(--accent-blue) 60%,
+    var(--accent-blue) 100%
+  );
+  background-size: 200% 100%;
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 .progress-text {
   font-size: 0.75rem;
   color: var(--text-dim);
-  min-width: 3rem;
+  min-width: 4.5rem;
   text-align: right;
 }
 

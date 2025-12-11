@@ -8,6 +8,14 @@ interface DownloadJobCardProps {
   t: UITranslations;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
 export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardProps) {
   const canCancel = job.status === "queued" || job.status === "downloading";
   const canClear = job.status === "completed" || job.status === "failed" || job.status === "cancelled";
@@ -46,11 +54,15 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
         <div className="progress-container">
           <div className="progress-bar">
             <div
-              className="progress-fill"
-              style={{ width: `${job.progress}%` }}
+              className={`progress-fill ${job.total <= 0 ? "indeterminate" : ""}`}
+              style={{ width: job.total > 0 ? `${job.progress}%` : "100%" }}
             />
           </div>
-          <span className="progress-text">{job.progress.toFixed(1)}%</span>
+          <span className="progress-text">
+            {job.total > 0
+              ? `${job.progress.toFixed(1)}%`
+              : formatBytes(job.downloaded)}
+          </span>
         </div>
       )}
       {job.status === "failed" && job.error && (
