@@ -56,9 +56,6 @@ type Config struct {
 	// Default quality preference (e.g., "1080p", "720p", "best")
 	Quality string `yaml:"quality,omitempty"`
 
-	// Default output filename template
-	FilenameTemplate string `yaml:"filename_template,omitempty"`
-
 	// WebDAV servers configuration
 	WebDAVServers map[string]WebDAVServer `yaml:"webdavServers,omitempty"`
 
@@ -172,11 +169,10 @@ func isRunningInDocker() bool {
 // DefaultConfig returns a config with sensible defaults
 func DefaultConfig() *Config {
 	return &Config{
-		Language:         "zh",
-		OutputDir:        DefaultDownloadDir(),
-		Format:           "mp4",
-		Quality:          "best",
-		FilenameTemplate: "{{.ID}}.{{.Ext}}",
+		Language:  "zh",
+		OutputDir: DefaultDownloadDir(),
+		Format:    "mp4",
+		Quality:   "best",
 	}
 }
 

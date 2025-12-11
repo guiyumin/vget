@@ -67,7 +67,6 @@ Supported keys:
   output_dir         Default download directory
   format             Preferred format (mp4, webm, best)
   quality            Default quality (1080p, 720p, best)
-  filename_template  Output filename template
   twitter.auth_token Twitter auth token for NSFW content
   server.port        Server listen port
   server.max_concurrent  Max concurrent downloads
@@ -133,7 +132,6 @@ Supported keys:
   output_dir         Reset to empty (uses default)
   format             Reset to empty (uses default)
   quality            Reset to empty (uses default)
-  filename_template  Reset to empty (uses default)
   twitter.auth_token Clear Twitter auth token
   server.port        Reset to 0 (uses default)
   server.max_concurrent  Reset to 0 (uses default)
@@ -172,8 +170,6 @@ func setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Format = value
 	case "quality":
 		cfg.Quality = value
-	case "filename_template":
-		cfg.FilenameTemplate = value
 	case "twitter.auth_token":
 		cfg.Twitter.AuthToken = value
 	case "server.port":
@@ -207,8 +203,6 @@ func getConfigValue(cfg *config.Config, key string) (string, error) {
 		return cfg.Format, nil
 	case "quality":
 		return cfg.Quality, nil
-	case "filename_template":
-		return cfg.FilenameTemplate, nil
 	case "twitter.auth_token":
 		return cfg.Twitter.AuthToken, nil
 	case "server.port":
@@ -233,8 +227,6 @@ func unsetConfigValue(cfg *config.Config, key string) error {
 		cfg.Format = ""
 	case "quality":
 		cfg.Quality = ""
-	case "filename_template":
-		cfg.FilenameTemplate = ""
 	case "twitter.auth_token":
 		cfg.Twitter.AuthToken = ""
 	case "server.port":

@@ -117,12 +117,17 @@ ui:
   format: "格式"
   quality: "质量"
   twitter_auth: "Twitter 认证"
-  configured: "已配置"
-  not_configured: "未配置"
-  custom_config: "自定义配置"
-  config_key: "键 (如 twitter.auth_token)"
-  config_value: "值"
-  set: "设置"
+  server_port: "服务端口"
+  max_concurrent: "最大并发"
+  api_key: "API 密钥"
+  webdav_servers: "WebDAV 服务器"
+  add: "添加"
+  delete: "删除"
+  name: "名称"
+  url: "地址"
+  username: "用户名"
+  password: "密码"
+  no_webdav_servers: "未配置 WebDAV 服务器"
 
 # 服务器消息
 server:

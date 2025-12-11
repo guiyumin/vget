@@ -92,6 +92,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/jobs", s.handleJobs)
 	mux.HandleFunc("/jobs/", s.handleJobAction)
 	mux.HandleFunc("/config", s.handleConfig)
+	mux.HandleFunc("/config/webdav", s.handleWebDAVConfig)
+	mux.HandleFunc("/config/webdav/", s.handleWebDAVConfigAction)
 	mux.HandleFunc("/i18n", s.handleI18n)
 
 	// Serve embedded UI if available
@@ -410,14 +412,29 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		// Return current config (reload fresh)
 		cfg := config.LoadOrDefault()
+
+		// Convert WebDAV servers to a simpler format for JSON
+		webdavServers := make(map[string]map[string]string)
+		for name, server := range cfg.WebDAVServers {
+			webdavServers[name] = map[string]string{
+				"url":      server.URL,
+				"username": server.Username,
+				"password": server.Password,
+			}
+		}
+
 		s.writeJSON(w, http.StatusOK, Response{
 			Code: 200,
 			Data: map[string]interface{}{
-				"output_dir":         s.outputDir,
-				"language":           cfg.Language,
-				"format":             cfg.Format,
-				"quality":            cfg.Quality,
-				"twitter_auth_token": cfg.Twitter.AuthToken != "",
+				"output_dir":            s.outputDir,
+				"language":              cfg.Language,
+				"format":                cfg.Format,
+				"quality":               cfg.Quality,
+				"twitter_auth_token":    cfg.Twitter.AuthToken,
+				"server_port":           cfg.Server.Port,
+				"server_max_concurrent": cfg.Server.MaxConcurrent,
+				"server_api_key":        cfg.Server.APIKey,
+				"webdav_servers":        webdavServers,
 			},
 			Message: "config retrieved",
 		})
@@ -575,10 +592,16 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Format = value
 	case "quality":
 		cfg.Quality = value
-	case "filename_template":
-		cfg.FilenameTemplate = value
 	case "twitter_auth_token", "twitter.auth_token":
 		cfg.Twitter.AuthToken = value
+	case "server.max_concurrent", "server_max_concurrent":
+		var val int
+		if _, err := fmt.Sscanf(value, "%d", &val); err != nil {
+			return fmt.Errorf("invalid value for max_concurrent: %s", value)
+		}
+		cfg.Server.MaxConcurrent = val
+	case "server.api_key", "server_api_key":
+		cfg.Server.APIKey = value
 	default:
 		return fmt.Errorf("unknown config key: %s", key)
 	}
@@ -589,6 +612,141 @@ func (s *Server) writeJSON(w http.ResponseWriter, statusCode int, resp Response)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(resp)
+}
+
+// WebDAVConfigRequest is the request body for WebDAV server operations
+type WebDAVConfigRequest struct {
+	Name     string `json:"name"`
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// handleWebDAVConfig handles listing and adding WebDAV servers
+func (s *Server) handleWebDAVConfig(w http.ResponseWriter, r *http.Request) {
+	cfg := config.LoadOrDefault()
+
+	switch r.Method {
+	case http.MethodGet:
+		// List all WebDAV servers
+		servers := make(map[string]map[string]string)
+		for name, server := range cfg.WebDAVServers {
+			servers[name] = map[string]string{
+				"url":      server.URL,
+				"username": server.Username,
+				"password": server.Password,
+			}
+		}
+		s.writeJSON(w, http.StatusOK, Response{
+			Code:    200,
+			Data:    servers,
+			Message: "webdav servers retrieved",
+		})
+
+	case http.MethodPost:
+		// Add a new WebDAV server
+		var req WebDAVConfigRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			s.writeJSON(w, http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "invalid request body",
+			})
+			return
+		}
+
+		if req.Name == "" || req.URL == "" {
+			s.writeJSON(w, http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "name and url are required",
+			})
+			return
+		}
+
+		cfg.SetWebDAVServer(req.Name, config.WebDAVServer{
+			URL:      req.URL,
+			Username: req.Username,
+			Password: req.Password,
+		})
+
+		if err := config.Save(cfg); err != nil {
+			s.writeJSON(w, http.StatusInternalServerError, Response{
+				Code:    500,
+				Data:    nil,
+				Message: fmt.Sprintf("failed to save config: %v", err),
+			})
+			return
+		}
+
+		s.cfg = cfg
+		s.writeJSON(w, http.StatusOK, Response{
+			Code:    200,
+			Data:    map[string]string{"name": req.Name},
+			Message: "webdav server added",
+		})
+
+	default:
+		s.writeJSON(w, http.StatusMethodNotAllowed, Response{
+			Code:    405,
+			Data:    nil,
+			Message: "method not allowed",
+		})
+	}
+}
+
+// handleWebDAVConfigAction handles updating and deleting individual WebDAV servers
+func (s *Server) handleWebDAVConfigAction(w http.ResponseWriter, r *http.Request) {
+	// Extract server name from path: /config/webdav/{name}
+	name := strings.TrimPrefix(r.URL.Path, "/config/webdav/")
+	if name == "" {
+		s.writeJSON(w, http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "server name is required",
+		})
+		return
+	}
+
+	cfg := config.LoadOrDefault()
+
+	switch r.Method {
+	case http.MethodDelete:
+		// Delete WebDAV server
+		if cfg.GetWebDAVServer(name) == nil {
+			s.writeJSON(w, http.StatusNotFound, Response{
+				Code:    404,
+				Data:    nil,
+				Message: "webdav server not found",
+			})
+			return
+		}
+
+		cfg.DeleteWebDAVServer(name)
+
+		if err := config.Save(cfg); err != nil {
+			s.writeJSON(w, http.StatusInternalServerError, Response{
+				Code:    500,
+				Data:    nil,
+				Message: fmt.Sprintf("failed to save config: %v", err),
+			})
+			return
+		}
+
+		s.cfg = cfg
+		s.writeJSON(w, http.StatusOK, Response{
+			Code:    200,
+			Data:    map[string]string{"name": name},
+			Message: "webdav server deleted",
+		})
+
+	default:
+		s.writeJSON(w, http.StatusMethodNotAllowed, Response{
+			Code:    405,
+			Data:    nil,
+			Message: "method not allowed",
+		})
+	}
 }
 
 // downloadWithExtractor is the download function used by the job queue

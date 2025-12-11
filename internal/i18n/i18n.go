@@ -130,29 +130,40 @@ type SitesTranslations struct {
 
 // UITranslations holds translations for the web UI
 type UITranslations struct {
-	DownloadTo    string `yaml:"download_to" json:"download_to"`
-	Edit          string `yaml:"edit" json:"edit"`
-	Save          string `yaml:"save" json:"save"`
-	Cancel        string `yaml:"cancel" json:"cancel"`
-	PasteURL      string `yaml:"paste_url" json:"paste_url"`
-	Download      string `yaml:"download" json:"download"`
-	Adding        string `yaml:"adding" json:"adding"`
-	Jobs          string `yaml:"jobs" json:"jobs"`
-	Total         string `yaml:"total" json:"total"`
-	NoDownloads   string `yaml:"no_downloads" json:"no_downloads"`
-	PasteHint     string `yaml:"paste_hint" json:"paste_hint"`
-	Queued        string `yaml:"queued" json:"queued"`
-	Downloading   string `yaml:"downloading" json:"downloading"`
-	Completed     string `yaml:"completed" json:"completed"`
-	Failed        string `yaml:"failed" json:"failed"`
-	Cancelled     string `yaml:"cancelled" json:"cancelled"`
-	Settings      string `yaml:"settings" json:"settings"`
-	Language      string `yaml:"language" json:"language"`
-	Format        string `yaml:"format" json:"format"`
-	Quality       string `yaml:"quality" json:"quality"`
-	TwitterAuth   string `yaml:"twitter_auth" json:"twitter_auth"`
-	Configured    string `yaml:"configured" json:"configured"`
-	NotConfigured string `yaml:"not_configured" json:"not_configured"`
+	DownloadTo       string `yaml:"download_to" json:"download_to"`
+	Edit             string `yaml:"edit" json:"edit"`
+	Save             string `yaml:"save" json:"save"`
+	Cancel           string `yaml:"cancel" json:"cancel"`
+	PasteURL         string `yaml:"paste_url" json:"paste_url"`
+	Download         string `yaml:"download" json:"download"`
+	Adding           string `yaml:"adding" json:"adding"`
+	Jobs             string `yaml:"jobs" json:"jobs"`
+	Total            string `yaml:"total" json:"total"`
+	NoDownloads      string `yaml:"no_downloads" json:"no_downloads"`
+	PasteHint        string `yaml:"paste_hint" json:"paste_hint"`
+	Queued           string `yaml:"queued" json:"queued"`
+	Downloading      string `yaml:"downloading" json:"downloading"`
+	Completed        string `yaml:"completed" json:"completed"`
+	Failed           string `yaml:"failed" json:"failed"`
+	Cancelled        string `yaml:"cancelled" json:"cancelled"`
+	Settings         string `yaml:"settings" json:"settings"`
+	Language         string `yaml:"language" json:"language"`
+	Format           string `yaml:"format" json:"format"`
+	Quality          string `yaml:"quality" json:"quality"`
+	TwitterAuth      string `yaml:"twitter_auth" json:"twitter_auth"`
+	ServerPort       string `yaml:"server_port" json:"server_port"`
+	MaxConcurrent    string `yaml:"max_concurrent" json:"max_concurrent"`
+	APIKey           string `yaml:"api_key" json:"api_key"`
+	WebDAVServers    string `yaml:"webdav_servers" json:"webdav_servers"`
+	Add              string `yaml:"add" json:"add"`
+	Delete           string `yaml:"delete" json:"delete"`
+	Name             string `yaml:"name" json:"name"`
+	URL              string `yaml:"url" json:"url"`
+	Username         string `yaml:"username" json:"username"`
+	Password         string `yaml:"password" json:"password"`
+	NoWebDAVServers  string `yaml:"no_webdav_servers" json:"no_webdav_servers"`
+	Configured       string `yaml:"configured" json:"configured"`
+	NotConfigured    string `yaml:"not_configured" json:"not_configured"`
 }
 
 // ServerTranslations holds translations for server messages

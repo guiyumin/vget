@@ -616,6 +616,30 @@ body {
   border-color: var(--accent-blue);
 }
 
+.setting-input-text {
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.setting-input-text:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.setting-input-text::placeholder {
+  color: var(--text-dim);
+}
+
+.setting-input-text:disabled {
+  opacity: 0.5;
+}
+
 .setting-input-group {
   flex: 1;
   display: flex;
@@ -669,73 +693,150 @@ body {
   font-size: 0.75rem;
 }
 
-/* Custom Config */
-.custom-config {
+/* Readonly value display */
+.setting-value-readonly {
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+/* Number input */
+.setting-input-number {
+  width: 80px;
+  flex: none;
+}
+
+/* WebDAV Section */
+.webdav-section {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
 }
 
-.custom-config-header {
+.webdav-header {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.webdav-empty {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+}
+
+.webdav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.webdav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.webdav-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.webdav-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.webdav-url {
   font-size: 0.75rem;
   color: var(--text-muted);
-  margin-bottom: 0.5rem;
+  font-family: monospace;
 }
 
-.custom-config-row {
+.webdav-delete-btn {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--accent-red);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent-red);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.webdav-delete-btn:hover:not(:disabled) {
+  background: var(--accent-red);
+  color: #fff;
+}
+
+.webdav-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.webdav-add-form {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
-.custom-config-input {
-  padding: 0.5rem 0.75rem;
+.webdav-input {
+  padding: 0.375rem 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-size: 0.875rem;
-  font-family: monospace;
+  width: 100px;
 }
 
-.custom-config-input:focus {
+.webdav-input:focus {
   outline: none;
   border-color: var(--accent-blue);
 }
 
-.custom-config-input::placeholder {
+.webdav-input::placeholder {
   color: var(--text-dim);
-  font-family: inherit;
 }
 
-.custom-config-input:disabled {
+.webdav-input:disabled {
   opacity: 0.5;
 }
 
-.custom-config-input:first-child {
-  width: 180px;
-}
-
-.custom-config-value {
+.webdav-input-url {
   flex: 1;
+  min-width: 150px;
 }
 
-.custom-config-btn {
-  padding: 0.5rem 1rem;
+.webdav-add-btn {
+  padding: 0.375rem 0.75rem;
   border: 1px solid var(--accent-blue);
   border-radius: 4px;
   background: var(--accent-blue);
   color: #fff;
   font-size: 0.875rem;
   cursor: pointer;
-  white-space: nowrap;
 }
 
-.custom-config-btn:hover:not(:disabled) {
+.webdav-add-btn:hover:not(:disabled) {
   background: var(--accent-blue-hover);
   border-color: var(--accent-blue-hover);
 }
 
-.custom-config-btn:disabled {
+.webdav-add-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

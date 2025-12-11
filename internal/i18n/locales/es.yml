@@ -105,12 +105,17 @@ ui:
   format: "Formato"
   quality: "Calidad"
   twitter_auth: "Auth de Twitter"
-  configured: "Configurado"
-  not_configured: "No configurado"
-  custom_config: "Config personalizada"
-  config_key: "Clave (ej. twitter.auth_token)"
-  config_value: "Valor"
-  set: "Guardar"
+  server_port: "Puerto del servidor"
+  max_concurrent: "Máx. simultáneos"
+  api_key: "Clave API"
+  webdav_servers: "Servidores WebDAV"
+  add: "Añadir"
+  delete: "Eliminar"
+  name: "Nombre"
+  url: "URL"
+  username: "Usuario"
+  password: "Contraseña"
+  no_webdav_servers: "No hay servidores WebDAV configurados"
 
 # Mensajes del servidor
 server:

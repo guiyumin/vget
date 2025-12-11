@@ -105,12 +105,17 @@ ui:
   format: "형식"
   quality: "품질"
   twitter_auth: "Twitter 인증"
-  configured: "설정됨"
-  not_configured: "설정 안 됨"
-  custom_config: "사용자 정의 설정"
-  config_key: "키 (예: twitter.auth_token)"
-  config_value: "값"
-  set: "설정"
+  server_port: "서버 포트"
+  max_concurrent: "최대 동시 실행"
+  api_key: "API 키"
+  webdav_servers: "WebDAV 서버"
+  add: "추가"
+  delete: "삭제"
+  name: "이름"
+  url: "URL"
+  username: "사용자 이름"
+  password: "비밀번호"
+  no_webdav_servers: "WebDAV 서버가 구성되지 않았습니다"
 
 # 서버 메시지
 server:

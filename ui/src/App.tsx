@@ -29,12 +29,22 @@ interface HealthData {
   version: string;
 }
 
+interface WebDAVServer {
+  url: string;
+  username: string;
+  password: string;
+}
+
 interface ConfigData {
   output_dir: string;
   language: string;
   format: string;
   quality: string;
-  twitter_auth_token: boolean;
+  twitter_auth_token: string;
+  server_port: number;
+  server_max_concurrent: number;
+  server_api_key: string;
+  webdav_servers: Record<string, WebDAVServer>;
 }
 
 interface JobsData {
@@ -63,12 +73,17 @@ interface UITranslations {
   format: string;
   quality: string;
   twitter_auth: string;
-  configured: string;
-  not_configured: string;
-  custom_config: string;
-  config_key: string;
-  config_value: string;
-  set: string;
+  server_port: string;
+  max_concurrent: string;
+  api_key: string;
+  webdav_servers: string;
+  add: string;
+  delete: string;
+  name: string;
+  url: string;
+  username: string;
+  password: string;
+  no_webdav_servers: string;
 }
 
 interface ServerTranslations {
@@ -105,12 +120,17 @@ const defaultTranslations: UITranslations = {
   format: "Format",
   quality: "Quality",
   twitter_auth: "Twitter Auth",
-  configured: "Configured",
-  not_configured: "Not configured",
-  custom_config: "Custom Config",
-  config_key: "Key (e.g. twitter.auth_token)",
-  config_value: "Value",
-  set: "Set",
+  server_port: "Server Port",
+  max_concurrent: "Max Concurrent",
+  api_key: "API Key",
+  webdav_servers: "WebDAV Servers",
+  add: "Add",
+  delete: "Delete",
+  name: "Name",
+  url: "URL",
+  username: "Username",
+  password: "Password",
+  no_webdav_servers: "No WebDAV servers configured",
 };
 
 const defaultServerTranslations: ServerTranslations = {
@@ -172,6 +192,29 @@ async function postDownload(
   return res.json();
 }
 
+async function addWebDAVServer(
+  name: string,
+  url: string,
+  username: string,
+  password: string
+): Promise<ApiResponse<{ name: string }>> {
+  const res = await fetch("/config/webdav", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, url, username, password }),
+  });
+  return res.json();
+}
+
+async function deleteWebDAVServer(
+  name: string
+): Promise<ApiResponse<{ name: string }>> {
+  const res = await fetch(`/config/webdav/${encodeURIComponent(name)}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}
+
 async function deleteJob(id: string): Promise<ApiResponse<{ id: string }>> {
   const res = await fetch(`/jobs/${id}`, { method: "DELETE" });
   return res.json();
@@ -197,16 +240,25 @@ function App() {
   const [configLang, setConfigLang] = useState("");
   const [configFormat, setConfigFormat] = useState("");
   const [configQuality, setConfigQuality] = useState("");
-  const [hasTwitterAuth, setHasTwitterAuth] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
+  // Config values from server
+  const [serverPort, setServerPort] = useState(8080);
+  const [maxConcurrent, setMaxConcurrent] = useState(10);
+  const [apiKey, setApiKey] = useState("");
+  const [webdavServers, setWebdavServers] = useState<Record<string, WebDAVServer>>({});
   // Local state for unsaved changes
   const [pendingLang, setPendingLang] = useState("");
   const [pendingFormat, setPendingFormat] = useState("");
   const [pendingQuality, setPendingQuality] = useState("");
-  // Custom key-value config input
-  const [customKey, setCustomKey] = useState("");
-  const [customValue, setCustomValue] = useState("");
-  const [savingCustom, setSavingCustom] = useState(false);
+  const [pendingTwitterAuth, setPendingTwitterAuth] = useState("");
+  const [pendingMaxConcurrent, setPendingMaxConcurrent] = useState("10");
+  const [pendingApiKey, setPendingApiKey] = useState("");
+  // WebDAV add form
+  const [newWebDAVName, setNewWebDAVName] = useState("");
+  const [newWebDAVUrl, setNewWebDAVUrl] = useState("");
+  const [newWebDAVUsername, setNewWebDAVUsername] = useState("");
+  const [newWebDAVPassword, setNewWebDAVPassword] = useState("");
+  const [addingWebDAV, setAddingWebDAV] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -231,11 +283,16 @@ function App() {
         setConfigLang(configRes.data.language || "");
         setConfigFormat(configRes.data.format || "");
         setConfigQuality(configRes.data.quality || "");
-        setHasTwitterAuth(configRes.data.twitter_auth_token || false);
+        setServerPort(configRes.data.server_port || 8080);
+        setMaxConcurrent(configRes.data.server_max_concurrent || 10);
+        setApiKey(configRes.data.server_api_key || "");
+        setWebdavServers(configRes.data.webdav_servers || {});
         // Initialize pending values if not already set (first load)
         if (!pendingLang) setPendingLang(configRes.data.language || "en");
         if (!pendingFormat) setPendingFormat(configRes.data.format || "mp4");
         if (!pendingQuality) setPendingQuality(configRes.data.quality || "best");
+        if (!pendingMaxConcurrent) setPendingMaxConcurrent(String(configRes.data.server_max_concurrent || 10));
+        if (!pendingApiKey && configRes.data.server_api_key) setPendingApiKey(configRes.data.server_api_key);
       }
       if (i18nRes.code === 200) {
         setT(i18nRes.data.ui);
@@ -308,6 +365,12 @@ function App() {
       await setConfigValue("language", pendingLang || "en");
       await setConfigValue("format", pendingFormat || "mp4");
       await setConfigValue("quality", pendingQuality || "best");
+      await setConfigValue("server_max_concurrent", pendingMaxConcurrent || "10");
+      await setConfigValue("server_api_key", pendingApiKey);
+      // Only save twitter auth if provided
+      if (pendingTwitterAuth) {
+        await setConfigValue("twitter.auth_token", pendingTwitterAuth);
+      }
       setShowSettings(false);
       refresh();
     } finally {
@@ -320,21 +383,43 @@ function App() {
     setPendingLang(configLang || "en");
     setPendingFormat(configFormat || "mp4");
     setPendingQuality(configQuality || "best");
-    setCustomKey("");
-    setCustomValue("");
+    setPendingTwitterAuth("");
+    setPendingMaxConcurrent(String(maxConcurrent || 10));
+    setPendingApiKey(apiKey || "");
+    // Reset WebDAV form
+    setNewWebDAVName("");
+    setNewWebDAVUrl("");
+    setNewWebDAVUsername("");
+    setNewWebDAVPassword("");
     setShowSettings(false);
   };
 
-  const handleSaveCustomConfig = async () => {
-    if (!customKey.trim()) return;
-    setSavingCustom(true);
+  const handleAddWebDAV = async () => {
+    if (!newWebDAVName.trim() || !newWebDAVUrl.trim()) return;
+    setAddingWebDAV(true);
     try {
-      await setConfigValue(customKey.trim(), customValue);
-      setCustomKey("");
-      setCustomValue("");
-      refresh();
+      const res = await addWebDAVServer(
+        newWebDAVName.trim(),
+        newWebDAVUrl.trim(),
+        newWebDAVUsername,
+        newWebDAVPassword
+      );
+      if (res.code === 200) {
+        setNewWebDAVName("");
+        setNewWebDAVUrl("");
+        setNewWebDAVUsername("");
+        setNewWebDAVPassword("");
+        refresh();
+      }
     } finally {
-      setSavingCustom(false);
+      setAddingWebDAV(false);
+    }
+  };
+
+  const handleDeleteWebDAV = async (name: string) => {
+    const res = await deleteWebDAVServer(name);
+    if (res.code === 200) {
+      refresh();
     }
   };
 
@@ -363,6 +448,13 @@ function App() {
           <h1>VGet Server</h1>
         </div>
         <div className="header-right">
+          <button
+            className="settings-toggle"
+            onClick={() => setShowSettings(!showSettings)}
+            title={t.settings}
+          >
+            ⚙️
+          </button>
           <button
             className="theme-toggle"
             onClick={() => setDarkMode(!darkMode)}
@@ -435,39 +527,107 @@ function App() {
             />
             <div className="setting-row">
               <span className="setting-label">{t.twitter_auth}</span>
-              <span className={`setting-status ${hasTwitterAuth ? "configured" : ""}`}>
-                {hasTwitterAuth ? t.configured : t.not_configured}
-              </span>
+              <input
+                type="password"
+                className="setting-input-text"
+                placeholder="auth_token"
+                value={pendingTwitterAuth}
+                onChange={(e) => setPendingTwitterAuth(e.target.value)}
+                disabled={!isConnected || savingConfig}
+              />
+            </div>
+            <div className="setting-row">
+              <span className="setting-label">{t.server_port}</span>
+              <span className="setting-value-readonly">{serverPort || 8080}</span>
+            </div>
+            <div className="setting-row">
+              <span className="setting-label">{t.max_concurrent}</span>
+              <input
+                type="number"
+                className="setting-input-text setting-input-number"
+                value={pendingMaxConcurrent}
+                onChange={(e) => setPendingMaxConcurrent(e.target.value)}
+                disabled={!isConnected || savingConfig}
+                min="1"
+                max="50"
+              />
+            </div>
+            <div className="setting-row">
+              <span className="setting-label">{t.api_key}</span>
+              <input
+                type="password"
+                className="setting-input-text"
+                placeholder="(optional)"
+                value={pendingApiKey}
+                onChange={(e) => setPendingApiKey(e.target.value)}
+                disabled={!isConnected || savingConfig}
+              />
             </div>
           </div>
-          <div className="custom-config">
-            <div className="custom-config-header">{t.custom_config || "Custom Config"}</div>
-            <div className="custom-config-row">
+
+          {/* WebDAV Servers Section */}
+          <div className="webdav-section">
+            <div className="webdav-header">{t.webdav_servers}</div>
+            {Object.keys(webdavServers).length === 0 ? (
+              <div className="webdav-empty">{t.no_webdav_servers}</div>
+            ) : (
+              <div className="webdav-list">
+                {Object.entries(webdavServers).map(([name, server]) => (
+                  <div key={name} className="webdav-item">
+                    <div className="webdav-item-info">
+                      <span className="webdav-name">{name}</span>
+                      <span className="webdav-url">{server.url}</span>
+                    </div>
+                    <button
+                      className="webdav-delete-btn"
+                      onClick={() => handleDeleteWebDAV(name)}
+                      disabled={!isConnected}
+                    >
+                      {t.delete}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="webdav-add-form">
               <input
                 type="text"
-                className="custom-config-input"
-                placeholder={t.config_key || "Key (e.g. twitter.auth_token)"}
-                value={customKey}
-                onChange={(e) => setCustomKey(e.target.value)}
-                disabled={!isConnected || savingCustom}
+                className="webdav-input"
+                placeholder={t.name}
+                value={newWebDAVName}
+                onChange={(e) => setNewWebDAVName(e.target.value)}
+                disabled={!isConnected || addingWebDAV}
               />
               <input
                 type="text"
-                className="custom-config-input custom-config-value"
-                placeholder={t.config_value || "Value"}
-                value={customValue}
-                onChange={(e) => setCustomValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveCustomConfig();
-                }}
-                disabled={!isConnected || savingCustom}
+                className="webdav-input webdav-input-url"
+                placeholder={t.url}
+                value={newWebDAVUrl}
+                onChange={(e) => setNewWebDAVUrl(e.target.value)}
+                disabled={!isConnected || addingWebDAV}
+              />
+              <input
+                type="text"
+                className="webdav-input"
+                placeholder={t.username}
+                value={newWebDAVUsername}
+                onChange={(e) => setNewWebDAVUsername(e.target.value)}
+                disabled={!isConnected || addingWebDAV}
+              />
+              <input
+                type="password"
+                className="webdav-input"
+                placeholder={t.password}
+                value={newWebDAVPassword}
+                onChange={(e) => setNewWebDAVPassword(e.target.value)}
+                disabled={!isConnected || addingWebDAV}
               />
               <button
-                className="custom-config-btn"
-                onClick={handleSaveCustomConfig}
-                disabled={!isConnected || savingCustom || !customKey.trim()}
+                className="webdav-add-btn"
+                onClick={handleAddWebDAV}
+                disabled={!isConnected || addingWebDAV || !newWebDAVName.trim() || !newWebDAVUrl.trim()}
               >
-                {savingCustom ? "..." : t.set || "Set"}
+                {addingWebDAV ? "..." : t.add}
               </button>
             </div>
           </div>

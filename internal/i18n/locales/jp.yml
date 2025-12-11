@@ -105,12 +105,17 @@ ui:
   format: "フォーマット"
   quality: "画質"
   twitter_auth: "Twitter認証"
-  configured: "設定済み"
-  not_configured: "未設定"
-  custom_config: "カスタム設定"
-  config_key: "キー (例: twitter.auth_token)"
-  config_value: "値"
-  set: "設定"
+  server_port: "サーバーポート"
+  max_concurrent: "最大同時実行数"
+  api_key: "APIキー"
+  webdav_servers: "WebDAVサーバー"
+  add: "追加"
+  delete: "削除"
+  name: "名前"
+  url: "URL"
+  username: "ユーザー名"
+  password: "パスワード"
+  no_webdav_servers: "WebDAVサーバーは設定されていません"
 
 # サーバーメッセージ
 server:

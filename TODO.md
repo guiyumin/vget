@@ -17,7 +17,6 @@
   - Sequential or parallel processing
 - [x] Format/quality selection (`-q` flag)
 - [x] Audio extraction (podcasts)
-- [ ] Custom output path/filename template
 - [ ] Resume interrupted downloads
 - [ ] Retry on failure
 - [x] Progress bar with speed/ETA
