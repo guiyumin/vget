@@ -164,6 +164,8 @@ type UITranslations struct {
 	NoWebDAVServers  string `yaml:"no_webdav_servers" json:"no_webdav_servers"`
 	Configured       string `yaml:"configured" json:"configured"`
 	NotConfigured    string `yaml:"not_configured" json:"not_configured"`
+	ClearHistory     string `yaml:"clear_history" json:"clear_history"`
+	ClearAll         string `yaml:"clear_all" json:"clear_all"`
 }
 
 // ServerTranslations holds translations for server messages
