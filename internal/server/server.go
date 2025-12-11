@@ -348,6 +348,8 @@ func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
 			"url":      job.URL,
 			"status":   job.Status,
 			"progress": job.Progress,
+			"filename": job.Filename,
+			"error":    job.Error,
 		}
 	}
 
