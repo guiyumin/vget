@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import logo from "./assets/logo.png";
+import { Kuaidi100 } from "./components/Kuaidi100";
+import { ConfigEditor, type ConfigValues } from "./components/ConfigEditor";
 
 type JobStatus =
   | "queued"
@@ -22,24 +24,6 @@ interface ApiResponse<T> {
   code: number;
   data: T;
   message: string;
-}
-
-interface TrackingRecord {
-  time: string;
-  ftime: string;
-  context: string;
-  status: string;
-}
-
-interface TrackingResult {
-  message: string;
-  state: string;
-  status: string;
-  condition: string;
-  ischeck: string;
-  com: string;
-  nu: string;
-  data: TrackingRecord[];
 }
 
 interface HealthData {
@@ -239,18 +223,6 @@ async function deleteJob(id: string): Promise<ApiResponse<{ id: string }>> {
   return res.json();
 }
 
-async function trackPackage(
-  trackingNumber: string,
-  courier: string
-): Promise<ApiResponse<TrackingResult>> {
-  const res = await fetch("/track", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tracking_number: trackingNumber, courier }),
-  });
-  return res.json();
-}
-
 function App() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -271,35 +243,14 @@ function App() {
   const [configLang, setConfigLang] = useState("");
   const [configFormat, setConfigFormat] = useState("");
   const [configQuality, setConfigQuality] = useState("");
-  const [savingConfig, setSavingConfig] = useState(false);
   // Config values from server
   const [serverPort, setServerPort] = useState(8080);
   const [maxConcurrent, setMaxConcurrent] = useState(10);
   const [apiKey, setApiKey] = useState("");
   const [webdavServers, setWebdavServers] = useState<Record<string, WebDAVServer>>({});
-  // Local state for unsaved changes
-  const [pendingLang, setPendingLang] = useState("");
-  const [pendingFormat, setPendingFormat] = useState("");
-  const [pendingQuality, setPendingQuality] = useState("");
-  const [pendingTwitterAuth, setPendingTwitterAuth] = useState("");
-  const [pendingMaxConcurrent, setPendingMaxConcurrent] = useState("10");
-  const [pendingApiKey, setPendingApiKey] = useState("");
   // Kuaidi100 config
-  const [pendingKuaidi100Key, setPendingKuaidi100Key] = useState("");
-  const [pendingKuaidi100Customer, setPendingKuaidi100Customer] = useState("");
-  // WebDAV add form
-  const [newWebDAVName, setNewWebDAVName] = useState("");
-  const [newWebDAVUrl, setNewWebDAVUrl] = useState("");
-  const [newWebDAVUsername, setNewWebDAVUsername] = useState("");
-  const [newWebDAVPassword, setNewWebDAVPassword] = useState("");
-  const [addingWebDAV, setAddingWebDAV] = useState(false);
-  // Package tracking
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [trackingCourier, setTrackingCourier] = useState("auto");
-  const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null);
-  const [trackingError, setTrackingError] = useState("");
-  const [isTracking, setIsTracking] = useState(false);
-  const [showTracking, setShowTracking] = useState(false);
+  const [kuaidi100Key, setKuaidi100Key] = useState("");
+  const [kuaidi100Customer, setKuaidi100Customer] = useState("");
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -328,16 +279,10 @@ function App() {
         setMaxConcurrent(configRes.data.server_max_concurrent || 10);
         setApiKey(configRes.data.server_api_key || "");
         setWebdavServers(configRes.data.webdav_servers || {});
-        // Initialize pending values if not already set (first load)
-        if (!pendingLang) setPendingLang(configRes.data.language || "en");
-        if (!pendingFormat) setPendingFormat(configRes.data.format || "mp4");
-        if (!pendingQuality) setPendingQuality(configRes.data.quality || "best");
-        if (!pendingMaxConcurrent) setPendingMaxConcurrent(String(configRes.data.server_max_concurrent || 10));
-        if (!pendingApiKey && configRes.data.server_api_key) setPendingApiKey(configRes.data.server_api_key);
-        // Initialize kuaidi100 config
+        // Kuaidi100 config
         const kuaidi100Cfg = configRes.data.express?.kuaidi100;
-        if (!pendingKuaidi100Key && kuaidi100Cfg?.key) setPendingKuaidi100Key(kuaidi100Cfg.key);
-        if (!pendingKuaidi100Customer && kuaidi100Cfg?.customer) setPendingKuaidi100Customer(kuaidi100Cfg.customer);
+        setKuaidi100Key(kuaidi100Cfg?.key || "");
+        setKuaidi100Customer(kuaidi100Cfg?.customer || "");
       }
       if (i18nRes.code === 200) {
         setT(i18nRes.data.ui);
@@ -397,76 +342,30 @@ function App() {
     setNewOutputDir("");
   };
 
-  const handlePendingChange = (key: string, value: string) => {
-    if (key === "language") setPendingLang(value);
-    else if (key === "format") setPendingFormat(value);
-    else if (key === "quality") setPendingQuality(value);
-  };
-
-  const handleSaveSettings = async () => {
-    setSavingConfig(true);
-    try {
-      // Always save all values (creates config file if it doesn't exist)
-      await setConfigValue("language", pendingLang || "en");
-      await setConfigValue("format", pendingFormat || "mp4");
-      await setConfigValue("quality", pendingQuality || "best");
-      await setConfigValue("server_max_concurrent", pendingMaxConcurrent || "10");
-      await setConfigValue("server_api_key", pendingApiKey);
-      // Only save twitter auth if provided
-      if (pendingTwitterAuth) {
-        await setConfigValue("twitter.auth_token", pendingTwitterAuth);
-      }
-      // Save kuaidi100 config if provided
-      if (pendingKuaidi100Key) {
-        await setConfigValue("express.kuaidi100.key", pendingKuaidi100Key);
-      }
-      if (pendingKuaidi100Customer) {
-        await setConfigValue("express.kuaidi100.customer", pendingKuaidi100Customer);
-      }
-      setShowSettings(false);
-      refresh();
-    } finally {
-      setSavingConfig(false);
+  const handleSaveConfig = async (values: ConfigValues) => {
+    // Save all values
+    await setConfigValue("language", values.language || "en");
+    await setConfigValue("format", values.format || "mp4");
+    await setConfigValue("quality", values.quality || "best");
+    await setConfigValue("server_max_concurrent", values.maxConcurrent || "10");
+    await setConfigValue("server_api_key", values.apiKey);
+    if (values.twitterAuth) {
+      await setConfigValue("twitter.auth_token", values.twitterAuth);
     }
-  };
-
-  const handleCancelSettings = () => {
-    // Reset pending values to current saved values
-    setPendingLang(configLang || "en");
-    setPendingFormat(configFormat || "mp4");
-    setPendingQuality(configQuality || "best");
-    setPendingTwitterAuth("");
-    setPendingMaxConcurrent(String(maxConcurrent || 10));
-    setPendingApiKey(apiKey || "");
-    setPendingKuaidi100Key("");
-    setPendingKuaidi100Customer("");
-    // Reset WebDAV form
-    setNewWebDAVName("");
-    setNewWebDAVUrl("");
-    setNewWebDAVUsername("");
-    setNewWebDAVPassword("");
+    if (values.kuaidi100Key) {
+      await setConfigValue("express.kuaidi100.key", values.kuaidi100Key);
+    }
+    if (values.kuaidi100Customer) {
+      await setConfigValue("express.kuaidi100.customer", values.kuaidi100Customer);
+    }
     setShowSettings(false);
+    refresh();
   };
 
-  const handleAddWebDAV = async () => {
-    if (!newWebDAVName.trim() || !newWebDAVUrl.trim()) return;
-    setAddingWebDAV(true);
-    try {
-      const res = await addWebDAVServer(
-        newWebDAVName.trim(),
-        newWebDAVUrl.trim(),
-        newWebDAVUsername,
-        newWebDAVPassword
-      );
-      if (res.code === 200) {
-        setNewWebDAVName("");
-        setNewWebDAVUrl("");
-        setNewWebDAVUsername("");
-        setNewWebDAVPassword("");
-        refresh();
-      }
-    } finally {
-      setAddingWebDAV(false);
+  const handleAddWebDAV = async (name: string, url: string, username: string, password: string) => {
+    const res = await addWebDAVServer(name, url, username, password);
+    if (res.code === 200) {
+      refresh();
     }
   };
 
@@ -474,28 +373,6 @@ function App() {
     const res = await deleteWebDAVServer(name);
     if (res.code === 200) {
       refresh();
-    }
-  };
-
-  const handleTrack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!trackingNumber.trim() || isTracking) return;
-
-    setIsTracking(true);
-    setTrackingError("");
-    setTrackingResult(null);
-
-    try {
-      const res = await trackPackage(trackingNumber.trim(), trackingCourier);
-      if (res.code === 200) {
-        setTrackingResult(res.data);
-      } else {
-        setTrackingError(res.message || "Failed to track package");
-      }
-    } catch {
-      setTrackingError("Network error");
-    } finally {
-      setIsTracking(false);
     }
   };
 
@@ -559,180 +436,23 @@ function App() {
       )}
 
       {showSettings && (
-        <div className="settings-panel">
-          <div className="settings-header">
-            <h2>{t.settings}</h2>
-            <div className="settings-actions">
-              <button
-                className="settings-cancel-btn"
-                onClick={handleCancelSettings}
-                disabled={savingConfig}
-              >
-                {t.cancel}
-              </button>
-              <button
-                className="settings-save-btn"
-                onClick={handleSaveSettings}
-                disabled={!isConnected || savingConfig}
-              >
-                {savingConfig ? "..." : t.save}
-              </button>
-            </div>
-          </div>
-          <div className="settings-grid">
-            <SettingRow
-              label={t.language}
-              value={pendingLang}
-              options={["en", "zh", "jp", "kr", "es", "fr", "de"]}
-              disabled={!isConnected || savingConfig}
-              onChange={(v) => handlePendingChange("language", v)}
-            />
-            <SettingRow
-              label={t.format}
-              value={pendingFormat}
-              options={["mp4", "webm", "best"]}
-              disabled={!isConnected || savingConfig}
-              onChange={(v) => handlePendingChange("format", v)}
-            />
-            <SettingRow
-              label={t.quality}
-              value={pendingQuality}
-              options={["best", "1080p", "720p", "480p"]}
-              disabled={!isConnected || savingConfig}
-              onChange={(v) => handlePendingChange("quality", v)}
-            />
-            <div className="setting-row">
-              <span className="setting-label">{t.twitter_auth}</span>
-              <input
-                type="password"
-                className="setting-input-text"
-                placeholder="auth_token"
-                value={pendingTwitterAuth}
-                onChange={(e) => setPendingTwitterAuth(e.target.value)}
-                disabled={!isConnected || savingConfig}
-              />
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">{t.server_port}</span>
-              <span className="setting-value-readonly">{serverPort || 8080}</span>
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">{t.max_concurrent}</span>
-              <input
-                type="number"
-                className="setting-input-text setting-input-number"
-                value={pendingMaxConcurrent}
-                onChange={(e) => setPendingMaxConcurrent(e.target.value)}
-                disabled={!isConnected || savingConfig}
-                min="1"
-                max="50"
-              />
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">{t.api_key}</span>
-              <input
-                type="password"
-                className="setting-input-text"
-                placeholder="(optional)"
-                value={pendingApiKey}
-                onChange={(e) => setPendingApiKey(e.target.value)}
-                disabled={!isConnected || savingConfig}
-              />
-            </div>
-
-            {/* Kuaidi100 Section */}
-            <div className="setting-section-label">Kuaidi100 (Package Tracking)</div>
-            <div className="setting-row">
-              <span className="setting-label">API Key</span>
-              <input
-                type="password"
-                className="setting-input-text"
-                placeholder="(optional)"
-                value={pendingKuaidi100Key}
-                onChange={(e) => setPendingKuaidi100Key(e.target.value)}
-                disabled={!isConnected || savingConfig}
-              />
-            </div>
-            <div className="setting-row">
-              <span className="setting-label">Customer ID</span>
-              <input
-                type="text"
-                className="setting-input-text"
-                placeholder="(optional)"
-                value={pendingKuaidi100Customer}
-                onChange={(e) => setPendingKuaidi100Customer(e.target.value)}
-                disabled={!isConnected || savingConfig}
-              />
-            </div>
-          </div>
-
-          {/* WebDAV Servers Section */}
-          <div className="webdav-section">
-            <div className="webdav-header">{t.webdav_servers}</div>
-            {Object.keys(webdavServers).length === 0 ? (
-              <div className="webdav-empty">{t.no_webdav_servers}</div>
-            ) : (
-              <div className="webdav-list">
-                {Object.entries(webdavServers).map(([name, server]) => (
-                  <div key={name} className="webdav-item">
-                    <div className="webdav-item-info">
-                      <span className="webdav-name">{name}</span>
-                      <span className="webdav-url">{server.url}</span>
-                    </div>
-                    <button
-                      className="webdav-delete-btn"
-                      onClick={() => handleDeleteWebDAV(name)}
-                      disabled={!isConnected}
-                    >
-                      {t.delete}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="webdav-add-form">
-              <input
-                type="text"
-                className="webdav-input"
-                placeholder={t.name}
-                value={newWebDAVName}
-                onChange={(e) => setNewWebDAVName(e.target.value)}
-                disabled={!isConnected || addingWebDAV}
-              />
-              <input
-                type="text"
-                className="webdav-input webdav-input-url"
-                placeholder={t.url}
-                value={newWebDAVUrl}
-                onChange={(e) => setNewWebDAVUrl(e.target.value)}
-                disabled={!isConnected || addingWebDAV}
-              />
-              <input
-                type="text"
-                className="webdav-input"
-                placeholder={t.username}
-                value={newWebDAVUsername}
-                onChange={(e) => setNewWebDAVUsername(e.target.value)}
-                disabled={!isConnected || addingWebDAV}
-              />
-              <input
-                type="password"
-                className="webdav-input"
-                placeholder={t.password}
-                value={newWebDAVPassword}
-                onChange={(e) => setNewWebDAVPassword(e.target.value)}
-                disabled={!isConnected || addingWebDAV}
-              />
-              <button
-                className="webdav-add-btn"
-                onClick={handleAddWebDAV}
-                disabled={!isConnected || addingWebDAV || !newWebDAVName.trim() || !newWebDAVUrl.trim()}
-              >
-                {addingWebDAV ? "..." : t.add}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfigEditor
+          isConnected={isConnected}
+          t={t}
+          initialLang={configLang}
+          initialFormat={configFormat}
+          initialQuality={configQuality}
+          initialMaxConcurrent={maxConcurrent}
+          initialApiKey={apiKey}
+          initialKuaidi100Key={kuaidi100Key}
+          initialKuaidi100Customer={kuaidi100Customer}
+          serverPort={serverPort}
+          webdavServers={webdavServers}
+          onSave={handleSaveConfig}
+          onCancel={() => setShowSettings(false)}
+          onAddWebDAV={handleAddWebDAV}
+          onDeleteWebDAV={handleDeleteWebDAV}
+        />
       )}
 
       <div className="output-dir">
@@ -785,82 +505,8 @@ function App() {
         </button>
       </form>
 
-      {/* Package Tracking Section */}
-      <section className="tracking-section">
-        <div className="tracking-header" onClick={() => setShowTracking(!showTracking)}>
-          <h2>📦 Package Tracking</h2>
-          <span className="tracking-toggle">{showTracking ? "▼" : "▶"}</span>
-        </div>
-        {showTracking && (
-          <div className="tracking-content">
-            <form className="tracking-form" onSubmit={handleTrack}>
-              <input
-                type="text"
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="Enter tracking number..."
-                disabled={!isConnected || isTracking}
-                className="tracking-input"
-              />
-              <select
-                value={trackingCourier}
-                onChange={(e) => setTrackingCourier(e.target.value)}
-                disabled={!isConnected || isTracking}
-                className="tracking-select"
-              >
-                <option value="auto">Auto Detect</option>
-                <option value="shunfeng">顺丰 SF Express</option>
-                <option value="yuantong">圆通 YTO</option>
-                <option value="zhongtong">中通 ZTO</option>
-                <option value="yunda">韵达 Yunda</option>
-                <option value="shentong">申通 STO</option>
-                <option value="jd">京东 JD</option>
-                <option value="ems">EMS</option>
-                <option value="youzhengguonei">邮政 China Post</option>
-                <option value="debangkuaidi">德邦 Deppon</option>
-                <option value="huitongkuaidi">百世 Best Express</option>
-                <option value="zhongyouex">众邮 ZYE</option>
-              </select>
-              <button
-                type="submit"
-                disabled={!isConnected || !trackingNumber.trim() || isTracking}
-                className="tracking-btn"
-              >
-                {isTracking ? "Tracking..." : "Track"}
-              </button>
-            </form>
-
-            {trackingError && (
-              <div className="tracking-error">{trackingError}</div>
-            )}
-
-            {trackingResult && (
-              <div className="tracking-result">
-                <div className="tracking-summary">
-                  <span className="tracking-nu">{trackingResult.nu}</span>
-                  <span className={`tracking-state tracking-state-${trackingResult.state}`}>
-                    {trackingResult.state === "3" ? "✓ Delivered" :
-                     trackingResult.state === "0" ? "In Transit" :
-                     trackingResult.state === "1" ? "Picked Up" :
-                     trackingResult.state === "2" ? "Problem" :
-                     trackingResult.state === "4" ? "Returned" :
-                     trackingResult.state === "5" ? "Delivering" :
-                     trackingResult.state === "6" ? "Returning" : "Unknown"}
-                  </span>
-                </div>
-                <div className="tracking-timeline">
-                  {trackingResult.data?.map((record, idx) => (
-                    <div key={idx} className="tracking-record">
-                      <div className="tracking-time">{record.ftime || record.time}</div>
-                      <div className="tracking-context">{record.context}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+      {/* Kuaidi100 - only shown for Chinese language */}
+      {configLang === "zh" && <Kuaidi100 isConnected={isConnected} />}
 
       <section className="jobs-section">
         <div className="jobs-header">
@@ -942,38 +588,6 @@ function JobCard({
       {job.status === "failed" && job.error && (
         <div className="error-message">{job.error}</div>
       )}
-    </div>
-  );
-}
-
-function SettingRow({
-  label,
-  value,
-  options,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  disabled: boolean;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="setting-row">
-      <span className="setting-label">{label}</span>
-      <select
-        className="setting-select"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }

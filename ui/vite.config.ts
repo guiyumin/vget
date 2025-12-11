@@ -12,7 +12,7 @@ export default defineConfig({
       '/jobs': 'http://localhost:8080',
       '/config': 'http://localhost:8080',
       '/i18n': 'http://localhost:8080',
-      '/track': 'http://localhost:8080',
+      '/kuaidi100': 'http://localhost:8080',
     },
   },
 })

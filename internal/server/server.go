@@ -96,7 +96,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/config/webdav", s.handleWebDAVConfig)
 	mux.HandleFunc("/config/webdav/", s.handleWebDAVConfigAction)
 	mux.HandleFunc("/i18n", s.handleI18n)
-	mux.HandleFunc("/track", s.handleTrack)
+	mux.HandleFunc("/kuaidi100", s.handleKuaidi100)
 
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
@@ -1172,8 +1172,8 @@ type TrackRequest struct {
 	Courier        string `json:"courier"`
 }
 
-// handleTrack handles package tracking requests
-func (s *Server) handleTrack(w http.ResponseWriter, r *http.Request) {
+// handleKuaidi100 handles kuaidi100 package tracking requests
+func (s *Server) handleKuaidi100(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		s.writeJSON(w, http.StatusMethodNotAllowed, Response{
 			Code:    405,
@@ -1218,7 +1218,7 @@ func (s *Server) handleTrack(w http.ResponseWriter, r *http.Request) {
 		s.writeJSON(w, http.StatusBadRequest, Response{
 			Code:    400,
 			Data:    nil,
-			Message: "kuaidi100 credentials not configured. Set express.kuaidi100.key and express.kuaidi100.customer in settings.",
+			Message: "快递100凭证未配置。请在设置中配置 API Key 和 Customer ID。",
 		})
 		return
 	}

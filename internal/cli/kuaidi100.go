@@ -12,19 +12,18 @@ import (
 )
 
 var (
-	trackExpress string // --express flag
-	trackCourier string // --courier flag for courier code
+	kuaidi100Courier string // --courier flag for courier code
 )
 
-var trackCmd = &cobra.Command{
-	Use:   "track <tracking_number>",
-	Short: "Track package delivery status",
-	Long: `Track package delivery status using express tracking APIs.
+var kuaidi100Cmd = &cobra.Command{
+	Use:   "kuaidi100 <tracking_number>",
+	Short: "Track package via kuaidi100 API",
+	Long: `Track package delivery status using kuaidi100 API.
 
 Examples:
-  vget track 73123456789 --courier yt        # Track YTO Express package
-  vget track SF1234567890 --courier sf       # Track SF Express package
-  vget track 1234567890 --courier jt         # Track JiTu Express package
+  vget kuaidi100 73123456789              # Auto-detect courier
+  vget kuaidi100 73123456789 -c yt        # Track YTO Express package
+  vget kuaidi100 SF1234567890 -c sf       # Track SF Express package
 
 Supported courier codes:
   sf       - 顺丰速运 (SF Express)
@@ -40,9 +39,6 @@ Supported courier codes:
   anneng   - 安能物流 (Anneng)
   best     - 百世快递 (Best Express)
   kuayue   - 跨越速运 (Kuayue)
-  ups      - UPS
-  fedex    - FedEx
-  dhl      - DHL
 
 Configuration:
   Set your kuaidi100 API credentials:
@@ -51,22 +47,16 @@ Configuration:
 
   Get credentials at: https://api.kuaidi100.com/manager/v2/myinfo/enterprise`,
 	Args: cobra.ExactArgs(1),
-	RunE: runTrack,
+	RunE: runKuaidi100,
 }
 
 func init() {
-	trackCmd.Flags().StringVar(&trackExpress, "express", "kuaidi100", "Express tracking service (default: kuaidi100)")
-	trackCmd.Flags().StringVarP(&trackCourier, "courier", "c", "auto", "Courier company code (e.g., sf, yt, zto, or auto for auto-detect)")
-	rootCmd.AddCommand(trackCmd)
+	kuaidi100Cmd.Flags().StringVarP(&kuaidi100Courier, "courier", "c", "auto", "Courier company code (e.g., sf, yt, zto, or auto for auto-detect)")
+	rootCmd.AddCommand(kuaidi100Cmd)
 }
 
-func runTrack(cmd *cobra.Command, args []string) error {
+func runKuaidi100(cmd *cobra.Command, args []string) error {
 	trackingNumber := args[0]
-
-	// Currently only kuaidi100 is supported
-	if trackExpress != "kuaidi100" {
-		return fmt.Errorf("unsupported express service: %s (only kuaidi100 is supported)", trackExpress)
-	}
 
 	// Load config
 	cfg := config.LoadOrDefault()
@@ -88,13 +78,13 @@ func runTrack(cmd *cobra.Command, args []string) error {
 	t := tracker.NewKuaidi100Tracker(expressCfg["key"], expressCfg["customer"])
 
 	// Convert courier alias to kuaidi100 code
-	courierCode := tracker.GetCourierCode(trackCourier)
+	courierCode := tracker.GetCourierCode(kuaidi100Courier)
 
 	// Get courier info for display
-	courierInfo := tracker.GetCourierInfo(trackCourier)
+	courierInfo := tracker.GetCourierInfo(kuaidi100Courier)
 	if courierInfo != nil {
 		fmt.Printf("Courier: %s (%s)\n", courierInfo.Name, courierCode)
-	} else {
+	} else if kuaidi100Courier != "auto" {
 		fmt.Printf("Courier: %s\n", courierCode)
 	}
 	fmt.Printf("Tracking: %s\n\n", trackingNumber)
@@ -106,12 +96,12 @@ func runTrack(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display results
-	printTrackingResult(result)
+	printKuaidi100Result(result)
 
 	return nil
 }
 
-func printTrackingResult(result *tracker.TrackingResponse) {
+func printKuaidi100Result(result *tracker.TrackingResponse) {
 	bold := color.New(color.Bold)
 	green := color.New(color.FgGreen)
 	yellow := color.New(color.FgYellow)

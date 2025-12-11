@@ -1,0 +1,32 @@
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.setting-label {
+  min-width: 100px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.setting-select {
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.setting-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
