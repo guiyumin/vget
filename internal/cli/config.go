@@ -42,7 +42,7 @@ var configShowCmd = &cobra.Command{
 
 		if cfg.Twitter.AuthToken != "" {
 			fmt.Println("\nTwitter:")
-			fmt.Printf("  auth_token: %s...%s\n", cfg.Twitter.AuthToken[:4], cfg.Twitter.AuthToken[len(cfg.Twitter.AuthToken)-4:])
+			fmt.Printf("  auth_token: %s\n", cfg.Twitter.AuthToken)
 		}
 	},
 }
