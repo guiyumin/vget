@@ -127,7 +127,7 @@ ui:
 # 服务器消息
 server:
   no_config_warning: "未找到配置文件，使用默认设置。"
-  run_init_hint: "运行 'vget init' 进行交互式配置。"
+  run_init_hint: "点击「设置」进行配置，或在终端运行 'vget init'。"
 
 # YouTube 消息
 youtube:

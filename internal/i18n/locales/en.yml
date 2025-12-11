@@ -127,7 +127,7 @@ ui:
 # Server messages
 server:
   no_config_warning: "No config file found. Using default settings."
-  run_init_hint: "Run 'vget init' to configure vget interactively."
+  run_init_hint: "Click Settings to configure, or run 'vget init' in terminal."
 
 # YouTube messages
 youtube:

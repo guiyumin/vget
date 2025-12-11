@@ -190,7 +190,11 @@ function App() {
   const [configFormat, setConfigFormat] = useState("");
   const [configQuality, setConfigQuality] = useState("");
   const [hasTwitterAuth, setHasTwitterAuth] = useState(false);
-  const [savingConfig, setSavingConfig] = useState<string | null>(null);
+  const [savingConfig, setSavingConfig] = useState(false);
+  // Local state for unsaved changes
+  const [pendingLang, setPendingLang] = useState("");
+  const [pendingFormat, setPendingFormat] = useState("");
+  const [pendingQuality, setPendingQuality] = useState("");
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -216,6 +220,10 @@ function App() {
         setConfigFormat(configRes.data.format || "");
         setConfigQuality(configRes.data.quality || "");
         setHasTwitterAuth(configRes.data.twitter_auth_token || false);
+        // Initialize pending values if not already set (first load)
+        if (!pendingLang) setPendingLang(configRes.data.language || "en");
+        if (!pendingFormat) setPendingFormat(configRes.data.format || "mp4");
+        if (!pendingQuality) setPendingQuality(configRes.data.quality || "best");
       }
       if (i18nRes.code === 200) {
         setT(i18nRes.data.ui);
@@ -275,16 +283,32 @@ function App() {
     setNewOutputDir("");
   };
 
-  const handleSaveConfigValue = async (key: string, value: string) => {
-    setSavingConfig(key);
+  const handlePendingChange = (key: string, value: string) => {
+    if (key === "language") setPendingLang(value);
+    else if (key === "format") setPendingFormat(value);
+    else if (key === "quality") setPendingQuality(value);
+  };
+
+  const handleSaveSettings = async () => {
+    setSavingConfig(true);
     try {
-      const res = await setConfigValue(key, value);
-      if (res.code === 200) {
-        refresh();
-      }
+      // Always save all values (creates config file if it doesn't exist)
+      await setConfigValue("language", pendingLang || "en");
+      await setConfigValue("format", pendingFormat || "mp4");
+      await setConfigValue("quality", pendingQuality || "best");
+      setShowSettings(false);
+      refresh();
     } finally {
-      setSavingConfig(null);
+      setSavingConfig(false);
     }
+  };
+
+  const handleCancelSettings = () => {
+    // Reset pending values to current saved values
+    setPendingLang(configLang || "en");
+    setPendingFormat(configFormat || "mp4");
+    setPendingQuality(configQuality || "best");
+    setShowSettings(false);
   };
 
   const isConnected = health?.status === "ok";
@@ -313,13 +337,6 @@ function App() {
         </div>
         <div className="header-right">
           <button
-            className="settings-toggle"
-            onClick={() => setShowSettings(!showSettings)}
-            title={t.settings}
-          >
-            ⚙️
-          </button>
-          <button
             className="theme-toggle"
             onClick={() => setDarkMode(!darkMode)}
             title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
@@ -337,36 +354,57 @@ function App() {
             <p>{serverT.no_config_warning}</p>
             <p className="warning-hint">{serverT.run_init_hint}</p>
           </div>
+          <button
+            className="warning-settings-btn"
+            onClick={() => setShowSettings(true)}
+          >
+            ⚙️ {t.settings}
+          </button>
         </div>
       )}
 
       {showSettings && (
         <div className="settings-panel">
-          <h2>{t.settings}</h2>
+          <div className="settings-header">
+            <h2>{t.settings}</h2>
+            <div className="settings-actions">
+              <button
+                className="settings-cancel-btn"
+                onClick={handleCancelSettings}
+                disabled={savingConfig}
+              >
+                {t.cancel}
+              </button>
+              <button
+                className="settings-save-btn"
+                onClick={handleSaveSettings}
+                disabled={!isConnected || savingConfig}
+              >
+                {savingConfig ? "..." : t.save}
+              </button>
+            </div>
+          </div>
           <div className="settings-grid">
             <SettingRow
               label={t.language}
-              value={configLang}
+              value={pendingLang}
               options={["en", "zh", "jp", "kr", "es", "fr", "de"]}
-              saving={savingConfig === "language"}
-              disabled={!isConnected}
-              onSave={(v) => handleSaveConfigValue("language", v)}
+              disabled={!isConnected || savingConfig}
+              onChange={(v) => handlePendingChange("language", v)}
             />
             <SettingRow
               label={t.format}
-              value={configFormat}
+              value={pendingFormat}
               options={["mp4", "webm", "best"]}
-              saving={savingConfig === "format"}
-              disabled={!isConnected}
-              onSave={(v) => handleSaveConfigValue("format", v)}
+              disabled={!isConnected || savingConfig}
+              onChange={(v) => handlePendingChange("format", v)}
             />
             <SettingRow
               label={t.quality}
-              value={configQuality}
+              value={pendingQuality}
               options={["best", "1080p", "720p", "480p"]}
-              saving={savingConfig === "quality"}
-              disabled={!isConnected}
-              onSave={(v) => handleSaveConfigValue("quality", v)}
+              disabled={!isConnected || savingConfig}
+              onChange={(v) => handlePendingChange("quality", v)}
             />
             <div className="setting-row">
               <span className="setting-label">{t.twitter_auth}</span>
@@ -516,16 +554,14 @@ function SettingRow({
   label,
   value,
   options,
-  saving,
   disabled,
-  onSave,
+  onChange,
 }: {
   label: string;
   value: string;
   options: string[];
-  saving: boolean;
   disabled: boolean;
-  onSave: (value: string) => void;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="setting-row">
@@ -533,8 +569,8 @@ function SettingRow({
       <select
         className="setting-select"
         value={value}
-        onChange={(e) => onSave(e.target.value)}
-        disabled={disabled || saving}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -542,7 +578,6 @@ function SettingRow({
           </option>
         ))}
       </select>
-      {saving && <span className="saving-indicator">...</span>}
     </div>
   );
 }
