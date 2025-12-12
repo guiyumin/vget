@@ -7,8 +7,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/guiyumin/vget/internal/config"
-	"github.com/guiyumin/vget/internal/i18n"
+	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/i18n"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

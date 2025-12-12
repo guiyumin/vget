@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/emersion/go-webdav"
-	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/core/config"
 )
 
 // Client wraps go-webdav client with convenience methods

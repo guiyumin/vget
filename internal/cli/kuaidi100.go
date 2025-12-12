@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/guiyumin/vget/internal/config"
-	"github.com/guiyumin/vget/internal/tracker"
+	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/tracker"
 	"github.com/spf13/cobra"
 )
 

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/core/config"
 )
 
 // YouTubeDockerRequiredError indicates YouTube extraction needs Docker

@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/guiyumin/vget/internal/config"
-	"github.com/guiyumin/vget/internal/downloader"
-	"github.com/guiyumin/vget/internal/extractor"
-	"github.com/guiyumin/vget/internal/i18n"
-	"github.com/guiyumin/vget/internal/version"
-	"github.com/guiyumin/vget/internal/webdav"
+	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/downloader"
+	"github.com/guiyumin/vget/internal/core/extractor"
+	"github.com/guiyumin/vget/internal/core/i18n"
+	"github.com/guiyumin/vget/internal/core/version"
+	"github.com/guiyumin/vget/internal/core/webdav"
 	"github.com/spf13/cobra"
 )
 

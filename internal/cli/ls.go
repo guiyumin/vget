@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/guiyumin/vget/internal/config"
-	"github.com/guiyumin/vget/internal/webdav"
+	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/webdav"
 	"github.com/spf13/cobra"
 )
 

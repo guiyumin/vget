@@ -16,7 +16,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/core/config"
 )
 
 // HLSConfig holds configuration for HLS downloads

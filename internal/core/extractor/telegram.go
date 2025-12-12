@@ -3,7 +3,7 @@ package extractor
 import (
 	"net/url"
 
-	"github.com/guiyumin/vget/internal/extractor/telegram"
+	"github.com/guiyumin/vget/internal/core/extractor/telegram"
 )
 
 // Re-export telegram package functions for external use

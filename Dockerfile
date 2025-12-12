@@ -20,8 +20,8 @@ COPY . .
 # Copy built UI into embed location
 COPY --from=ui-builder /app/ui/dist ./internal/server/dist
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /vget ./cmd/vget
+# Build the server binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /vget-server ./cmd/vget-server
 
 # Final runtime stage
 FROM debian:bookworm-slim
@@ -58,7 +58,7 @@ RUN groupadd -g 1000 vget && \
     chown -R vget:vget /home/vget
 
 # Copy binary from builder
-COPY --from=go-builder /vget /usr/local/bin/vget
+COPY --from=go-builder /vget-server /usr/local/bin/vget-server
 
 # Tell rod to use system chromium instead of downloading
 ENV ROD_BROWSER=/usr/bin/chromium
@@ -74,4 +74,4 @@ EXPOSE 8080
 VOLUME ["/home/vget/downloads", "/home/vget/.config/vget"]
 
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["server", "start"]
+CMD []

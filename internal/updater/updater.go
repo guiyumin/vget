@@ -6,7 +6,7 @@ import (
 	"runtime"
 
 	"github.com/creativeprojects/go-selfupdate"
-	"github.com/guiyumin/vget/internal/version"
+	"github.com/guiyumin/vget/internal/core/version"
 )
 
 const (

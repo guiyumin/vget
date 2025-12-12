@@ -14,7 +14,7 @@ import (
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/go-rod/stealth"
-	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/core/config"
 )
 
 // BrowserExtractor uses browser automation to intercept media URLs

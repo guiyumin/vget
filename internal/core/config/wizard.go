@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/guiyumin/vget/internal/i18n"
+	"github.com/guiyumin/vget/internal/core/i18n"
 )
 
 const asciiArt = `

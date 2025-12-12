@@ -12,7 +12,7 @@ import (
 	"github.com/gotd/td/session/tdesktop"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/tg"
-	tgpkg "github.com/guiyumin/vget/internal/extractor/telegram"
+	tgpkg "github.com/guiyumin/vget/internal/core/extractor/telegram"
 	"github.com/spf13/cobra"
 )
 

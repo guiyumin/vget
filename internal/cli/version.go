@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/guiyumin/vget/internal/version"
+	"github.com/guiyumin/vget/internal/core/version"
 	"github.com/spf13/cobra"
 )
 

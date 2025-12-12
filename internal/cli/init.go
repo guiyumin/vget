@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/guiyumin/vget/internal/config"
+	"github.com/guiyumin/vget/internal/core/config"
 	"github.com/spf13/cobra"
 )
 
