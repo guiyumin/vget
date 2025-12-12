@@ -1,7 +1,7 @@
 .PHONY: build build-ui push version patch minor major
 
 BUILD_DIR := ./build
-VERSION_FILE := internal/version/version.go
+VERSION_FILE := internal/core/version/version.go
 UI_DIR := ./ui
 SERVER_DIST := ./internal/server/dist
 
@@ -15,6 +15,7 @@ build-ui:
 
 build: build-ui
 	go build -o $(BUILD_DIR)/vget ./cmd/vget
+	go build -o $(BUILD_DIR)/vget-server ./cmd/vget-server
 
 push:
 	git push origin main --tags

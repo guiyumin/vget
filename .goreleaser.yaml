@@ -13,9 +13,9 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X github.com/guiyumin/vget/internal/version.Version={{.Version}}
-      - -X github.com/guiyumin/vget/internal/version.Commit={{.Commit}}
-      - -X github.com/guiyumin/vget/internal/version.Date={{.Date}}
+      - -X github.com/guiyumin/vget/internal/core/version.Version={{.Version}}
+      - -X github.com/guiyumin/vget/internal/core/version.Commit={{.Commit}}
+      - -X github.com/guiyumin/vget/internal/core/version.Date={{.Date}}
     goos:
       - darwin
       - linux
@@ -24,7 +24,6 @@ builds:
       - amd64
       - arm64
     ignore:
-      # Windows: only amd64 supported
       - goos: windows
         goarch: arm64
 
