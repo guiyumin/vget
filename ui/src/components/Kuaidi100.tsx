@@ -1,4 +1,5 @@
 import { useState } from "react";
+import clsx from "clsx";
 
 interface TrackingRecord {
   time: string;
@@ -68,14 +69,19 @@ export function Kuaidi100({ isConnected }: Kuaidi100Props) {
 
   const getStateStyle = (state: string) => {
     switch (state) {
-      case "3": return "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-500";
+      case "3":
+        return "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-500";
       case "0":
-      case "5": return "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400";
-      case "1": return "bg-zinc-300 dark:bg-zinc-700 text-zinc-500";
+      case "5":
+        return "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400";
+      case "1":
+        return "bg-zinc-300 dark:bg-zinc-700 text-zinc-500";
       case "2":
       case "4":
-      case "6": return "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400";
-      default: return "bg-zinc-300 dark:bg-zinc-700 text-zinc-500";
+      case "6":
+        return "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400";
+      default:
+        return "bg-zinc-300 dark:bg-zinc-700 text-zinc-500";
     }
   };
 
@@ -85,8 +91,12 @@ export function Kuaidi100({ isConnected }: Kuaidi100Props) {
         className="flex justify-between items-center px-4 py-3 cursor-pointer transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-950"
         onClick={() => setShowTracking(!showTracking)}
       >
-        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">📦 快递查询 (快递100 API)</h2>
-        <span className="text-zinc-500 dark:text-zinc-600 text-xs">{showTracking ? "▼" : "▶"}</span>
+        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+          📦 快递查询 (快递100 API)
+        </h2>
+        <span className="text-zinc-500 dark:text-zinc-600 text-xs">
+          {showTracking ? "▼" : "▶"}
+        </span>
       </div>
       {showTracking && (
         <div className="p-4 border-t border-zinc-300 dark:border-zinc-700">
@@ -136,32 +146,41 @@ export function Kuaidi100({ isConnected }: Kuaidi100Props) {
           {trackingResult && (
             <div className="mt-4">
               <div className="flex items-center gap-3 p-3 bg-zinc-100 dark:bg-zinc-950 rounded-md mb-3">
-                <span className="font-mono text-sm text-zinc-700 dark:text-zinc-200">{trackingResult.nu}</span>
-                <span className={`text-xs font-medium px-2 py-1 rounded uppercase ${getStateStyle(trackingResult.state)}`}>
+                <span className="font-mono text-sm text-zinc-700 dark:text-zinc-200">
+                  {trackingResult.nu}
+                </span>
+                <span
+                  className={clsx("text-xs font-medium px-2 py-1 rounded uppercase", getStateStyle(trackingResult.state))}
+                >
                   {trackingResult.state === "3"
                     ? "✓ 已签收"
                     : trackingResult.state === "0"
-                    ? "运输中"
-                    : trackingResult.state === "1"
-                    ? "已揽收"
-                    : trackingResult.state === "2"
-                    ? "疑难件"
-                    : trackingResult.state === "4"
-                    ? "已退签"
-                    : trackingResult.state === "5"
-                    ? "派送中"
-                    : trackingResult.state === "6"
-                    ? "退回中"
-                    : "未知"}
+                      ? "运输中"
+                      : trackingResult.state === "1"
+                        ? "已揽收"
+                        : trackingResult.state === "2"
+                          ? "疑难件"
+                          : trackingResult.state === "4"
+                            ? "已退签"
+                            : trackingResult.state === "5"
+                              ? "派送中"
+                              : trackingResult.state === "6"
+                                ? "退回中"
+                                : "未知"}
                 </span>
               </div>
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
                 {trackingResult.data?.map((record, idx) => (
-                  <div key={idx} className="px-3 py-2 bg-zinc-100 dark:bg-zinc-950 rounded border-l-3 border-l-blue-500">
+                  <div
+                    key={idx}
+                    className="px-3 py-2 bg-zinc-100 dark:bg-zinc-950 rounded border-l-3 border-l-blue-500"
+                  >
                     <div className="text-xs text-zinc-500 dark:text-zinc-600 mb-1">
                       {record.ftime || record.time}
                     </div>
-                    <div className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">{record.context}</div>
+                    <div className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">
+                      {record.context}
+                    </div>
                   </div>
                 ))}
               </div>

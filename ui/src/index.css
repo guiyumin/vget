@@ -51,3 +51,14 @@ body {
 html.dark body {
   color: #fff;
 }
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

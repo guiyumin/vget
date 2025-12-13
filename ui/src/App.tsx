@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import clsx from "clsx";
 import logo from "./assets/logo.png";
 import { Kuaidi100 } from "./components/Kuaidi100";
 import { ConfigEditor, type ConfigValues } from "./components/ConfigEditor";
@@ -214,15 +215,15 @@ export default function App() {
   });
 
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-zinc-100 dark:bg-zinc-950 min-h-screen text-zinc-900 dark:text-white transition-colors">
+    <div className="max-w-3xl mx-auto w-full h-full flex gap-3 flex-col p-8 bg-zinc-100 dark:bg-zinc-950 min-h-screen text-zinc-900 dark:text-white transition-colors">
       <header className="flex justify-between items-center mb-8 pb-6 border-b border-zinc-300 dark:border-zinc-700">
         <div className="flex items-center gap-3">
           <img
             src={logo}
             alt="vget"
-            className={`w-10 h-10 object-contain transition-all ${isConnected ? "" : "grayscale opacity-50"}`}
+            className={clsx("w-10 h-10 object-contain transition-all", !isConnected && "grayscale opacity-50")}
           />
-          <h1 className="text-2xl font-bold bg-gradient-to-br from-amber-400 to-orange-500 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-linear-to-br from-amber-400 to-orange-500 bg-clip-text text-transparent">
             VGet Server
           </h1>
         </div>
@@ -251,8 +252,12 @@ export default function App() {
         <div className="flex items-start gap-3 p-3 mb-4 bg-amber-100 dark:bg-amber-900 border border-amber-500 rounded-lg">
           <span className="text-xl leading-none">⚠️</span>
           <div className="flex-1">
-            <p className="text-amber-800 dark:text-amber-100 text-sm">{serverT.no_config_warning}</p>
-            <p className="text-amber-700 dark:text-amber-200 text-xs mt-1 opacity-80">{serverT.run_init_hint}</p>
+            <p className="text-amber-800 dark:text-amber-100 text-sm">
+              {serverT.no_config_warning}
+            </p>
+            <p className="text-amber-700 dark:text-amber-200 text-xs mt-1 opacity-80">
+              {serverT.run_init_hint}
+            </p>
           </div>
           <button
             className="px-4 py-2 border border-amber-500 rounded-md bg-amber-200/30 dark:bg-amber-500/20 text-amber-800 dark:text-amber-100 text-sm cursor-pointer whitespace-nowrap transition-colors hover:bg-amber-200/50 dark:hover:bg-amber-500/40"
@@ -284,14 +289,17 @@ export default function App() {
       )}
 
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-zinc-700 dark:text-zinc-200 text-sm whitespace-nowrap">{t.download_to}</span>
+        <span className="text-zinc-700 dark:text-zinc-200 text-sm whitespace-nowrap">
+          {t.download_to}
+        </span>
         <input
           type="text"
-          className={`flex-1 px-3 py-2 border rounded font-mono text-sm transition-colors
-            ${editingDir
-              ? "border-blue-500 bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white"
-              : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 cursor-default"
-            } focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
+          className={clsx(
+              "flex-1 px-3 py-2 border rounded font-mono text-sm transition-colors focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
+              editingDir
+                ? "border-blue-500 bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white"
+                : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 cursor-default"
+            )}
           value={editingDir ? newOutputDir : outputDir}
           onChange={(e) => setNewOutputDir(e.target.value)}
           onKeyDown={(e) => {
@@ -350,7 +358,9 @@ export default function App() {
 
       <section>
         <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{t.jobs}</h2>
+          <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            {t.jobs}
+          </h2>
           <span className="text-zinc-700 dark:text-zinc-200 text-sm">
             {jobs.length} {t.total}
           </span>
@@ -375,7 +385,9 @@ export default function App() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-zinc-400 dark:text-zinc-600">Loading...</div>
+          <div className="text-center py-12 text-zinc-400 dark:text-zinc-600">
+            Loading...
+          </div>
         ) : sortedJobs.length === 0 ? (
           <div className="text-center py-12 text-zinc-400 dark:text-zinc-600">
             <p>{t.no_downloads}</p>

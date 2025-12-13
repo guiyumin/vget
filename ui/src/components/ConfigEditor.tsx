@@ -44,7 +44,12 @@ interface ConfigEditorProps {
   // Callbacks
   onSave: (values: ConfigValues) => Promise<void>;
   onCancel: () => void;
-  onAddWebDAV: (name: string, url: string, username: string, password: string) => Promise<void>;
+  onAddWebDAV: (
+    name: string,
+    url: string,
+    username: string,
+    password: string
+  ) => Promise<void>;
   onDeleteWebDAV: (name: string) => Promise<void>;
 }
 
@@ -81,12 +86,20 @@ export function ConfigEditor({
   // Pending values (local state for editing)
   const [pendingLang, setPendingLang] = useState(initialLang || "en");
   const [pendingFormat, setPendingFormat] = useState(initialFormat || "mp4");
-  const [pendingQuality, setPendingQuality] = useState(initialQuality || "best");
+  const [pendingQuality, setPendingQuality] = useState(
+    initialQuality || "best"
+  );
   const [pendingTwitterAuth, setPendingTwitterAuth] = useState("");
-  const [pendingMaxConcurrent, setPendingMaxConcurrent] = useState(String(initialMaxConcurrent || 10));
+  const [pendingMaxConcurrent, setPendingMaxConcurrent] = useState(
+    String(initialMaxConcurrent || 10)
+  );
   const [pendingApiKey, setPendingApiKey] = useState(initialApiKey || "");
-  const [pendingKuaidi100Key, setPendingKuaidi100Key] = useState(initialKuaidi100Key || "");
-  const [pendingKuaidi100Customer, setPendingKuaidi100Customer] = useState(initialKuaidi100Customer || "");
+  const [pendingKuaidi100Key, setPendingKuaidi100Key] = useState(
+    initialKuaidi100Key || ""
+  );
+  const [pendingKuaidi100Customer, setPendingKuaidi100Customer] = useState(
+    initialKuaidi100Customer || ""
+  );
 
   // WebDAV add form
   const [newWebDAVName, setNewWebDAVName] = useState("");
@@ -154,12 +167,15 @@ export function ConfigEditor({
     await onDeleteWebDAV(name);
   };
 
-  const inputBaseClass = "flex-1 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm font-mono focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50";
+  const inputBaseClass =
+    "flex-1 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm font-mono focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50";
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4 mb-4">
+    <div className="ConfigEditor bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">{t.settings}</h2>
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
+          {t.settings}
+        </h2>
         <div className="flex gap-2">
           <button
             className="px-3 py-1.5 rounded text-xs cursor-pointer transition-colors bg-transparent border border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -200,7 +216,9 @@ export function ConfigEditor({
           onChange={setPendingQuality}
         />
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">{t.twitter_auth}</span>
+          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+            {t.twitter_auth}
+          </span>
           <input
             type="password"
             className={inputBaseClass}
@@ -211,13 +229,17 @@ export function ConfigEditor({
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">{t.server_port}</span>
+          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+            {t.server_port}
+          </span>
           <span className="flex-1 px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-500 text-sm font-mono">
             {serverPort || 8080}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">{t.max_concurrent}</span>
+          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+            {t.max_concurrent}
+          </span>
           <input
             type="number"
             className={`${inputBaseClass} w-20 flex-none`}
@@ -229,7 +251,9 @@ export function ConfigEditor({
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">{t.api_key}</span>
+          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+            {t.api_key}
+          </span>
           <input
             type="password"
             className={inputBaseClass}
@@ -245,7 +269,9 @@ export function ConfigEditor({
           Kuaidi100 (快递查询)
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">API Key</span>
+          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+            API Key
+          </span>
           <input
             type="password"
             className={inputBaseClass}
@@ -256,7 +282,9 @@ export function ConfigEditor({
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">Customer ID</span>
+          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+            Customer ID
+          </span>
           <input
             type="text"
             className={inputBaseClass}
@@ -270,16 +298,27 @@ export function ConfigEditor({
 
       {/* WebDAV Servers Section */}
       <div className="mt-4 pt-4 border-t border-zinc-300 dark:border-zinc-700">
-        <div className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">{t.webdav_servers}</div>
+        <div className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">
+          {t.webdav_servers}
+        </div>
         {Object.keys(webdavServers).length === 0 ? (
-          <div className="text-zinc-500 dark:text-zinc-600 text-sm py-2">{t.no_webdav_servers}</div>
+          <div className="text-zinc-500 dark:text-zinc-600 text-sm py-2">
+            {t.no_webdav_servers}
+          </div>
         ) : (
           <div className="flex flex-col gap-2 mb-3">
             {Object.entries(webdavServers).map(([name, server]) => (
-              <div key={name} className="flex items-center justify-between px-3 py-2 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded">
+              <div
+                key={name}
+                className="flex items-center justify-between px-3 py-2 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded"
+              >
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{name}</span>
-                  <span className="text-xs text-zinc-500 font-mono">{server.url}</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                    {name}
+                  </span>
+                  <span className="text-xs text-zinc-500 font-mono">
+                    {server.url}
+                  </span>
                 </div>
                 <button
                   className="px-2 py-1 border border-red-500 rounded bg-transparent text-red-500 text-xs cursor-pointer hover:bg-red-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -328,7 +367,12 @@ export function ConfigEditor({
           <button
             className="px-3 py-1.5 border border-blue-500 rounded bg-blue-500 text-white text-sm cursor-pointer hover:bg-blue-600 hover:border-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onClick={handleAddWebDAV}
-            disabled={!isConnected || addingWebDAV || !newWebDAVName.trim() || !newWebDAVUrl.trim()}
+            disabled={
+              !isConnected ||
+              addingWebDAV ||
+              !newWebDAVName.trim() ||
+              !newWebDAVUrl.trim()
+            }
           >
             {addingWebDAV ? "..." : t.add}
           </button>

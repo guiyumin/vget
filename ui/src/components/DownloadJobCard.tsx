@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { Job, JobStatus } from "../utils/apis";
 import type { UITranslations } from "../utils/translations";
 
@@ -16,9 +17,17 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
-export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardProps) {
+export function DownloadJobCard({
+  job,
+  onCancel,
+  onClear,
+  t,
+}: DownloadJobCardProps) {
   const canCancel = job.status === "queued" || job.status === "downloading";
-  const canClear = job.status === "completed" || job.status === "failed" || job.status === "cancelled";
+  const canClear =
+    job.status === "completed" ||
+    job.status === "failed" ||
+    job.status === "cancelled";
 
   const statusText: Record<JobStatus, string> = {
     queued: t.queued,
@@ -30,8 +39,10 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
 
   const statusStyles: Record<JobStatus, string> = {
     queued: "bg-zinc-300 dark:bg-zinc-700 text-zinc-500",
-    downloading: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
-    completed: "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-500",
+    downloading:
+      "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
+    completed:
+      "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-500",
     failed: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-500",
     cancelled: "bg-zinc-300 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-600",
   };
@@ -39,9 +50,16 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4">
       <div className="flex justify-between items-center mb-2">
-        <code className="text-xs text-zinc-400 dark:text-zinc-600">{job.id}</code>
+        <code className="text-xs text-zinc-400 dark:text-zinc-600">
+          {job.id}
+        </code>
         <div className="flex items-center gap-2">
-          <span className={`inline-block px-2 py-1 rounded text-[0.7rem] font-medium uppercase ${statusStyles[job.status]}`}>
+          <span
+            className={clsx(
+              "inline-block px-2 py-1 rounded text-[0.7rem] font-medium uppercase",
+              statusStyles[job.status]
+            )}
+          >
             {statusText[job.status]}
           </span>
           {canCancel && (
@@ -62,7 +80,9 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
           )}
         </div>
       </div>
-      <p className="text-sm text-zinc-700 dark:text-zinc-200 break-all mb-2">{job.url}</p>
+      <p className="text-sm text-zinc-700 dark:text-zinc-200 break-all mb-2">
+        {job.url}
+      </p>
       {job.filename && (
         <p className="text-xs text-zinc-400 dark:text-zinc-600 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
           {job.filename}
@@ -72,7 +92,10 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
         <div className="flex items-center gap-3 mt-3">
           <div className="flex-1 h-1 bg-zinc-300 dark:bg-zinc-700 rounded overflow-hidden">
             <div
-              className={`h-full bg-blue-500 transition-all duration-300 ${job.total <= 0 ? "animate-indeterminate" : ""}`}
+              className={clsx(
+                "h-full bg-blue-500 transition-all duration-300",
+                job.total <= 0 && "animate-indeterminate"
+              )}
               style={{ width: job.total > 0 ? `${job.progress}%` : "100%" }}
             />
           </div>
