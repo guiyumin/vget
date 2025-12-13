@@ -14,7 +14,7 @@ export function ConfigRow({
   onChange,
 }: ConfigRowProps) {
   return (
-    <div className="ConfigRowflex items-center gap-3">
+    <div className="ConfigRow flex items-center gap-3">
       <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
         {label}
       </span>
