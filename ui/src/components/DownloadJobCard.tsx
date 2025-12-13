@@ -28,37 +28,55 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
     cancelled: t.cancelled,
   };
 
+  const statusStyles: Record<JobStatus, string> = {
+    queued: "bg-zinc-300 dark:bg-zinc-700 text-zinc-500",
+    downloading: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
+    completed: "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-500",
+    failed: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-500",
+    cancelled: "bg-zinc-300 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-600",
+  };
+
   return (
-    <div className="job-card">
-      <div className="job-header">
-        <code className="job-id">{job.id}</code>
-        <div className="job-actions">
-          <span className={`status-badge ${job.status}`}>
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4">
+      <div className="flex justify-between items-center mb-2">
+        <code className="text-xs text-zinc-400 dark:text-zinc-600">{job.id}</code>
+        <div className="flex items-center gap-2">
+          <span className={`inline-block px-2 py-1 rounded text-[0.7rem] font-medium uppercase ${statusStyles[job.status]}`}>
             {statusText[job.status]}
           </span>
           {canCancel && (
-            <button className="cancel-btn" onClick={onCancel}>
+            <button
+              className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent text-zinc-500 dark:text-zinc-600 text-[0.7rem] cursor-pointer hover:border-red-500 hover:text-red-500 transition-colors"
+              onClick={onCancel}
+            >
               {t.cancel}
             </button>
           )}
           {canClear && (
-            <button className="clear-btn" onClick={onClear}>
+            <button
+              className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent text-zinc-500 text-[0.7rem] cursor-pointer hover:border-red-500 hover:text-red-500 transition-colors"
+              onClick={onClear}
+            >
               {t.clear_history}
             </button>
           )}
         </div>
       </div>
-      <p className="job-url">{job.url}</p>
-      {job.filename && <p className="job-filename">{job.filename}</p>}
+      <p className="text-sm text-zinc-700 dark:text-zinc-200 break-all mb-2">{job.url}</p>
+      {job.filename && (
+        <p className="text-xs text-zinc-400 dark:text-zinc-600 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
+          {job.filename}
+        </p>
+      )}
       {job.status === "downloading" && (
-        <div className="progress-container">
-          <div className="progress-bar">
+        <div className="flex items-center gap-3 mt-3">
+          <div className="flex-1 h-1 bg-zinc-300 dark:bg-zinc-700 rounded overflow-hidden">
             <div
-              className={`progress-fill ${job.total <= 0 ? "indeterminate" : ""}`}
+              className={`h-full bg-blue-500 transition-all duration-300 ${job.total <= 0 ? "animate-indeterminate" : ""}`}
               style={{ width: job.total > 0 ? `${job.progress}%` : "100%" }}
             />
           </div>
-          <span className="progress-text">
+          <span className="text-xs text-zinc-400 dark:text-zinc-600 min-w-[4.5rem] text-right">
             {job.total > 0
               ? `${job.progress.toFixed(1)}%`
               : formatBytes(job.downloaded)}
@@ -66,7 +84,9 @@ export function DownloadJobCard({ job, onCancel, onClear, t }: DownloadJobCardPr
         </div>
       )}
       {job.status === "failed" && job.error && (
-        <div className="error-message">{job.error}</div>
+        <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
+          {job.error}
+        </div>
       )}
     </div>
   );

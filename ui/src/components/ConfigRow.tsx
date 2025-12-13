@@ -1,5 +1,3 @@
-import "./ConfigRow.css";
-
 interface ConfigRowProps {
   label: string;
   value: string;
@@ -16,10 +14,10 @@ export function ConfigRow({
   onChange,
 }: ConfigRowProps) {
   return (
-    <div className="setting-row">
-      <span className="setting-label">{label}</span>
+    <div className="flex items-center gap-3">
+      <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">{label}</span>
       <select
-        className="setting-select"
+        className="flex-1 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm cursor-pointer focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
