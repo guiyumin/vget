@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useRef, useEffect, useState } from "react";
 import type { Job, JobStatus } from "../utils/apis";
 import type { UITranslations } from "../utils/translations";
 
@@ -17,6 +18,16 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
+function formatSpeed(bytesPerSecond: number): string {
+  if (bytesPerSecond <= 0) return "0 B/s";
+  const k = 1024;
+  const sizes = ["B/s", "KB/s", "MB/s", "GB/s"];
+  const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
+  return (
+    parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
+  );
+}
+
 export function DownloadJobCard({
   job,
   onCancel,
@@ -28,6 +39,39 @@ export function DownloadJobCard({
     job.status === "completed" ||
     job.status === "failed" ||
     job.status === "cancelled";
+
+  // Track download speed
+  const prevDownloaded = useRef<number>(0);
+  const prevTime = useRef<number>(0);
+  const [speed, setSpeed] = useState<number>(0);
+
+  useEffect(() => {
+    if (job.status === "downloading") {
+      const now = Date.now();
+      // Initialize prevTime on first update
+      if (prevTime.current === 0) {
+        prevTime.current = now;
+        prevDownloaded.current = job.downloaded;
+        return;
+      }
+
+      const timeDelta = (now - prevTime.current) / 1000; // seconds
+      const bytesDelta = job.downloaded - prevDownloaded.current;
+
+      if (timeDelta > 0 && bytesDelta >= 0) {
+        const newSpeed = bytesDelta / timeDelta;
+        setSpeed(newSpeed);
+      }
+
+      prevDownloaded.current = job.downloaded;
+      prevTime.current = now;
+    } else {
+      // Reset when not downloading
+      prevDownloaded.current = 0;
+      prevTime.current = 0;
+      setSpeed(0);
+    }
+  }, [job.downloaded, job.status]);
 
   const statusText: Record<JobStatus, string> = {
     queued: t.queued,
@@ -99,10 +143,13 @@ export function DownloadJobCard({
               style={{ width: job.total > 0 ? `${job.progress}%` : "100%" }}
             />
           </div>
-          <span className="text-xs text-zinc-400 dark:text-zinc-600 min-w-[4.5rem] text-right">
+          <span className="text-xs text-zinc-400 dark:text-zinc-600 min-w-18 text-right">
             {job.total > 0
               ? `${job.progress.toFixed(1)}%`
               : formatBytes(job.downloaded)}
+          </span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-500 min-w-20 text-right">
+            {formatSpeed(speed)}
           </span>
         </div>
       )}
