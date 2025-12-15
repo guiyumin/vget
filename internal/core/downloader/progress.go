@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -486,4 +487,40 @@ func RunTelegramDownloadTUI(urlStr, outputPath, lang string, downloadFn Telegram
 	}
 
 	return nil
+}
+
+// RunMultiStreamDownloadWithAuthCallback runs a multi-stream download with auth and progress callback (for server use)
+func RunMultiStreamDownloadWithAuthCallback(ctx context.Context, url, authHeader, output string, totalSize int64, config MultiStreamConfig, progressFn func(downloaded, total int64)) error {
+	state := &downloadState{
+		startTime: time.Now(),
+	}
+
+	// Start a goroutine to forward progress updates to the callback
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				current, total, _, _, _ := state.get()
+				if progressFn != nil {
+					progressFn(current, total)
+				}
+			}
+		}
+	}()
+
+	err := MultiStreamDownloadWithAuth(ctx, url, authHeader, output, totalSize, config, state)
+	close(done)
+
+	// Final progress update
+	if progressFn != nil {
+		current, total, _, _, _ := state.get()
+		progressFn(current, total)
+	}
+
+	return err
 }

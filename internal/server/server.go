@@ -1047,7 +1047,7 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 	return nil
 }
 
-// downloadWebDAV handles WebDAV URL downloads
+// downloadWebDAV handles WebDAV URL downloads using multi-stream for better performance
 func (s *Server) downloadWebDAV(ctx context.Context, rawURL, filename string, progressFn func(downloaded, total int64)) error {
 	var client *webdav.Client
 	var filePath string
@@ -1090,16 +1090,11 @@ func (s *Server) downloadWebDAV(ctx context.Context, rawURL, filename string, pr
 		// Update job filename
 		s.updateJobFilename(rawURL, outputPath)
 
-		// Download using HTTP with auth header
+		// Download using multi-stream for better performance (same as CLI)
 		fileURL := client.GetFileURL(filePath)
 		authHeader := client.GetAuthHeader()
 
-		var headers map[string]string
-		if authHeader != "" {
-			headers = map[string]string{"Authorization": authHeader}
-		}
-
-		return downloadFile(ctx, fileURL, outputPath, headers, progressFn)
+		return downloadWebDAVMultiStream(ctx, fileURL, authHeader, outputPath, fileInfo.Size, progressFn)
 	}
 
 	// Handle full WebDAV URL
@@ -1133,12 +1128,13 @@ func (s *Server) downloadWebDAV(ctx context.Context, rawURL, filename string, pr
 	fileURL := client.GetFileURL(filePath)
 	authHeader := client.GetAuthHeader()
 
-	var headers map[string]string
-	if authHeader != "" {
-		headers = map[string]string{"Authorization": authHeader}
-	}
+	return downloadWebDAVMultiStream(ctx, fileURL, authHeader, outputPath, fileInfo.Size, progressFn)
+}
 
-	return downloadFile(ctx, fileURL, outputPath, headers, progressFn)
+// downloadWebDAVMultiStream uses multi-stream download for better performance
+func downloadWebDAVMultiStream(ctx context.Context, url, authHeader, outputPath string, totalSize int64, progressFn func(downloaded, total int64)) error {
+	msConfig := downloader.DefaultMultiStreamConfig()
+	return downloader.RunMultiStreamDownloadWithAuthCallback(ctx, url, authHeader, outputPath, totalSize, msConfig, progressFn)
 }
 
 // downloadWithExtractor is the download function used by the job queue
