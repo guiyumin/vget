@@ -122,6 +122,12 @@ ui:
   clear_all: "모두 삭제"
   # WebDAV
   webdav_browser: "WebDAV"
+  select_remote: "원격 선택"
+  empty_directory: "빈 디렉토리"
+  download_selected: "선택 다운로드"
+  selected_files: "선택됨"
+  loading: "로딩 중..."
+  go_to_settings: "설정으로 이동"
   # 토렌트
   torrent: "BT/마그넷"
   torrent_hint: "마그넷 링크 또는 토렌트 URL 붙여넣기..."

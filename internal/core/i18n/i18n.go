@@ -170,6 +170,12 @@ type UITranslations struct {
 	ClearAll         string `yaml:"clear_all" json:"clear_all"`
 	// WebDAV
 	WebDAVBrowser    string `yaml:"webdav_browser" json:"webdav_browser"`
+	SelectRemote     string `yaml:"select_remote" json:"select_remote"`
+	EmptyDirectory   string `yaml:"empty_directory" json:"empty_directory"`
+	DownloadSelected string `yaml:"download_selected" json:"download_selected"`
+	SelectedFiles    string `yaml:"selected_files" json:"selected_files"`
+	Loading          string `yaml:"loading" json:"loading"`
+	GoToSettings     string `yaml:"go_to_settings" json:"go_to_settings"`
 	// Torrent
 	Torrent              string `yaml:"torrent" json:"torrent"`
 	TorrentHint          string `yaml:"torrent_hint" json:"torrent_hint"`

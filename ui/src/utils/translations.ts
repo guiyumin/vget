@@ -37,6 +37,12 @@ export interface UITranslations {
   clear_all: string;
   // WebDAV
   webdav_browser: string;
+  select_remote: string;
+  empty_directory: string;
+  download_selected: string;
+  selected_files: string;
+  loading: string;
+  go_to_settings: string;
   // Torrent
   torrent: string;
   torrent_hint: string;
@@ -97,6 +103,12 @@ export const defaultTranslations: UITranslations = {
   clear_all: "Clear All",
   // WebDAV
   webdav_browser: "WebDAV",
+  select_remote: "Select Remote",
+  empty_directory: "Empty directory",
+  download_selected: "Download Selected",
+  selected_files: "selected",
+  loading: "Loading...",
+  go_to_settings: "Go to Settings",
   // Torrent
   torrent: "BT/Magnet",
   torrent_hint: "Paste magnet link or torrent URL...",

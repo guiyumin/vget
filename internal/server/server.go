@@ -115,6 +115,11 @@ func (s *Server) Start() error {
 	api.GET("/i18n", s.handleI18n)
 	api.POST("/kuaidi100", s.handleKuaidi100)
 
+	// WebDAV browsing routes
+	api.GET("/webdav/remotes", s.handleWebDAVRemotes)
+	api.GET("/webdav/list", s.handleWebDAVList)
+	api.POST("/webdav/download", s.handleWebDAVDownload)
+
 	// Torrent dispatch routes
 	api.GET("/config/torrent", s.handleGetTorrentConfig)
 	api.POST("/config/torrent", s.handleSetTorrentConfig)

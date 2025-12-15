@@ -122,6 +122,12 @@ ui:
   clear_all: "Tout effacer"
   # WebDAV
   webdav_browser: "WebDAV"
+  select_remote: "Sélectionner distant"
+  empty_directory: "Répertoire vide"
+  download_selected: "Télécharger la sélection"
+  selected_files: "sélectionnés"
+  loading: "Chargement..."
+  go_to_settings: "Aller aux paramètres"
   # Torrent
   torrent: "BT/Magnet"
   torrent_hint: "Collez un lien magnet ou une URL torrent..."

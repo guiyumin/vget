@@ -208,3 +208,52 @@ export async function addTorrent(
   });
   return res.json();
 }
+
+// WebDAV Browsing APIs
+
+export interface WebDAVRemote {
+  name: string;
+  url: string;
+  hasAuth: boolean;
+}
+
+export interface WebDAVFile {
+  name: string;
+  path: string;
+  size: number;
+  isDir: boolean;
+}
+
+export interface WebDAVListData {
+  remote: string;
+  path: string;
+  files: WebDAVFile[];
+}
+
+export async function fetchWebDAVRemotes(): Promise<
+  ApiResponse<{ remotes: WebDAVRemote[] }>
+> {
+  const res = await fetch("/api/webdav/remotes");
+  return res.json();
+}
+
+export async function fetchWebDAVList(
+  remote: string,
+  path: string
+): Promise<ApiResponse<WebDAVListData>> {
+  const params = new URLSearchParams({ remote, path });
+  const res = await fetch(`/api/webdav/list?${params}`);
+  return res.json();
+}
+
+export async function submitWebDAVDownload(
+  remote: string,
+  files: string[]
+): Promise<ApiResponse<{ jobIds: string[]; count: number }>> {
+  const res = await fetch("/api/webdav/download", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ remote, files }),
+  });
+  return res.json();
+}

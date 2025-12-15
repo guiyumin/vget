@@ -134,6 +134,12 @@ ui:
   clear_all: "全部清除"
   # WebDAV
   webdav_browser: "WebDAV"
+  select_remote: "选择远程"
+  empty_directory: "空目录"
+  download_selected: "下载选中"
+  selected_files: "已选中"
+  loading: "加载中..."
+  go_to_settings: "前往设置"
   # 磁力下载
   torrent: "磁力下载"
   torrent_hint: "粘贴磁力链接或种子URL..."
