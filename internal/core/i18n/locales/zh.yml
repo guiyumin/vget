@@ -155,8 +155,8 @@ ui:
   torrent_test_success: "连接成功"
   torrent_enabled: "启用磁力下载"
   # Toast
-  download_queued: "已加入下载队列"
-  downloads_queued: "个文件已加入下载队列"
+  download_queued: "下载任务已创建，请在下载页查看进度"
+  downloads_queued: "个下载任务已创建，请在下载页查看进度"
 
 # 服务器消息
 server:

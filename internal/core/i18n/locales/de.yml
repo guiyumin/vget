@@ -143,8 +143,8 @@ ui:
   torrent_test_success: "Verbindung erfolgreich"
   torrent_enabled: "Torrent aktivieren"
   # Toast
-  download_queued: "Download in Warteschlange"
-  downloads_queued: "Downloads in Warteschlange"
+  download_queued: "Download gestartet. Fortschritt auf der Download-Seite überprüfen."
+  downloads_queued: "Downloads gestartet. Fortschritt auf der Download-Seite überprüfen."
 
 # Server-Nachrichten
 server:

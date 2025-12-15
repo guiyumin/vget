@@ -133,8 +133,8 @@ export function WebDAVPage() {
         showToast(
           "success",
           count === 1
-            ? t.download_queued || "Download queued"
-            : `${count} ${t.downloads_queued || "downloads queued"}`
+            ? t.download_queued || "Download started. Check progress on Download page."
+            : `${count} ${t.downloads_queued || "downloads started. Check progress on Download page."}`
         );
       } else {
         setError(res.message);

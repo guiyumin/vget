@@ -143,8 +143,8 @@ ui:
   torrent_test_success: "Conexión exitosa"
   torrent_enabled: "Activar Torrent"
   # Toast
-  download_queued: "Descarga en cola"
-  downloads_queued: "descargas en cola"
+  download_queued: "Descarga iniciada. Verifica el progreso en la página de Descargas."
+  downloads_queued: "descargas iniciadas. Verifica el progreso en la página de Descargas."
 
 # Mensajes del servidor
 server:

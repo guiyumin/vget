@@ -143,8 +143,8 @@ ui:
   torrent_test_success: "연결 성공"
   torrent_enabled: "토렌트 활성화"
   # Toast
-  download_queued: "다운로드가 대기열에 추가됨"
-  downloads_queued: "개의 다운로드가 대기열에 추가됨"
+  download_queued: "다운로드가 시작되었습니다. 다운로드 페이지에서 진행 상황을 확인하세요."
+  downloads_queued: "개의 다운로드가 시작되었습니다. 다운로드 페이지에서 진행 상황을 확인하세요."
 
 # 서버 메시지
 server:

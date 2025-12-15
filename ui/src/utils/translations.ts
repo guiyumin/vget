@@ -127,8 +127,8 @@ export const defaultTranslations: UITranslations = {
   torrent_test_success: "Connection successful",
   torrent_enabled: "Enable Torrent",
   // Toast
-  download_queued: "Download queued",
-  downloads_queued: "downloads queued",
+  download_queued: "Download started. Check progress on Download page.",
+  downloads_queued: "downloads started. Check progress on Download page.",
 };
 
 export const defaultServerTranslations: ServerTranslations = {
