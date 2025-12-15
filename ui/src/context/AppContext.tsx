@@ -6,6 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { ToastContainer, type ToastData, type ToastType } from "../components/Toast";
 import {
   type UITranslations,
   type ServerTranslations,
@@ -75,6 +76,7 @@ interface AppContextType {
     password: string
   ) => Promise<void>;
   deleteWebDAV: (name: string) => Promise<void>;
+  showToast: (type: ToastType, message: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -105,6 +107,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [kuaidi100Key, setKuaidi100Key] = useState("");
   const [kuaidi100Customer, setKuaidi100Customer] = useState("");
   const [torrentEnabled, setTorrentEnabled] = useState(false);
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+
+  const showToast = useCallback((type: ToastType, message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, type, message }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const setDarkMode = useCallback((dark: boolean) => {
     setDarkModeState(dark);
@@ -279,9 +291,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveConfig,
         addWebDAV,
         deleteWebDAV,
+        showToast,
       }}
     >
       {children}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </AppContext.Provider>
   );
 }

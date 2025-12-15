@@ -142,6 +142,9 @@ ui:
   torrent_testing: "Test..."
   torrent_test_success: "Connexion réussie"
   torrent_enabled: "Activer Torrent"
+  # Toast
+  download_queued: "Téléchargement en file d'attente"
+  downloads_queued: "téléchargements en file d'attente"
 
 # Messages du serveur
 server:

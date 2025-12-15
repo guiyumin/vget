@@ -19,6 +19,7 @@ import (
 	"github.com/guiyumin/vget/internal/core/i18n"
 	"github.com/guiyumin/vget/internal/core/tracker"
 	"github.com/guiyumin/vget/internal/core/version"
+	"github.com/guiyumin/vget/internal/core/webdav"
 	"github.com/guiyumin/vget/internal/torrent"
 )
 
@@ -1046,8 +1047,107 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 	return nil
 }
 
+// downloadWebDAV handles WebDAV URL downloads
+func (s *Server) downloadWebDAV(ctx context.Context, rawURL, filename string, progressFn func(downloaded, total int64)) error {
+	var client *webdav.Client
+	var filePath string
+	var err error
+
+	// Check if it's a remote path (e.g., "pikpak:/path/to/file")
+	if webdav.IsRemotePath(rawURL) {
+		serverName, filePath, err := webdav.ParseRemotePath(rawURL)
+		if err != nil {
+			return err
+		}
+
+		server := s.cfg.GetWebDAVServer(serverName)
+		if server == nil {
+			return fmt.Errorf("WebDAV server '%s' not found", serverName)
+		}
+
+		client, err = webdav.NewClientFromConfig(server)
+		if err != nil {
+			return fmt.Errorf("failed to create WebDAV client: %w", err)
+		}
+
+		// Get file info
+		fileInfo, err := client.Stat(ctx, filePath)
+		if err != nil {
+			return fmt.Errorf("failed to get file info: %w", err)
+		}
+
+		if fileInfo.IsDir {
+			return fmt.Errorf("cannot download directory: %s", filePath)
+		}
+
+		// Determine output filename
+		outputFile := filename
+		if outputFile == "" {
+			outputFile = webdav.ExtractFilename(filePath)
+		}
+		outputPath := filepath.Join(s.outputDir, outputFile)
+
+		// Update job filename
+		s.updateJobFilename(rawURL, outputPath)
+
+		// Download using HTTP with auth header
+		fileURL := client.GetFileURL(filePath)
+		authHeader := client.GetAuthHeader()
+
+		var headers map[string]string
+		if authHeader != "" {
+			headers = map[string]string{"Authorization": authHeader}
+		}
+
+		return downloadFile(ctx, fileURL, outputPath, headers, progressFn)
+	}
+
+	// Handle full WebDAV URL
+	client, err = webdav.NewClient(rawURL)
+	if err != nil {
+		return fmt.Errorf("failed to create WebDAV client: %w", err)
+	}
+
+	filePath, err = webdav.ParseURL(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid WebDAV URL: %w", err)
+	}
+
+	fileInfo, err := client.Stat(ctx, filePath)
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	if fileInfo.IsDir {
+		return fmt.Errorf("cannot download directory: %s", filePath)
+	}
+
+	outputFile := filename
+	if outputFile == "" {
+		outputFile = webdav.ExtractFilename(filePath)
+	}
+	outputPath := filepath.Join(s.outputDir, outputFile)
+
+	s.updateJobFilename(rawURL, outputPath)
+
+	fileURL := client.GetFileURL(filePath)
+	authHeader := client.GetAuthHeader()
+
+	var headers map[string]string
+	if authHeader != "" {
+		headers = map[string]string{"Authorization": authHeader}
+	}
+
+	return downloadFile(ctx, fileURL, outputPath, headers, progressFn)
+}
+
 // downloadWithExtractor is the download function used by the job queue
 func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string, progressFn func(downloaded, total int64)) error {
+	// Handle WebDAV URLs specially
+	if webdav.IsWebDAVURL(url) {
+		return s.downloadWebDAV(ctx, url, filename, progressFn)
+	}
+
 	// Find matching extractor
 	ext := extractor.Match(url)
 	if ext == nil {

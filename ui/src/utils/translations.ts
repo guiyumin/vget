@@ -57,6 +57,9 @@ export interface UITranslations {
   torrent_testing: string;
   torrent_test_success: string;
   torrent_enabled: string;
+  // Toast
+  download_queued: string;
+  downloads_queued: string;
 }
 
 export interface ServerTranslations {
@@ -123,6 +126,9 @@ export const defaultTranslations: UITranslations = {
   torrent_testing: "Testing...",
   torrent_test_success: "Connection successful",
   torrent_enabled: "Enable Torrent",
+  // Toast
+  download_queued: "Download queued",
+  downloads_queued: "downloads queued",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

@@ -154,6 +154,9 @@ ui:
   torrent_testing: "Testing..."
   torrent_test_success: "Connection successful"
   torrent_enabled: "Enable Torrent"
+  # Toast
+  download_queued: "Download queued"
+  downloads_queued: "downloads queued"
 
 # Server messages
 server:

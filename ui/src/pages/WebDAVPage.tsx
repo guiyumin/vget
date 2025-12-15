@@ -25,7 +25,7 @@ function formatSize(bytes: number): string {
 }
 
 export function WebDAVPage() {
-  const { t, isConnected, refresh } = useApp();
+  const { t, isConnected, refresh, showToast } = useApp();
 
   // State
   const [remotes, setRemotes] = useState<WebDAVRemote[]>([]);
@@ -127,15 +127,23 @@ export function WebDAVPage() {
         Array.from(selectedFiles)
       );
       if (res.code === 200) {
+        const count = selectedFiles.size;
         setSelectedFiles(new Set());
         refresh(); // Refresh jobs list
+        showToast(
+          "success",
+          count === 1
+            ? t.download_queued || "Download queued"
+            : `${count} ${t.downloads_queued || "downloads queued"}`
+        );
       } else {
         setError(res.message);
+        showToast("error", res.message);
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to start download"
-      );
+      const msg = err instanceof Error ? err.message : "Failed to start download";
+      setError(msg);
+      showToast("error", msg);
     } finally {
       setSubmitting(false);
     }

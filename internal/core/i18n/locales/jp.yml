@@ -142,6 +142,9 @@ ui:
   torrent_testing: "テスト中..."
   torrent_test_success: "接続成功"
   torrent_enabled: "トレントを有効にする"
+  # Toast
+  download_queued: "ダウンロードがキューに追加されました"
+  downloads_queued: "件のダウンロードがキューに追加されました"
 
 # サーバーメッセージ
 server:

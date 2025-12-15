@@ -142,6 +142,9 @@ ui:
   torrent_testing: "테스트 중..."
   torrent_test_success: "연결 성공"
   torrent_enabled: "토렌트 활성화"
+  # Toast
+  download_queued: "다운로드가 대기열에 추가됨"
+  downloads_queued: "개의 다운로드가 대기열에 추가됨"
 
 # 서버 메시지
 server:

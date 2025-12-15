@@ -142,6 +142,9 @@ ui:
   torrent_testing: "Probando..."
   torrent_test_success: "Conexión exitosa"
   torrent_enabled: "Activar Torrent"
+  # Toast
+  download_queued: "Descarga en cola"
+  downloads_queued: "descargas en cola"
 
 # Mensajes del servidor
 server:
