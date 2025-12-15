@@ -71,6 +71,15 @@
   - [ ] API mode (user provides own keys in config.yml)
   - [ ] kuaidi100 - Bring Your Own Key (API is expensive)
 
+## Known Issues
+
+- [ ] Docker server download speed is unstable (can range from 2 MB/s to 70 MB/s for PikPak)
+  - CLI consistently gets ~70 MB/s
+  - Both use same multi-stream download code (12 parallel connections)
+  - `--network host` doesn't help
+  - Likely Docker overhead (networking or volume mount I/O)
+  - Need to investigate: run CLI inside Docker to isolate issue
+
 ## DevOps
 
 - [x] GoReleaser + GitHub Actions for tagged releases
