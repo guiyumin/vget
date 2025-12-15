@@ -36,7 +36,12 @@ var configShowCmd = &cobra.Command{
 		if len(cfg.WebDAVServers) > 0 {
 			fmt.Println("\nWebDAV servers:")
 			for name, server := range cfg.WebDAVServers {
-				fmt.Printf("  %s: %s\n", name, server.URL)
+				fmt.Printf("  %s:\n", name)
+				fmt.Printf("    URL:      %s\n", server.URL)
+				if server.Username != "" {
+					fmt.Printf("    Username: %s\n", server.Username)
+					fmt.Printf("    Password: %s\n", server.Password)
+				}
 			}
 		}
 
