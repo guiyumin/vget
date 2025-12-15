@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { Link } from "@tanstack/react-router";
 import clsx from "clsx";
@@ -29,6 +29,7 @@ export function WebDAVPage() {
 
   // State
   const [remotes, setRemotes] = useState<WebDAVRemote[]>([]);
+  const [remotesLoaded, setRemotesLoaded] = useState(false);
   const [selectedRemote, setSelectedRemote] = useState<string>("");
   const [currentPath, setCurrentPath] = useState<string>("/");
   const [files, setFiles] = useState<WebDAVFile[]>([]);
@@ -45,40 +46,41 @@ export function WebDAVPage() {
       if (res.code === 200 && res.data.remotes) {
         setRemotes(res.data.remotes);
         // Auto-select first remote if available
-        if (res.data.remotes.length > 0 && !selectedRemote) {
+        if (res.data.remotes.length > 0) {
           setSelectedRemote(res.data.remotes[0].name);
         }
       }
+      setRemotesLoaded(true);
     });
-  }, [isConnected, selectedRemote]);
+  }, [isConnected]);
 
   // Load directory contents when remote or path changes
-  const loadDirectory = useCallback(async () => {
+  useEffect(() => {
     if (!selectedRemote) return;
 
-    setLoading(true);
-    setError(null);
-    setSelectedFiles(new Set());
+    const loadDirectory = async () => {
+      setLoading(true);
+      setError(null);
+      setSelectedFiles(new Set());
 
-    try {
-      const res = await fetchWebDAVList(selectedRemote, currentPath);
-      if (res.code === 200) {
-        setFiles(res.data.files);
-      } else {
-        setError(res.message);
+      try {
+        const res = await fetchWebDAVList(selectedRemote, currentPath);
+        if (res.code === 200) {
+          setFiles(res.data.files || []);
+        } else {
+          setError(res.message);
+          setFiles([]);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load directory");
         setFiles([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load directory");
-      setFiles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedRemote, currentPath]);
+    };
 
-  useEffect(() => {
     loadDirectory();
-  }, [loadDirectory]);
+  }, [selectedRemote, currentPath]);
 
   // Navigate to a path
   const navigateTo = (path: string) => {
@@ -152,8 +154,20 @@ export function WebDAVPage() {
     selectableFiles.length > 0 &&
     selectedFiles.size === selectableFiles.length;
 
+  // Show loading while fetching remotes
+  if (!remotesLoaded) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">{t.webdav_browser}</h1>
+        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-8 text-center">
+          <p className="text-zinc-500 dark:text-zinc-400">{t.loading}</p>
+        </div>
+      </div>
+    );
+  }
+
   // No remotes configured
-  if (!loading && remotes.length === 0) {
+  if (remotes.length === 0) {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-6">{t.webdav_browser}</h1>
