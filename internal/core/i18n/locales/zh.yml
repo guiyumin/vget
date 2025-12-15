@@ -132,6 +132,20 @@ ui:
   no_webdav_servers: "未配置 WebDAV 服务器"
   clear_history: "清除"
   clear_all: "全部清除"
+  # 磁力下载
+  torrent: "磁力下载"
+  torrent_hint: "粘贴磁力链接或种子URL..."
+  torrent_submit: "发送"
+  torrent_submitting: "发送中..."
+  torrent_success: "种子添加成功"
+  torrent_not_configured: "未配置下载客户端，请先在设置中配置。"
+  torrent_settings: "下载客户端"
+  torrent_client: "客户端类型"
+  torrent_host: "地址"
+  torrent_test: "测试连接"
+  torrent_testing: "测试中..."
+  torrent_test_success: "连接成功"
+  torrent_enabled: "启用磁力下载"
 
 # 服务器消息
 server:

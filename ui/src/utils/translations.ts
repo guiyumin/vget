@@ -35,6 +35,20 @@ export interface UITranslations {
   no_webdav_servers: string;
   clear_history: string;
   clear_all: string;
+  // Torrent
+  torrent: string;
+  torrent_hint: string;
+  torrent_submit: string;
+  torrent_submitting: string;
+  torrent_success: string;
+  torrent_not_configured: string;
+  torrent_settings: string;
+  torrent_client: string;
+  torrent_host: string;
+  torrent_test: string;
+  torrent_testing: string;
+  torrent_test_success: string;
+  torrent_enabled: string;
 }
 
 export interface ServerTranslations {
@@ -79,6 +93,20 @@ export const defaultTranslations: UITranslations = {
   no_webdav_servers: "No WebDAV servers configured",
   clear_history: "Clear",
   clear_all: "Clear All",
+  // Torrent
+  torrent: "BT/Magnet",
+  torrent_hint: "Paste magnet link or torrent URL...",
+  torrent_submit: "Send",
+  torrent_submitting: "Sending...",
+  torrent_success: "Torrent added successfully",
+  torrent_not_configured: "Torrent client not configured. Go to Settings to set up.",
+  torrent_settings: "Torrent Client",
+  torrent_client: "Client Type",
+  torrent_host: "Host",
+  torrent_test: "Test Connection",
+  torrent_testing: "Testing...",
+  torrent_test_success: "Connection successful",
+  torrent_enabled: "Enable Torrent",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

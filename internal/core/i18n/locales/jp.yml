@@ -120,6 +120,20 @@ ui:
   no_webdav_servers: "WebDAVサーバーは設定されていません"
   clear_history: "クリア"
   clear_all: "すべてクリア"
+  # トレント
+  torrent: "BT/マグネット"
+  torrent_hint: "マグネットリンクまたはトレントURLを貼り付け..."
+  torrent_submit: "送信"
+  torrent_submitting: "送信中..."
+  torrent_success: "トレントが正常に追加されました"
+  torrent_not_configured: "トレントクライアントが設定されていません。設定で構成してください。"
+  torrent_settings: "トレントクライアント"
+  torrent_client: "クライアントタイプ"
+  torrent_host: "ホスト"
+  torrent_test: "接続テスト"
+  torrent_testing: "テスト中..."
+  torrent_test_success: "接続成功"
+  torrent_enabled: "トレントを有効にする"
 
 # サーバーメッセージ
 server:

@@ -120,6 +120,20 @@ ui:
   no_webdav_servers: "Keine WebDAV-Server konfiguriert"
   clear_history: "Löschen"
   clear_all: "Alle löschen"
+  # Torrent
+  torrent: "BT/Magnet"
+  torrent_hint: "Magnet-Link oder Torrent-URL einfügen..."
+  torrent_submit: "Senden"
+  torrent_submitting: "Wird gesendet..."
+  torrent_success: "Torrent erfolgreich hinzugefügt"
+  torrent_not_configured: "Torrent-Client nicht konfiguriert. In den Einstellungen einrichten."
+  torrent_settings: "Torrent-Client"
+  torrent_client: "Client-Typ"
+  torrent_host: "Host"
+  torrent_test: "Verbindung testen"
+  torrent_testing: "Teste..."
+  torrent_test_success: "Verbindung erfolgreich"
+  torrent_enabled: "Torrent aktivieren"
 
 # Server-Nachrichten
 server:

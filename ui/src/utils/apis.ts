@@ -46,6 +46,24 @@ export interface ConfigData {
   server_api_key: string;
   webdav_servers: Record<string, WebDAVServer>;
   express?: Record<string, Record<string, string>>;
+  torrent_enabled?: boolean;
+}
+
+export interface TorrentConfig {
+  enabled: boolean;
+  client: string;
+  host: string;
+  username: string;
+  password: string;
+  use_https: boolean;
+  default_save_path: string;
+}
+
+export interface TorrentAddResult {
+  id: string;
+  hash: string;
+  name: string;
+  duplicate: boolean;
 }
 
 export interface JobsData {
@@ -147,5 +165,46 @@ export async function clearHistory(): Promise<
   ApiResponse<{ cleared: number }>
 > {
   const res = await fetch("/api/jobs", { method: "DELETE" });
+  return res.json();
+}
+
+// Torrent APIs
+
+export async function fetchTorrentConfig(): Promise<
+  ApiResponse<TorrentConfig>
+> {
+  const res = await fetch("/api/config/torrent");
+  return res.json();
+}
+
+export async function saveTorrentConfig(
+  config: TorrentConfig
+): Promise<ApiResponse<{ enabled: boolean }>> {
+  const res = await fetch("/api/config/torrent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+  return res.json();
+}
+
+export async function testTorrentConnection(): Promise<
+  ApiResponse<{ client: string }>
+> {
+  const res = await fetch("/api/config/torrent/test", {
+    method: "POST",
+  });
+  return res.json();
+}
+
+export async function addTorrent(
+  url: string,
+  savePath?: string
+): Promise<ApiResponse<TorrentAddResult>> {
+  const res = await fetch("/api/torrent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url, save_path: savePath }),
+  });
   return res.json();
 }

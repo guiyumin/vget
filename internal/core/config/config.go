@@ -75,6 +75,33 @@ type Config struct {
 	//     fedex:
 	//       api_key: "zzz"
 	Express map[string]map[string]string `yaml:"express,omitempty"`
+
+	// Torrent client configuration for dispatching magnet links
+	Torrent TorrentConfig `yaml:"torrent,omitempty"`
+}
+
+// TorrentConfig holds configuration for remote torrent client integration
+type TorrentConfig struct {
+	// Enabled determines if torrent dispatch feature is active
+	Enabled bool `yaml:"enabled,omitempty"`
+
+	// Client type: "transmission", "qbittorrent", "synology"
+	Client string `yaml:"client,omitempty"`
+
+	// Host is the torrent client address (e.g., "192.168.1.100:9091")
+	Host string `yaml:"host,omitempty"`
+
+	// Username for authentication
+	Username string `yaml:"username,omitempty"`
+
+	// Password for authentication
+	Password string `yaml:"password,omitempty"`
+
+	// UseHTTPS enables HTTPS connection to torrent client
+	UseHTTPS bool `yaml:"use_https,omitempty"`
+
+	// DefaultSavePath overrides the client's default download directory
+	DefaultSavePath string `yaml:"default_save_path,omitempty"`
 }
 
 // GetExpressConfig returns the config for a specific express provider

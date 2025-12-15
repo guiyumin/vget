@@ -19,6 +19,7 @@ import (
 	"github.com/guiyumin/vget/internal/core/i18n"
 	"github.com/guiyumin/vget/internal/core/tracker"
 	"github.com/guiyumin/vget/internal/core/version"
+	"github.com/guiyumin/vget/internal/torrent"
 )
 
 // Response is the standard API response structure
@@ -113,6 +114,13 @@ func (s *Server) Start() error {
 	api.DELETE("/config/webdav/:name", s.handleDeleteWebDAV)
 	api.GET("/i18n", s.handleI18n)
 	api.POST("/kuaidi100", s.handleKuaidi100)
+
+	// Torrent dispatch routes
+	api.GET("/config/torrent", s.handleGetTorrentConfig)
+	api.POST("/config/torrent", s.handleSetTorrentConfig)
+	api.POST("/config/torrent/test", s.handleTestTorrentConnection)
+	api.POST("/torrent", s.handleAddTorrent)
+	api.GET("/torrent", s.handleListTorrents)
 
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
@@ -400,6 +408,7 @@ func (s *Server) handleGetConfig(c *gin.Context) {
 			"server_api_key":        cfg.Server.APIKey,
 			"webdav_servers":        webdavServers,
 			"express":               cfg.Express,
+			"torrent_enabled":       cfg.Torrent.Enabled,
 		},
 		Message: "config retrieved",
 	})
@@ -684,6 +693,311 @@ func (s *Server) handleKuaidi100(c *gin.Context) {
 		},
 		Message: "tracking info retrieved",
 	})
+}
+
+// Torrent handlers
+
+// TorrentConfigRequest is the request body for POST /config/torrent
+type TorrentConfigRequest struct {
+	Enabled         bool   `json:"enabled"`
+	Client          string `json:"client"`
+	Host            string `json:"host"`
+	Username        string `json:"username"`
+	Password        string `json:"password"`
+	UseHTTPS        bool   `json:"use_https"`
+	DefaultSavePath string `json:"default_save_path"`
+}
+
+// TorrentAddRequest is the request body for POST /torrent
+type TorrentAddRequest struct {
+	URL      string `json:"url" binding:"required"` // Magnet link or .torrent URL
+	SavePath string `json:"save_path,omitempty"`
+	Paused   bool   `json:"paused,omitempty"`
+}
+
+func (s *Server) handleGetTorrentConfig(c *gin.Context) {
+	cfg := config.LoadOrDefault()
+
+	c.JSON(http.StatusOK, Response{
+		Code: 200,
+		Data: gin.H{
+			"enabled":           cfg.Torrent.Enabled,
+			"client":            cfg.Torrent.Client,
+			"host":              cfg.Torrent.Host,
+			"username":          cfg.Torrent.Username,
+			"password":          cfg.Torrent.Password,
+			"use_https":         cfg.Torrent.UseHTTPS,
+			"default_save_path": cfg.Torrent.DefaultSavePath,
+		},
+		Message: "torrent config retrieved",
+	})
+}
+
+func (s *Server) handleSetTorrentConfig(c *gin.Context) {
+	var req TorrentConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "invalid request body",
+		})
+		return
+	}
+
+	// Validate client type if enabled
+	if req.Enabled {
+		switch req.Client {
+		case "transmission", "qbittorrent", "synology":
+			// Valid
+		default:
+			c.JSON(http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "invalid client type: must be transmission, qbittorrent, or synology",
+			})
+			return
+		}
+
+		if req.Host == "" {
+			c.JSON(http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "host is required when torrent is enabled",
+			})
+			return
+		}
+	}
+
+	cfg := config.LoadOrDefault()
+	cfg.Torrent = config.TorrentConfig{
+		Enabled:         req.Enabled,
+		Client:          req.Client,
+		Host:            req.Host,
+		Username:        req.Username,
+		Password:        req.Password,
+		UseHTTPS:        req.UseHTTPS,
+		DefaultSavePath: req.DefaultSavePath,
+	}
+
+	if err := config.Save(cfg); err != nil {
+		c.JSON(http.StatusInternalServerError, Response{
+			Code:    500,
+			Data:    nil,
+			Message: fmt.Sprintf("failed to save config: %v", err),
+		})
+		return
+	}
+
+	s.cfg = cfg
+	c.JSON(http.StatusOK, Response{
+		Code:    200,
+		Data:    gin.H{"enabled": req.Enabled},
+		Message: "torrent config saved",
+	})
+}
+
+func (s *Server) handleTestTorrentConnection(c *gin.Context) {
+	cfg := config.LoadOrDefault()
+
+	if !cfg.Torrent.Enabled {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "torrent is not enabled",
+		})
+		return
+	}
+
+	client, err := s.createTorrentClient(&cfg.Torrent)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: fmt.Sprintf("invalid torrent config: %v", err),
+		})
+		return
+	}
+
+	if err := client.Connect(); err != nil {
+		c.JSON(http.StatusBadGateway, Response{
+			Code:    502,
+			Data:    nil,
+			Message: fmt.Sprintf("connection failed: %v", err),
+		})
+		return
+	}
+	defer client.Close()
+
+	c.JSON(http.StatusOK, Response{
+		Code:    200,
+		Data:    gin.H{"client": client.Name()},
+		Message: "connection successful",
+	})
+}
+
+func (s *Server) handleAddTorrent(c *gin.Context) {
+	var req TorrentAddRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "url is required",
+		})
+		return
+	}
+
+	cfg := config.LoadOrDefault()
+
+	if !cfg.Torrent.Enabled {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "torrent is not enabled. Configure it in settings first.",
+		})
+		return
+	}
+
+	client, err := s.createTorrentClient(&cfg.Torrent)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: fmt.Sprintf("invalid torrent config: %v", err),
+		})
+		return
+	}
+
+	if err := client.Connect(); err != nil {
+		c.JSON(http.StatusBadGateway, Response{
+			Code:    502,
+			Data:    nil,
+			Message: fmt.Sprintf("failed to connect to torrent client: %v", err),
+		})
+		return
+	}
+	defer client.Close()
+
+	// Prepare options
+	opts := &torrent.AddOptions{
+		Paused: req.Paused,
+	}
+	if req.SavePath != "" {
+		opts.SavePath = req.SavePath
+	} else if cfg.Torrent.DefaultSavePath != "" {
+		opts.SavePath = cfg.Torrent.DefaultSavePath
+	}
+
+	// Add torrent based on URL type
+	var result *torrent.AddResult
+	if torrent.IsMagnetLink(req.URL) {
+		result, err = client.AddMagnet(req.URL, opts)
+	} else {
+		result, err = client.AddTorrentURL(req.URL, opts)
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, Response{
+			Code:    500,
+			Data:    nil,
+			Message: fmt.Sprintf("failed to add torrent: %v", err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, Response{
+		Code: 200,
+		Data: gin.H{
+			"id":        result.ID,
+			"hash":      result.Hash,
+			"name":      result.Name,
+			"duplicate": result.Duplicate,
+		},
+		Message: "torrent added successfully",
+	})
+}
+
+func (s *Server) handleListTorrents(c *gin.Context) {
+	cfg := config.LoadOrDefault()
+
+	if !cfg.Torrent.Enabled {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "torrent is not enabled",
+		})
+		return
+	}
+
+	client, err := s.createTorrentClient(&cfg.Torrent)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: fmt.Sprintf("invalid torrent config: %v", err),
+		})
+		return
+	}
+
+	if err := client.Connect(); err != nil {
+		c.JSON(http.StatusBadGateway, Response{
+			Code:    502,
+			Data:    nil,
+			Message: fmt.Sprintf("failed to connect to torrent client: %v", err),
+		})
+		return
+	}
+	defer client.Close()
+
+	torrents, err := client.ListTorrents()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, Response{
+			Code:    500,
+			Data:    nil,
+			Message: fmt.Sprintf("failed to list torrents: %v", err),
+		})
+		return
+	}
+
+	// Convert to JSON-friendly format
+	torrentList := make([]gin.H, len(torrents))
+	for i, t := range torrents {
+		torrentList[i] = gin.H{
+			"id":             t.ID,
+			"hash":           t.Hash,
+			"name":           t.Name,
+			"state":          t.State.String(),
+			"progress":       t.Progress,
+			"size":           t.Size,
+			"downloaded":     t.Downloaded,
+			"uploaded":       t.Uploaded,
+			"download_speed": t.DownloadSpeed,
+			"upload_speed":   t.UploadSpeed,
+			"ratio":          t.Ratio,
+			"eta":            t.ETA,
+			"save_path":      t.SavePath,
+		}
+	}
+
+	c.JSON(http.StatusOK, Response{
+		Code: 200,
+		Data: gin.H{
+			"torrents": torrentList,
+			"count":    len(torrentList),
+		},
+		Message: fmt.Sprintf("%d torrents found", len(torrentList)),
+	})
+}
+
+// createTorrentClient creates a torrent client from config
+func (s *Server) createTorrentClient(cfg *config.TorrentConfig) (torrent.Client, error) {
+	clientCfg := &torrent.Config{
+		Type:     torrent.ClientType(cfg.Client),
+		Host:     cfg.Host,
+		Username: cfg.Username,
+		Password: cfg.Password,
+		UseHTTPS: cfg.UseHTTPS,
+	}
+	return torrent.NewClient(clientCfg)
 }
 
 // Helper functions

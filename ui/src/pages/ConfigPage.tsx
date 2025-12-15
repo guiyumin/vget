@@ -1,5 +1,6 @@
 import { useApp } from "../context/AppContext";
 import { ConfigEditor, type ConfigValues } from "../components/ConfigEditor";
+import { TorrentSettings } from "../components/TorrentSettings";
 
 export function ConfigPage() {
   const {
@@ -58,6 +59,8 @@ export function ConfigPage() {
         onAddWebDAV={addWebDAV}
         onDeleteWebDAV={deleteWebDAV}
       />
+
+      <TorrentSettings isConnected={isConnected} />
     </div>
   );
 }

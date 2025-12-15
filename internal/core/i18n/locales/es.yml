@@ -120,6 +120,20 @@ ui:
   no_webdav_servers: "No hay servidores WebDAV configurados"
   clear_history: "Limpiar"
   clear_all: "Limpiar todo"
+  # Torrent
+  torrent: "BT/Magnet"
+  torrent_hint: "Pega un enlace magnet o URL de torrent..."
+  torrent_submit: "Enviar"
+  torrent_submitting: "Enviando..."
+  torrent_success: "Torrent añadido exitosamente"
+  torrent_not_configured: "Cliente torrent no configurado. Configúrelo en ajustes."
+  torrent_settings: "Cliente Torrent"
+  torrent_client: "Tipo de cliente"
+  torrent_host: "Host"
+  torrent_test: "Probar conexión"
+  torrent_testing: "Probando..."
+  torrent_test_success: "Conexión exitosa"
+  torrent_enabled: "Activar Torrent"
 
 # Mensajes del servidor
 server:

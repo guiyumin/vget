@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import clsx from "clsx";
 
-import { FaDownload, FaGear, FaTruck, FaLayerGroup } from "react-icons/fa6";
+import { FaDownload, FaGear, FaTruck, FaLayerGroup, FaMagnet } from "react-icons/fa6";
 import { useApp } from "../context/AppContext";
 
 interface SidebarProps {
@@ -30,6 +30,12 @@ export function Sidebar({ lang }: SidebarProps) {
       to: "/bulk",
       icon: <FaLayerGroup />,
       label: t.bulk_download,
+      show: true,
+    },
+    {
+      to: "/torrent",
+      icon: <FaMagnet />,
+      label: t.torrent,
       show: true,
     },
     {

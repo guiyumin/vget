@@ -51,6 +51,7 @@ interface AppContextType {
   kuaidi100Key: string;
   kuaidi100Customer: string;
   configExists: boolean;
+  torrentEnabled: boolean;
 
   // Translations
   t: UITranslations;
@@ -103,6 +104,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   >({});
   const [kuaidi100Key, setKuaidi100Key] = useState("");
   const [kuaidi100Customer, setKuaidi100Customer] = useState("");
+  const [torrentEnabled, setTorrentEnabled] = useState(false);
 
   const setDarkMode = useCallback((dark: boolean) => {
     setDarkModeState(dark);
@@ -139,6 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const kuaidi100Cfg = configRes.data.express?.kuaidi100;
         setKuaidi100Key(kuaidi100Cfg?.key || "");
         setKuaidi100Customer(kuaidi100Cfg?.customer || "");
+        setTorrentEnabled(configRes.data.torrent_enabled || false);
       }
       if (i18nRes.code === 200) {
         // Merge with defaults to ensure new keys are available
@@ -263,6 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         kuaidi100Key,
         kuaidi100Customer,
         configExists,
+        torrentEnabled,
         t,
         serverT,
         darkMode,

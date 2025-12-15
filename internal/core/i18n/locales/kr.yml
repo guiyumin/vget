@@ -120,6 +120,20 @@ ui:
   no_webdav_servers: "WebDAV 서버가 구성되지 않았습니다"
   clear_history: "삭제"
   clear_all: "모두 삭제"
+  # 토렌트
+  torrent: "BT/마그넷"
+  torrent_hint: "마그넷 링크 또는 토렌트 URL 붙여넣기..."
+  torrent_submit: "전송"
+  torrent_submitting: "전송 중..."
+  torrent_success: "토렌트가 성공적으로 추가되었습니다"
+  torrent_not_configured: "토렌트 클라이언트가 구성되지 않았습니다. 설정에서 구성하세요."
+  torrent_settings: "토렌트 클라이언트"
+  torrent_client: "클라이언트 유형"
+  torrent_host: "호스트"
+  torrent_test: "연결 테스트"
+  torrent_testing: "테스트 중..."
+  torrent_test_success: "연결 성공"
+  torrent_enabled: "토렌트 활성화"
 
 # 서버 메시지
 server:
