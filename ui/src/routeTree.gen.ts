@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WebdavRouteImport } from './routes/webdav'
 import { Route as TorrentRouteImport } from './routes/torrent'
+import { Route as PodcastRouteImport } from './routes/podcast'
 import { Route as Kuaidi100RouteImport } from './routes/kuaidi100'
 import { Route as ConfigRouteImport } from './routes/config'
 import { Route as BulkRouteImport } from './routes/bulk'
@@ -24,6 +25,11 @@ const WebdavRoute = WebdavRouteImport.update({
 const TorrentRoute = TorrentRouteImport.update({
   id: '/torrent',
   path: '/torrent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PodcastRoute = PodcastRouteImport.update({
+  id: '/podcast',
+  path: '/podcast',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Kuaidi100Route = Kuaidi100RouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/kuaidi100': typeof Kuaidi100Route
+  '/podcast': typeof PodcastRoute
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/kuaidi100': typeof Kuaidi100Route
+  '/podcast': typeof PodcastRoute
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
 }
@@ -69,20 +77,36 @@ export interface FileRoutesById {
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/kuaidi100': typeof Kuaidi100Route
+  '/podcast': typeof PodcastRoute
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bulk' | '/config' | '/kuaidi100' | '/torrent' | '/webdav'
+  fullPaths:
+    | '/'
+    | '/bulk'
+    | '/config'
+    | '/kuaidi100'
+    | '/podcast'
+    | '/torrent'
+    | '/webdav'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bulk' | '/config' | '/kuaidi100' | '/torrent' | '/webdav'
+  to:
+    | '/'
+    | '/bulk'
+    | '/config'
+    | '/kuaidi100'
+    | '/podcast'
+    | '/torrent'
+    | '/webdav'
   id:
     | '__root__'
     | '/'
     | '/bulk'
     | '/config'
     | '/kuaidi100'
+    | '/podcast'
     | '/torrent'
     | '/webdav'
   fileRoutesById: FileRoutesById
@@ -92,6 +116,7 @@ export interface RootRouteChildren {
   BulkRoute: typeof BulkRoute
   ConfigRoute: typeof ConfigRoute
   Kuaidi100Route: typeof Kuaidi100Route
+  PodcastRoute: typeof PodcastRoute
   TorrentRoute: typeof TorrentRoute
   WebdavRoute: typeof WebdavRoute
 }
@@ -110,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/torrent'
       fullPath: '/torrent'
       preLoaderRoute: typeof TorrentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/podcast': {
+      id: '/podcast'
+      path: '/podcast'
+      fullPath: '/podcast'
+      preLoaderRoute: typeof PodcastRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kuaidi100': {
@@ -148,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   BulkRoute: BulkRoute,
   ConfigRoute: ConfigRoute,
   Kuaidi100Route: Kuaidi100Route,
+  PodcastRoute: PodcastRoute,
   TorrentRoute: TorrentRoute,
   WebdavRoute: WebdavRoute,
 }

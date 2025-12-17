@@ -121,12 +121,13 @@ export async function setConfigValue(
 }
 
 export async function postDownload(
-  url: string
+  url: string,
+  filename?: string
 ): Promise<ApiResponse<{ id: string; status: string }>> {
   const res = await fetch("/api/download", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, filename }),
   });
   return res.json();
 }
@@ -254,6 +255,58 @@ export async function submitWebDAVDownload(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ remote, files }),
+  });
+  return res.json();
+}
+
+// Podcast APIs
+
+export interface PodcastChannel {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  episode_count: number;
+  feed_url?: string;
+  source: "xiaoyuzhou" | "itunes";
+}
+
+export interface PodcastEpisode {
+  id: string;
+  title: string;
+  podcast_name: string;
+  duration: number;
+  pub_date?: string;
+  download_url: string;
+  source: "xiaoyuzhou" | "itunes";
+}
+
+export interface PodcastSearchResult {
+  source: "xiaoyuzhou" | "itunes";
+  podcasts: PodcastChannel[];
+  episodes: PodcastEpisode[];
+}
+
+export async function searchPodcasts(
+  query: string,
+  lang?: string
+): Promise<ApiResponse<{ results: PodcastSearchResult[] }>> {
+  const res = await fetch("/api/podcast/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, lang }),
+  });
+  return res.json();
+}
+
+export async function fetchPodcastEpisodes(
+  podcastId: string,
+  source: "xiaoyuzhou" | "itunes"
+): Promise<ApiResponse<{ podcast_title: string; episodes: PodcastEpisode[] }>> {
+  const res = await fetch("/api/podcast/episodes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ podcast_id: podcastId, source }),
   });
   return res.json();
 }

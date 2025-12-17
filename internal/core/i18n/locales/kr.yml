@@ -145,6 +145,17 @@ ui:
   # Toast
   download_queued: "다운로드가 시작되었습니다. 다운로드 페이지에서 진행 상황을 확인하세요."
   downloads_queued: "개의 다운로드가 시작되었습니다. 다운로드 페이지에서 진행 상황을 확인하세요."
+  # Podcast
+  podcast: "팟캐스트"
+  podcast_search: "검색"
+  podcast_search_hint: "팟캐스트 또는 에피소드 검색..."
+  podcast_searching: "검색 중..."
+  podcast_channels: "팟캐스트"
+  podcast_episodes: "에피소드"
+  podcast_no_results: "결과를 찾을 수 없습니다"
+  podcast_episodes_count: "에피소드"
+  podcast_back: "뒤로"
+  podcast_download_started: "다운로드 시작됨"
 
 # 서버 메시지
 server:

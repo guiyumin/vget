@@ -128,6 +128,10 @@ func (s *Server) Start() error {
 	api.POST("/torrent", s.handleAddTorrent)
 	api.GET("/torrent", s.handleListTorrents)
 
+	// Podcast search routes
+	api.POST("/podcast/search", s.handlePodcastSearch)
+	api.POST("/podcast/episodes", s.handlePodcastEpisodes)
+
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
 		s.setupStaticFiles(distFS)

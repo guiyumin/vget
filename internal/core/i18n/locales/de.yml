@@ -145,6 +145,17 @@ ui:
   # Toast
   download_queued: "Download gestartet. Fortschritt auf der Download-Seite überprüfen."
   downloads_queued: "Downloads gestartet. Fortschritt auf der Download-Seite überprüfen."
+  # Podcast
+  podcast: "Podcast"
+  podcast_search: "Suchen"
+  podcast_search_hint: "Podcasts oder Episoden suchen..."
+  podcast_searching: "Suche..."
+  podcast_channels: "Podcasts"
+  podcast_episodes: "Episoden"
+  podcast_no_results: "Keine Ergebnisse gefunden"
+  podcast_episodes_count: "Episoden"
+  podcast_back: "Zurück"
+  podcast_download_started: "Download gestartet"
 
 # Server-Nachrichten
 server:

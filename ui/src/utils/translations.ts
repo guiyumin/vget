@@ -60,6 +60,17 @@ export interface UITranslations {
   // Toast
   download_queued: string;
   downloads_queued: string;
+  // Podcast
+  podcast: string;
+  podcast_search: string;
+  podcast_search_hint: string;
+  podcast_searching: string;
+  podcast_channels: string;
+  podcast_episodes: string;
+  podcast_no_results: string;
+  podcast_episodes_count: string;
+  podcast_back: string;
+  podcast_download_started: string;
 }
 
 export interface ServerTranslations {
@@ -129,6 +140,17 @@ export const defaultTranslations: UITranslations = {
   // Toast
   download_queued: "Download started. Check progress on Download page.",
   downloads_queued: "downloads started. Check progress on Download page.",
+  // Podcast
+  podcast: "Podcast",
+  podcast_search: "Search",
+  podcast_search_hint: "Search podcasts or episodes...",
+  podcast_searching: "Searching...",
+  podcast_channels: "Podcasts",
+  podcast_episodes: "Episodes",
+  podcast_no_results: "No results found",
+  podcast_episodes_count: "episodes",
+  podcast_back: "Back",
+  podcast_download_started: "Download started",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

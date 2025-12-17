@@ -193,6 +193,17 @@ type UITranslations struct {
 	// Toast
 	DownloadQueued  string `yaml:"download_queued" json:"download_queued"`
 	DownloadsQueued string `yaml:"downloads_queued" json:"downloads_queued"`
+	// Podcast
+	Podcast                string `yaml:"podcast" json:"podcast"`
+	PodcastSearch          string `yaml:"podcast_search" json:"podcast_search"`
+	PodcastSearchHint      string `yaml:"podcast_search_hint" json:"podcast_search_hint"`
+	PodcastSearching       string `yaml:"podcast_searching" json:"podcast_searching"`
+	PodcastChannels        string `yaml:"podcast_channels" json:"podcast_channels"`
+	PodcastEpisodes        string `yaml:"podcast_episodes" json:"podcast_episodes"`
+	PodcastNoResults       string `yaml:"podcast_no_results" json:"podcast_no_results"`
+	PodcastEpisodesCount   string `yaml:"podcast_episodes_count" json:"podcast_episodes_count"`
+	PodcastBack            string `yaml:"podcast_back" json:"podcast_back"`
+	PodcastDownloadStarted string `yaml:"podcast_download_started" json:"podcast_download_started"`
 }
 
 // ServerTranslations holds translations for server messages
