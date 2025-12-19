@@ -419,6 +419,7 @@ func (s *Server) handleGetConfig(c *gin.Context) {
 			"webdav_servers":        webdavServers,
 			"express":               cfg.Express,
 			"torrent_enabled":       cfg.Torrent.Enabled,
+			"bilibili_cookie":       cfg.Bilibili.Cookie,
 		},
 		Message: "config retrieved",
 	})
@@ -1045,6 +1046,8 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Server.MaxConcurrent = val
 	case "server.api_key", "server_api_key":
 		cfg.Server.APIKey = value
+	case "bilibili.cookie", "bilibili_cookie":
+		cfg.Bilibili.Cookie = value
 	default:
 		return fmt.Errorf("unknown config key: %s", key)
 	}

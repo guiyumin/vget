@@ -84,6 +84,7 @@ Supported keys:
   format             Preferred format (mp4, webm, best)
   quality            Default quality (1080p, 720p, best)
   twitter.auth_token Twitter auth token for NSFW content
+  bilibili.cookie    Bilibili cookie for member-only content
   server.port        Server listen port
   server.max_concurrent  Max concurrent downloads
   server.api_key     Server API key
@@ -159,6 +160,7 @@ Supported keys:
   format             Reset to empty (uses default)
   quality            Reset to empty (uses default)
   twitter.auth_token Clear Twitter auth token
+  bilibili.cookie    Clear Bilibili cookie
   server.port        Reset to 0 (uses default)
   server.max_concurrent  Reset to 0 (uses default)
   server.api_key     Clear API key
@@ -214,6 +216,8 @@ func setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Quality = value
 	case "twitter.auth_token":
 		cfg.Twitter.AuthToken = value
+	case "bilibili.cookie":
+		cfg.Bilibili.Cookie = value
 	case "server.port":
 		var port int
 		if _, err := fmt.Sscanf(value, "%d", &port); err != nil {
@@ -262,6 +266,8 @@ func getConfigValue(cfg *config.Config, key string) (string, error) {
 		return cfg.Quality, nil
 	case "twitter.auth_token":
 		return cfg.Twitter.AuthToken, nil
+	case "bilibili.cookie":
+		return cfg.Bilibili.Cookie, nil
 	case "server.port":
 		return fmt.Sprintf("%d", cfg.Server.Port), nil
 	case "server.max_concurrent":
@@ -298,6 +304,8 @@ func unsetConfigValue(cfg *config.Config, key string) error {
 		cfg.Quality = ""
 	case "twitter.auth_token":
 		cfg.Twitter.AuthToken = ""
+	case "bilibili.cookie":
+		cfg.Bilibili.Cookie = ""
 	case "server.port":
 		cfg.Server.Port = 0
 	case "server.max_concurrent":

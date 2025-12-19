@@ -78,6 +78,15 @@ type Config struct {
 
 	// Torrent client configuration for dispatching magnet links
 	Torrent TorrentConfig `yaml:"torrent,omitempty"`
+
+	// Bilibili configuration
+	Bilibili BilibiliConfig `yaml:"bilibili,omitempty"`
+}
+
+// BilibiliConfig holds Bilibili authentication settings
+type BilibiliConfig struct {
+	// Cookie is the full cookie string (SESSDATA, bili_jct, DedeUserID)
+	Cookie string `yaml:"cookie,omitempty"`
 }
 
 // TorrentConfig holds configuration for remote torrent client integration

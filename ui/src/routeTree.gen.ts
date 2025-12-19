@@ -15,6 +15,7 @@ import { Route as PodcastRouteImport } from './routes/podcast'
 import { Route as Kuaidi100RouteImport } from './routes/kuaidi100'
 import { Route as ConfigRouteImport } from './routes/config'
 import { Route as BulkRouteImport } from './routes/bulk'
+import { Route as BilibiliRouteImport } from './routes/bilibili'
 import { Route as IndexRouteImport } from './routes/index'
 
 const WebdavRoute = WebdavRouteImport.update({
@@ -47,6 +48,11 @@ const BulkRoute = BulkRouteImport.update({
   path: '/bulk',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BilibiliRoute = BilibiliRouteImport.update({
+  id: '/bilibili',
+  path: '/bilibili',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,6 +61,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bilibili': typeof BilibiliRoute
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/kuaidi100': typeof Kuaidi100Route
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bilibili': typeof BilibiliRoute
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/kuaidi100': typeof Kuaidi100Route
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bilibili': typeof BilibiliRoute
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/kuaidi100': typeof Kuaidi100Route
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bilibili'
     | '/bulk'
     | '/config'
     | '/kuaidi100'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bilibili'
     | '/bulk'
     | '/config'
     | '/kuaidi100'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/bilibili'
     | '/bulk'
     | '/config'
     | '/kuaidi100'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BilibiliRoute: typeof BilibiliRoute
   BulkRoute: typeof BulkRoute
   ConfigRoute: typeof ConfigRoute
   Kuaidi100Route: typeof Kuaidi100Route
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BulkRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bilibili': {
+      id: '/bilibili'
+      path: '/bilibili'
+      fullPath: '/bilibili'
+      preLoaderRoute: typeof BilibiliRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -177,6 +197,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BilibiliRoute: BilibiliRoute,
   BulkRoute: BulkRoute,
   ConfigRoute: ConfigRoute,
   Kuaidi100Route: Kuaidi100Route,

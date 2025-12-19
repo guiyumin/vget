@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import clsx from "clsx";
 
-import { FaDownload, FaGear, FaTruck, FaLayerGroup, FaMagnet, FaCloud, FaPodcast } from "react-icons/fa6";
+import { FaDownload, FaGear, FaTruck, FaLayerGroup, FaMagnet, FaCloud, FaPodcast, FaB } from "react-icons/fa6";
 import { useApp } from "../context/AppContext";
 
 interface SidebarProps {
@@ -60,6 +60,12 @@ export function Sidebar({ lang }: SidebarProps) {
       to: "/kuaidi100",
       icon: <FaTruck />,
       label: "快递查询",
+      show: lang === "zh",
+    },
+    {
+      to: "/bilibili",
+      icon: <FaB />,
+      label: "哔哩哔哩",
       show: lang === "zh",
     },
   ];

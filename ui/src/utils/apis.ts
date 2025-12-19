@@ -47,6 +47,7 @@ export interface ConfigData {
   webdav_servers: Record<string, WebDAVServer>;
   express?: Record<string, Record<string, string>>;
   torrent_enabled?: boolean;
+  bilibili_cookie?: string;
 }
 
 export interface TorrentConfig {
