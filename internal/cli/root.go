@@ -635,16 +635,16 @@ func isTelegramURL(urlStr string) bool {
 func confirmBilibiliNoLogin() bool {
 	fmt.Println()
 	fmt.Println("  \033[33m未登录 Bilibili，只能下载 360P/480P 低清视频\033[0m")
-	fmt.Println("  \033[90m提示: 运行 'vget login bilibili' 登录后可下载更高清晰度\033[0m")
+	fmt.Println("  \033[36m提示: 运行 'vget login bilibili' 登录后可下载更高清晰度\033[0m")
 	fmt.Println()
-	fmt.Print("  是否继续下载? [Y/n]: ")
+	fmt.Print("  是否继续下载? [y/N]: ")
 
 	var response string
 	fmt.Scanln(&response)
 
 	response = strings.TrimSpace(strings.ToLower(response))
-	// Default to yes if empty, or explicit yes
-	return response == "" || response == "y" || response == "yes" || response == "是"
+	// Default to no if empty, only continue on explicit yes
+	return response == "y" || response == "yes" || response == "是"
 }
 
 // runTelegramDownload handles Telegram media downloads with TUI progress

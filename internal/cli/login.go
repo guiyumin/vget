@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/guiyumin/vget/internal/core/config"
@@ -77,12 +78,9 @@ var (
 			Foreground(lipgloss.Color("#00A1D6")) // Bilibili blue
 
 	biliStepStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("248"))
-
-	biliInputStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("252"))
 
-	biliCursorStyle = lipgloss.NewStyle().
+	biliKeyStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#00A1D6")).
 			Bold(true)
 
@@ -94,159 +92,203 @@ var (
 
 	biliErrorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("196"))
-
-	biliContainerStyle = lipgloss.NewStyle().
-				Padding(1, 2)
 )
 
 type bilibiliLoginModel struct {
-	cookie      string
-	saved       bool
-	cancelled   bool
-	error       string
-	width       int
-	height      int
-	showingHelp bool
+	inputs    []textinput.Model
+	focused   int
+	saved     bool
+	cancelled bool
+	error     string
 }
 
 func newBilibiliLoginModel() bilibiliLoginModel {
+	inputs := make([]textinput.Model, 3)
+
+	// SESSDATA input
+	inputs[0] = textinput.New()
+	inputs[0].Placeholder = "粘贴 SESSDATA 值..."
+	inputs[0].CharLimit = 500
+	inputs[0].Width = 50
+	inputs[0].Prompt = "  SESSDATA    > "
+	inputs[0].PromptStyle = biliKeyStyle
+	inputs[0].Focus()
+
+	// bili_jct input
+	inputs[1] = textinput.New()
+	inputs[1].Placeholder = "粘贴 bili_jct 值..."
+	inputs[1].CharLimit = 100
+	inputs[1].Width = 50
+	inputs[1].Prompt = "  bili_jct    > "
+	inputs[1].PromptStyle = biliKeyStyle
+
+	// DedeUserID input
+	inputs[2] = textinput.New()
+	inputs[2].Placeholder = "粘贴 DedeUserID 值..."
+	inputs[2].CharLimit = 50
+	inputs[2].Width = 50
+	inputs[2].Prompt = "  DedeUserID  > "
+	inputs[2].PromptStyle = biliKeyStyle
+
+	// Load existing cookie if any
 	cfg := config.LoadOrDefault()
+	if cfg.Bilibili.Cookie != "" {
+		// Parse existing cookie
+		parts := strings.Split(cfg.Bilibili.Cookie, ";")
+		for _, part := range parts {
+			part = strings.TrimSpace(part)
+			if strings.HasPrefix(part, "SESSDATA=") {
+				inputs[0].SetValue(strings.TrimPrefix(part, "SESSDATA="))
+			} else if strings.HasPrefix(part, "bili_jct=") {
+				inputs[1].SetValue(strings.TrimPrefix(part, "bili_jct="))
+			} else if strings.HasPrefix(part, "DedeUserID=") {
+				inputs[2].SetValue(strings.TrimPrefix(part, "DedeUserID="))
+			}
+		}
+	}
+
 	return bilibiliLoginModel{
-		cookie: cfg.Bilibili.Cookie,
+		inputs:  inputs,
+		focused: 0,
 	}
 }
 
 func (m bilibiliLoginModel) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (m bilibiliLoginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, nil
+	var cmds []tea.Cmd
 
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			m.cancelled = true
 			return m, tea.Quit
 
+		case "tab", "down":
+			// Move to next input
+			m.inputs[m.focused].Blur()
+			m.focused = (m.focused + 1) % len(m.inputs)
+			m.inputs[m.focused].Focus()
+			return m, textinput.Blink
+
+		case "shift+tab", "up":
+			// Move to previous input
+			m.inputs[m.focused].Blur()
+			m.focused--
+			if m.focused < 0 {
+				m.focused = len(m.inputs) - 1
+			}
+			m.inputs[m.focused].Focus()
+			return m, textinput.Blink
+
 		case "enter":
-			// Validate and save
-			if m.cookie == "" {
-				m.error = "Cookie cannot be empty"
-				return m, nil
+			// If not on last field, move to next
+			if m.focused < len(m.inputs)-1 {
+				m.inputs[m.focused].Blur()
+				m.focused++
+				m.inputs[m.focused].Focus()
+				return m, textinput.Blink
 			}
-			if !strings.Contains(m.cookie, "SESSDATA") {
-				m.error = "Cookie must contain SESSDATA"
-				return m, nil
+
+			// Validate all fields
+			sessdata := strings.TrimSpace(m.inputs[0].Value())
+			biliJct := strings.TrimSpace(m.inputs[1].Value())
+			dedeUserID := strings.TrimSpace(m.inputs[2].Value())
+
+			if sessdata == "" {
+				m.error = "SESSDATA 不能为空"
+				m.focused = 0
+				m.inputs[0].Focus()
+				return m, textinput.Blink
 			}
+
+			// Build cookie string
+			cookie := fmt.Sprintf("SESSDATA=%s; bili_jct=%s; DedeUserID=%s", sessdata, biliJct, dedeUserID)
 
 			// Save to config
 			cfg := config.LoadOrDefault()
-			cfg.Bilibili.Cookie = m.cookie
+			cfg.Bilibili.Cookie = cookie
 			if err := config.Save(cfg); err != nil {
-				m.error = fmt.Sprintf("Failed to save: %v", err)
+				m.error = fmt.Sprintf("保存失败: %v", err)
 				return m, nil
 			}
 
 			m.saved = true
 			return m, tea.Quit
-
-		case "tab":
-			m.showingHelp = !m.showingHelp
-			return m, nil
-
-		case "backspace":
-			if len(m.cookie) > 0 {
-				m.cookie = m.cookie[:len(m.cookie)-1]
-			}
-			m.error = ""
-			return m, nil
-
-		case "ctrl+u":
-			m.cookie = ""
-			m.error = ""
-			return m, nil
-
-		case "ctrl+v":
-			// Note: clipboard paste is handled by terminal, not bubbletea
-			return m, nil
-
-		default:
-			// Accept printable characters
-			if len(msg.String()) == 1 || msg.Type == tea.KeySpace {
-				char := msg.String()
-				if msg.Type == tea.KeySpace {
-					char = " "
-				}
-				m.cookie += char
-				m.error = ""
-			}
-			return m, nil
 		}
 	}
 
-	return m, nil
+	// Update the focused input
+	var cmd tea.Cmd
+	m.inputs[m.focused], cmd = m.inputs[m.focused].Update(msg)
+	cmds = append(cmds, cmd)
+	m.error = "" // Clear error on any input
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m bilibiliLoginModel) View() string {
 	var b strings.Builder
 
 	// Title
-	b.WriteString(biliTitleStyle.Render("Bilibili 登录"))
+	b.WriteString("\n")
+	b.WriteString(biliTitleStyle.Render("  ━━━ Bilibili 登录 ━━━"))
 	b.WriteString("\n\n")
 
-	// Instructions toggle
-	if m.showingHelp {
-		b.WriteString(biliStepStyle.Render("获取 Cookie 的方法："))
-		b.WriteString("\n")
-		b.WriteString(biliStepStyle.Render("1. 在浏览器中打开 bilibili.com 并登录"))
-		b.WriteString("\n")
-		b.WriteString(biliStepStyle.Render("2. 按 F12 打开开发者工具"))
-		b.WriteString("\n")
-		b.WriteString(biliStepStyle.Render("3. 切换到「应用」(Application) 标签"))
-		b.WriteString("\n")
-		b.WriteString(biliStepStyle.Render("4. 在左侧找到 Cookies → bilibili.com"))
-		b.WriteString("\n")
-		b.WriteString(biliStepStyle.Render("5. 复制 SESSDATA、bili_jct、DedeUserID 的值"))
-		b.WriteString("\n\n")
-		b.WriteString(biliStepStyle.Render("格式：SESSDATA=xxx; bili_jct=xxx; DedeUserID=xxx"))
-		b.WriteString("\n\n")
-	} else {
-		b.WriteString(biliStepStyle.Render("按 Tab 显示获取方法"))
-		b.WriteString("\n\n")
-	}
-
-	// Input field
-	b.WriteString(biliStepStyle.Render("Cookie:"))
+	// Instructions
+	b.WriteString(biliTitleStyle.Render("  获取 Cookie 的方法："))
+	b.WriteString("\n\n")
+	b.WriteString(biliStepStyle.Render("  1. 在浏览器中打开 "))
+	b.WriteString(biliKeyStyle.Render("bilibili.com"))
+	b.WriteString(biliStepStyle.Render(" 并登录"))
 	b.WriteString("\n")
-	b.WriteString(biliCursorStyle.Render("> "))
+	b.WriteString(biliStepStyle.Render("  2. 按 "))
+	b.WriteString(biliKeyStyle.Render("F12"))
+	b.WriteString(biliStepStyle.Render(" 打开开发者工具"))
+	b.WriteString("\n")
+	b.WriteString(biliStepStyle.Render("  3. 点击顶部「"))
+	b.WriteString(biliKeyStyle.Render("Application"))
+	b.WriteString(biliStepStyle.Render("」或「"))
+	b.WriteString(biliKeyStyle.Render("应用"))
+	b.WriteString(biliStepStyle.Render("」标签"))
+	b.WriteString("\n")
+	b.WriteString(biliStepStyle.Render("  4. 左侧展开 "))
+	b.WriteString(biliKeyStyle.Render("Cookies"))
+	b.WriteString(biliStepStyle.Render(" → 点击 "))
+	b.WriteString(biliKeyStyle.Render("bilibili.com"))
+	b.WriteString("\n")
+	b.WriteString(biliStepStyle.Render("  5. 分别复制以下三个值:"))
+	b.WriteString("\n\n")
 
-	// Show truncated cookie if too long
-	displayCookie := m.cookie
-	maxLen := 60
-	if len(displayCookie) > maxLen {
-		displayCookie = displayCookie[:maxLen] + "..."
+	// Divider
+	b.WriteString(biliHelpStyle.Render("  ─────────────────────────────────────────────────────────"))
+	b.WriteString("\n\n")
+
+	// Input fields
+	for i, input := range m.inputs {
+		b.WriteString(input.View())
+		if i < len(m.inputs)-1 {
+			b.WriteString("\n")
+		}
 	}
-	b.WriteString(biliInputStyle.Render(displayCookie))
-	b.WriteString(biliCursorStyle.Render("█"))
 	b.WriteString("\n")
 
 	// Error message
 	if m.error != "" {
 		b.WriteString("\n")
-		b.WriteString(biliErrorStyle.Render("✗ " + m.error))
+		b.WriteString(biliErrorStyle.Render("  ✗ " + m.error))
 		b.WriteString("\n")
 	}
 
 	// Help
 	b.WriteString("\n")
-	b.WriteString(biliHelpStyle.Render("Enter 保存 • Tab 显示帮助 • Ctrl+U 清空 • Esc 取消"))
+	b.WriteString(biliHelpStyle.Render("  Tab/↓ 下一项 • Shift+Tab/↑ 上一项 • Enter 保存 • Esc 取消"))
+	b.WriteString("\n")
 
-	return biliContainerStyle.Render(b.String())
+	return b.String()
 }
 
 func runBilibiliLogin() error {
@@ -260,12 +302,12 @@ func runBilibiliLogin() error {
 
 	result := finalModel.(bilibiliLoginModel)
 	if result.cancelled {
-		fmt.Println("Cancelled")
+		fmt.Println("  已取消")
 		return nil
 	}
 
 	if result.saved {
-		fmt.Println(biliSuccessStyle.Render("✓ Bilibili cookie saved"))
+		fmt.Println(biliSuccessStyle.Render("  ✓ Bilibili Cookie 已保存"))
 	}
 
 	return nil
