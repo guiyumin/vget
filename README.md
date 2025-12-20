@@ -1,6 +1,6 @@
 # vget
 
-Versatile command-line toolkit for downloading audio, video, podcasts, and more.
+Versatile downloader for audio, video, podcasts, PDFs and more. Available as CLI and Docker
 
 [简体中文](README_zh.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
@@ -40,22 +40,22 @@ See [sites.md](sites.md) for the full list of supported sites.
 
 ## Commands
 
-| Command                            | Description                           |
-| ---------------------------------- | ------------------------------------- |
-| `vget [url]`                       | Download media (`-o`, `-q`, `--info`) |
-| `vget ls <remote>:<path>`          | List remote directory (`--json`)      |
-| `vget init`                        | Interactive config wizard             |
-| `vget update`                      | Self-update (use `sudo` on Mac/Linux) |
-| `vget search --podcast <query>`    | Search podcasts                       |
-| `vget completion [shell]`          | Generate shell completion script      |
-| `vget config show`                 | Show config                           |
-| `vget config set <key> <value>`    | Set config value (non-interactive)    |
-| `vget config get <key>`            | Get config value                      |
-| `vget config path`                 | Show config file path                 |
-| `vget config webdav list`          | List configured WebDAV servers        |
-| `vget config webdav add <name>`    | Add a WebDAV server                   |
-| `vget config webdav show <name>`   | Show server details                   |
-| `vget config webdav delete <name>` | Delete a server                       |
+| Command                                | Description                              |
+| -------------------------------------- | ---------------------------------------- |
+| `vget [url]`                           | Download media (`-o`, `-q`, `--info`)    |
+| `vget ls <remote>:<path>`              | List remote directory (`--json`)         |
+| `vget init`                            | Interactive config wizard                |
+| `vget update`                          | Self-update (use `sudo` on Mac/Linux)    |
+| `vget search --podcast <query>`        | Search podcasts                          |
+| `vget completion [shell]`              | Generate shell completion script         |
+| `vget config show`                     | Show config                              |
+| `vget config set <key> <value>`        | Set config value (non-interactive)       |
+| `vget config get <key>`                | Get config value                         |
+| `vget config path`                     | Show config file path                    |
+| `vget config webdav list`              | List configured WebDAV servers           |
+| `vget config webdav add <name>`        | Add a WebDAV server                      |
+| `vget config webdav show <name>`       | Show server details                      |
+| `vget config webdav delete <name>`     | Delete a server                          |
 | `vget telegram login --import-desktop` | Import Telegram session from desktop app |
 
 ### Examples

@@ -1,6 +1,6 @@
 # vget
 
-Herramienta de línea de comandos versátil para descargar audio, video, podcasts y más.
+Descargador versátil para audio, video, podcasts, PDFs y más. Disponible como CLI y Docker.
 
 [English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 

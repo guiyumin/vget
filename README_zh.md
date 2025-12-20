@@ -1,6 +1,6 @@
 # vget
 
-多功能命令行下载工具，支持音频、视频、播客等。
+多功能下载工具，支持音频、视频、播客、PDF等。提供 CLI 和 Docker 两种方式。
 
 [English](README.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 

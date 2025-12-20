@@ -1,6 +1,6 @@
 # vget
 
-오디오, 비디오, 팟캐스트 등을 다운로드하는 다목적 명령줄 도구.
+오디오, 비디오, 팟캐스트, PDF 등을 다운로드하는 다목적 도구. CLI 및 Docker로 사용 가능.
 
 [English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
