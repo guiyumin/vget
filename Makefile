@@ -36,8 +36,11 @@ patch minor major: version
 		else if (type == "minor") { print $$1"."$$2+1".0" } \
 		else { print $$1"."$$2"."$$3+1 } \
 	}') && \
+	BUILD_DATE=$$(date -u +"%Y-%m-%d") && \
 	echo "New version: $$NEW_VERSION" && \
+	echo "Build date: $$BUILD_DATE" && \
 	sed -i '' 's/Version = ".*"/Version = "'$$NEW_VERSION'"/' $(VERSION_FILE) && \
+	sed -i '' 's/Date    = ".*"/Date    = "'$$BUILD_DATE'"/' $(VERSION_FILE) && \
 	git add $(VERSION_FILE) && \
 	git commit -m "chore: bump version to v$$NEW_VERSION" && \
 	git tag "v$$NEW_VERSION" && \
