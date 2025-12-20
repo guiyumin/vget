@@ -49,8 +49,14 @@ var loginBilibiliStatusCmd = &cobra.Command{
 	},
 }
 
-var loginBilibiliLogoutCmd = &cobra.Command{
+var logoutCmd = &cobra.Command{
 	Use:   "logout",
+	Short: "Logout from media platforms",
+	Long:  "Clear saved credentials for media platforms",
+}
+
+var logoutBilibiliCmd = &cobra.Command{
+	Use:   "bilibili",
 	Short: "Clear Bilibili credentials",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg := config.LoadOrDefault()
@@ -58,16 +64,17 @@ var loginBilibiliLogoutCmd = &cobra.Command{
 		if err := config.Save(cfg); err != nil {
 			return fmt.Errorf("failed to save config: %w", err)
 		}
-		fmt.Println("Bilibili credentials cleared")
+		fmt.Println("✓ Bilibili credentials cleared")
 		return nil
 	},
 }
 
 func init() {
 	loginBilibiliCmd.AddCommand(loginBilibiliStatusCmd)
-	loginBilibiliCmd.AddCommand(loginBilibiliLogoutCmd)
 	loginCmd.AddCommand(loginBilibiliCmd)
+	logoutCmd.AddCommand(logoutBilibiliCmd)
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(logoutCmd)
 }
 
 // Bilibili login TUI
