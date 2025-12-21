@@ -106,7 +106,7 @@ func (w *compactQRWriter) render() error {
 	}
 
 	// Print tip
-	tip := "扫码后按任意键继续..."
+	tip := "扫码后，手机点击确认，成功后按任意键继续..."
 	tipY := displayHeight + 1
 	x := 0
 	for _, r := range tip {
