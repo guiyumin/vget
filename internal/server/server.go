@@ -132,6 +132,11 @@ func (s *Server) Start() error {
 	api.POST("/podcast/search", s.handlePodcastSearch)
 	api.POST("/podcast/episodes", s.handlePodcastEpisodes)
 
+	// Bilibili login routes
+	api.POST("/bilibili/qr/generate", s.handleBilibiliQRGenerate)
+	api.GET("/bilibili/qr/poll", s.handleBilibiliQRPoll)
+	api.GET("/bilibili/status", s.handleBilibiliStatus)
+
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
 		s.setupStaticFiles(distFS)
