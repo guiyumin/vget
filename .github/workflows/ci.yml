@@ -18,6 +18,9 @@ jobs:
         with:
           go-version: "1.25.4"
 
+      - name: Create placeholder for embed
+        run: mkdir -p internal/server/dist && touch internal/server/dist/.gitkeep
+
       - name: Run tests
         run: go test -v ./...
 
