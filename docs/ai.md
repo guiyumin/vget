@@ -6,16 +6,27 @@ Add AI-powered transcription and summarization to vget for converting downloaded
 ## User Requirements
 - **Transcription**: Both cloud APIs (OpenAI, Qwen) AND local (Ollama, whisper.cpp)
 - **Summarization**: Interface-based for OpenAI, Anthropic, Ollama, Qwen, and extensible
-- **CLI**: Unified `vget ai` command with operation flags
+- **CLI**: Clean separation - `vget <url>` downloads only, `vget ai` does AI
 - **Output**: Each step saves its result (transcript → .md/.srt, summary → .md)
 
 ---
 
-## CLI Design: `vget ai`
+## CLI Design: Clean Separation
 
-### Command Structure
+### Principle
 ```bash
-vget ai <file-or-url> --operation1 --operation2 ...
+vget <url>                    # Download ONLY. No AI flags. Simple.
+vget ai <url-or-file> ...     # AI operations. If URL, download first.
+```
+
+**Why?**
+- No flag pollution on download command
+- `vget ai` is the AI entry point - handles everything AI-related
+- If you pass a URL to `vget ai`, it downloads first then processes
+
+### `vget ai` Command
+```bash
+vget ai <url-or-file> --operation1 --operation2 ...
 ```
 
 - **Input**: URL (downloads first) or local file path
@@ -281,13 +292,18 @@ GET /api/ai/result/:jobId
 | `internal/core/ai/transcriber/registry.go` | Provider factory |
 | `internal/core/ai/transcriber/openai.go` | OpenAI Whisper |
 | `internal/core/ai/transcriber/ollama.go` | Ollama/whisper.cpp |
-| `internal/core/ai/transcriber/qwen.go` | Qwen audio |
+| `internal/core/ai/transcriber/qwen.go` | Qwen audio (via Aliyun API) |
+| `internal/core/ai/transcriber/volcengine.go` | 火山引擎 Volcengine |
+| `internal/core/ai/transcriber/baidu.go` | 百度智能云 |
 | `internal/core/ai/summarizer/registry.go` | Provider factory |
 | `internal/core/ai/summarizer/openai.go` | GPT summarization |
 | `internal/core/ai/summarizer/anthropic.go` | Claude summarization |
 | `internal/core/ai/summarizer/ollama.go` | Local LLM |
 | `internal/core/ai/summarizer/cli.go` | CLI tools (claude, gemini, codex, etc.) |
 | `internal/core/ai/summarizer/router.go` | AI Routers (OpenRouter, MuleRouter) |
+| `internal/core/ai/summarizer/aliyun.go` | 阿里云 Qwen |
+| `internal/core/ai/summarizer/volcengine.go` | 火山引擎 Doubao |
+| `internal/core/ai/summarizer/baidu.go` | 百度 ERNIE |
 | `internal/core/ai/output/srt.go` | SRT formatter |
 | `internal/core/ai/output/markdown.go` | Markdown formatter |
 | `internal/cli/ai.go` | `vget ai` command |
@@ -429,6 +445,49 @@ var routerPresets = map[string]string{
 # │      mulerouter          MuleRouter (Qwen focus)    │
 # │      custom              Custom base_url...         │
 ```
+
+### Chinese Cloud Providers (中国云服务商)
+
+For users in China who need domestic providers:
+
+| Provider | Transcription (ASR) | LLM | Pricing | Notes |
+|----------|---------------------|-----|---------|-------|
+| **阿里云 (Aliyun)** | 智能语音交互 | 通义千问 Qwen | ¥0.058/分钟 | 新用户3个月免费试用 |
+| **火山引擎 (Volcengine)** | 豆包语音 | 豆包 Doubao | 阶梯计费 | 字节跳动旗下 |
+| **百度智能云** | 百度语音 | 文心一言 ERNIE | 60秒内免费 | 免费额度多 |
+| **腾讯云** | 腾讯语音 | 混元 Hunyuan | 按量计费 | ASR延迟低 |
+| **科大讯飞** | 讯飞语音 | 讯飞星火 Spark | 在线免费 | 中文识别最强 |
+
+**Config:**
+```yaml
+ai:
+  transcription:
+    provider: aliyun          # 阿里云
+    api_key: xxx
+    model: paraformer-v2
+
+  summarization:
+    provider: volcengine      # 火山引擎
+    api_key: xxx
+    model: doubao-pro
+```
+
+**TUI shows:**
+```
+# │    ── 中国云服务 (China Cloud) ──                  │
+# │      aliyun              阿里云 (Qwen)              │
+# │      volcengine          火山引擎 (豆包)            │
+# │      baidu               百度智能云 (文心)          │
+# │      tencent             腾讯云 (混元)              │
+# │      iflytek             科大讯飞 (星火)            │
+```
+
+**Implementation files:**
+- `internal/core/ai/transcriber/aliyun.go`
+- `internal/core/ai/transcriber/volcengine.go`
+- `internal/core/ai/summarizer/aliyun.go`
+- `internal/core/ai/summarizer/volcengine.go`
+- etc.
 
 ### CLI Tools as Providers (use existing installations)
 
@@ -768,11 +827,11 @@ vget init ai
 vget config set ai.transcription.provider openai
 vget config set ai.transcription.api_key sk-xxx
 
-# From URL - full pipeline
+# From URL (downloads first, then processes)
 vget ai https://xiaoyuzhoufm.com/episode/xxx --transcribe --summarize
-# Downloads → podcast.mp3
-# Transcribes → podcast.transcript.md
-# Summarizes → podcast.summary.md
+# → Downloads podcast.mp3
+# → podcast.transcript.md
+# → podcast.summary.md
 
 # From local file
 vget ai podcast.mp3 --transcribe --summarize
