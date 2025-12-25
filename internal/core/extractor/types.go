@@ -126,8 +126,14 @@ type Image struct {
 
 // SanitizeFilename removes or replaces characters that are invalid in filenames
 func SanitizeFilename(name string) string {
+	// Remove URLs first (before character replacement mangles them)
+	urlRegex := regexp.MustCompile(`https?://[^\s]+`)
+	result := urlRegex.ReplaceAllString(name, "")
+
 	// Replace characters that are problematic in filenames
+	// Includes both ASCII and full-width (CJK) versions of reserved characters
 	replacer := strings.NewReplacer(
+		// ASCII versions
 		"/", "-",
 		"\\", "-",
 		":", "-",
@@ -139,12 +145,32 @@ func SanitizeFilename(name string) string {
 		"|", "",
 		"\n", " ",
 		"\r", "",
+		"\t", " ",
+		// Full-width versions (common in Chinese/Japanese text)
+		"：", "-", // U+FF1A Full-width colon
+		"／", "-", // U+FF0F Full-width solidus
+		"＼", "-", // U+FF3C Full-width reverse solidus
+		"＊", "",  // U+FF0A Full-width asterisk
+		"？", "",  // U+FF1F Full-width question mark
+		"＂", "",  // U+FF02 Full-width quotation mark
+		"＜", "",  // U+FF1C Full-width less-than
+		"＞", "",  // U+FF1E Full-width greater-than
+		"｜", "",  // U+FF5C Full-width vertical line
+		// Additional problematic characters
+		"「", "",  // CJK left corner bracket
+		"」", "",  // CJK right corner bracket
+		"【", "",  // CJK left black lenticular bracket
+		"】", "",  // CJK right black lenticular bracket
 	)
-	result := replacer.Replace(name)
+	result = replacer.Replace(result)
 
-	// Remove URLs (http:// or https://)
-	urlRegex := regexp.MustCompile(`https?://[^\s]+`)
-	result = urlRegex.ReplaceAllString(result, "")
+	// Remove control characters (0x00-0x1F, 0x7F) which are invalid on Windows
+	result = strings.Map(func(r rune) rune {
+		if r < 32 || r == 127 {
+			return -1 // -1 means delete the rune
+		}
+		return r
+	}, result)
 
 	// Trim spaces and dots from ends
 	result = strings.TrimSpace(result)
@@ -165,6 +191,21 @@ func SanitizeFilename(name string) string {
 
 	// If result is empty after sanitization, return empty
 	result = strings.TrimSpace(result)
+
+	// Handle Windows reserved names (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+	// These names (with or without extension) cannot be used as filenames on Windows
+	upperResult := strings.ToUpper(result)
+	reservedNames := []string{
+		"CON", "PRN", "AUX", "NUL",
+		"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+		"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+	}
+	for _, reserved := range reservedNames {
+		if upperResult == reserved {
+			result = "_" + result
+			break
+		}
+	}
 
 	return result
 }
