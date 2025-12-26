@@ -530,7 +530,66 @@ func (s *CLISummarizer) Summarize(ctx context.Context, text string, opts Summari
 }
 ```
 
-**TODO: Research exact CLI invocation for each tool**
+**CLI Invocation Reference:**
+
+| CLI | Command | Output Format |
+|-----|---------|---------------|
+| Claude Code | `claude -p "prompt" --model haiku --output-format json` | `{"result": "..."}` |
+| Codex | `codex exec "prompt" --json` | JSONL stream, extract `agent_message.text` |
+| Gemini | `gemini "prompt" --output-format json` | `{"response": "..."}` |
+| Ollama | `ollama run llama3.2:3b "prompt"` | Plain text |
+
+### Prompt-Based JSON Extraction (Recommended)
+
+When you need structured data from AI (e.g., parsed events, extracted metadata), use a **prompt-based approach** rather than CLI-specific flags like `--json-schema`:
+
+**Approach:**
+1. **Prompt defines the schema** - Tell AI exactly what JSON structure to return
+2. **Strip markdown fences** - AI often wraps JSON in \`\`\`json...\`\`\`, so strip it
+3. **Parse and validate** - Unmarshal JSON into Go struct
+
+**Why this approach?**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Prompt + strip fences** | Portable across all AI CLIs, won't break if CLI changes, we control the schema | Must handle markdown wrapping |
+| **CLI `--json-schema`** | Cleaner output | CLI-specific (Claude only), may change, ties us to CLI internals |
+
+The prompt-based approach is more stable because:
+- We control the prompt and parsing logic
+- Works identically across Claude, Codex, Gemini, Ollama
+- If CLI flags change tomorrow, our code still works
+- Simple function handles all edge cases
+
+**Implementation:**
+```go
+// Prompt tells AI what JSON to return
+prompt := `Extract metadata. Respond with ONLY JSON (no markdown):
+{"title":"...", "duration":"...", "language":"..."}`
+
+response, _ := callAI(prompt)
+
+// Strip markdown fences (AI's habit of formatting code)
+response = stripMarkdownCodeFences(response)
+
+// Parse into struct
+var metadata Metadata
+json.Unmarshal([]byte(response), &metadata)
+
+// stripMarkdownCodeFences removes ```json ... ``` wrappers
+func stripMarkdownCodeFences(s string) string {
+    s = strings.TrimSpace(s)
+    if strings.HasPrefix(s, "```") {
+        if idx := strings.Index(s, "\n"); idx != -1 {
+            s = s[idx+1:]
+        }
+    }
+    if strings.HasSuffix(s, "```") {
+        s = s[:len(s)-3]
+    }
+    return strings.TrimSpace(s)
+}
+```
 
 **TODO: Research and fill in exact limits for each provider/model**
 
