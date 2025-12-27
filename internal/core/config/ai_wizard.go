@@ -418,11 +418,12 @@ func (m aiModel) View() string {
 
 		// Mask display for sensitive fields
 		displayText := m.inputBuffer
-		if m.currentStep == aiStepTranscriptionAPIKey || m.currentStep == aiStepSummarizationAPIKey {
+		switch m.currentStep {
+		case aiStepTranscriptionAPIKey, aiStepSummarizationAPIKey:
 			if len(displayText) > 4 {
 				displayText = displayText[:4] + strings.Repeat("*", len(displayText)-4)
 			}
-		} else if m.currentStep == aiStepPIN || m.currentStep == aiStepPINConfirm {
+		case aiStepPIN, aiStepPINConfirm:
 			displayText = strings.Repeat("*", len(displayText))
 		}
 
