@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/guiyumin/vget/internal/core/ai"
 	"github.com/guiyumin/vget/internal/core/config"
@@ -20,22 +21,18 @@ var aiCmd = &cobra.Command{
 	Short: "AI transcription and summarization",
 	Long: `AI-powered transcription and summarization for audio/video files.
 
-Configure AI settings:
-  vget ai config              Interactive TUI wizard
-
-Process files:
-  vget ai <file> --transcribe              Transcribe audio/video to text
-  vget ai <file> --transcribe --summarize  Transcribe and summarize
-
-Flags:
-  --password <PIN>   4-digit PIN to decrypt API keys (will prompt if not provided)
-  --account <name>   Use specific AI account (uses default if not specified)
+Commands:
+  vget ai config                  Configure AI providers (TUI wizard)
+  vget ai slice <file>            Slice audio into chunks
+  vget ai transcribe <file>       Transcribe audio/video to text
+  vget ai summarize <file>        Summarize text
 
 Examples:
   vget ai config
-  vget ai podcast.mp3 --transcribe --password 1234
-  vget ai podcast.mp3 --transcribe --summarize --account work
-  vget ai transcript.md --summarize`,
+  vget ai slice podcast.mp3 --chunk-duration 5m
+  vget ai transcribe podcast.mp3
+  vget ai transcribe ./podcast.chunks/
+  vget ai summarize transcript.md`,
 }
 
 var aiConfigCmd = &cobra.Command{
@@ -105,68 +102,96 @@ var aiAccountsCmd = &cobra.Command{
 	},
 }
 
-// Flags for ai command
+// Slice command flags
 var (
-	transcribeFlag bool
-	summarizeFlag  bool
-	passwordFlag   string
-	accountFlag    string
+	chunkDurationFlag time.Duration
+	overlapFlag       time.Duration
 )
 
-var aiProcessCmd = &cobra.Command{
-	Use:   "[file]",
-	Short: "Process audio/video file with AI",
-	Long: `Process an audio or video file with AI transcription and/or summarization.
+var aiSliceCmd = &cobra.Command{
+	Use:   "slice <file>",
+	Short: "Slice audio into chunks",
+	Long: `Slice an audio/video file into smaller chunks for transcription.
 
-Operations:
-  --transcribe    Convert speech to text (requires audio/video input)
-  --summarize     Generate summary (requires text input or --transcribe)
+This is a local operation that does not require API keys.
+Chunks are saved to a directory with a manifest for resumability.
 
-Authentication:
-  --password <PIN>   4-digit PIN to decrypt API keys (will prompt if not provided)
-  --account <name>   Use specific AI account (uses default if not specified)
+Flags:
+  --chunk-duration   Duration of each chunk (default: 10m)
+  --overlap          Overlap between chunks (default: 10s)
 
 Examples:
-  vget ai podcast.mp3 --transcribe --password 1234
-  vget ai podcast.mp3 --transcribe --summarize
-  vget ai transcript.md --summarize --account work`,
+  vget ai slice podcast.mp3
+  vget ai slice podcast.mp3 --chunk-duration 5m
+  vget ai slice podcast.mp3 --chunk-duration 5m --overlap 5s`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filePath := args[0]
-
-		// Validate flags
-		if !transcribeFlag && !summarizeFlag {
-			return fmt.Errorf("at least one operation required: --transcribe or --summarize")
-		}
 
 		// Check if file exists
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
 			return fmt.Errorf("file not found: %s", filePath)
 		}
 
+		opts := ai.ChunkOptions{
+			ChunkDuration: chunkDurationFlag,
+			Overlap:       overlapFlag,
+		}
+		return ai.SliceOnly(filePath, opts)
+	},
+}
+
+// Transcribe command flags
+var (
+	transcribePasswordFlag string
+	transcribeAccountFlag  string
+)
+
+var aiTranscribeCmd = &cobra.Command{
+	Use:   "transcribe <file|chunks-dir>",
+	Short: "Transcribe audio/video to text",
+	Long: `Transcribe an audio/video file or chunks directory to text.
+
+Input can be:
+  - An audio/video file (mp3, m4a, wav, mp4, etc.)
+  - A chunks directory created by 'vget ai slice'
+
+Output:
+  - {filename}.transcript.md
+
+Examples:
+  vget ai transcribe podcast.mp3
+  vget ai transcribe podcast.mp3 --password 1234
+  vget ai transcribe ./podcast.chunks/
+  vget ai transcribe podcast.mp3 --account work`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		inputPath := args[0]
+
+		// Check if path exists
+		if _, err := os.Stat(inputPath); os.IsNotExist(err) {
+			return fmt.Errorf("path not found: %s", inputPath)
+		}
+
 		// Load config
 		cfg := config.LoadOrDefault()
 
 		// Validate account exists
-		account := cfg.AI.GetAccount(accountFlag)
+		account := cfg.AI.GetAccount(transcribeAccountFlag)
 		if account == nil {
-			if accountFlag == "" {
+			if transcribeAccountFlag == "" {
 				return fmt.Errorf("no AI accounts configured\nRun: vget ai config")
 			}
-			return fmt.Errorf("AI account '%s' not found\nRun: vget ai config", accountFlag)
+			return fmt.Errorf("AI account '%s' not found\nRun: vget ai config", transcribeAccountFlag)
 		}
 
-		// Validate required services are configured
-		if transcribeFlag && account.Transcription.APIKeyEncrypted == "" {
-			return fmt.Errorf("transcription not configured for account '%s'\nRun: vget ai config", accountFlag)
+		// Validate transcription is configured
+		if account.Transcription.APIKeyEncrypted == "" {
+			return fmt.Errorf("transcription not configured for account '%s'\nRun: vget ai config", transcribeAccountFlag)
 		}
 
-		if summarizeFlag && account.Summarization.APIKeyEncrypted == "" {
-			return fmt.Errorf("summarization not configured for account '%s'\nRun: vget ai config", accountFlag)
-		}
-
-		// Get PIN (from flag or prompt)
-		pin := passwordFlag
+		// Get PIN
+		pin := transcribePasswordFlag
 		if pin == "" {
 			var err error
 			pin, err = promptPIN()
@@ -175,24 +200,100 @@ Examples:
 			}
 		}
 
-		// Validate PIN format
 		if err := crypto.ValidatePIN(pin); err != nil {
 			return err
 		}
 
-		// Create and run AI pipeline
-		pipeline, err := ai.NewPipeline(cfg, accountFlag, pin)
+		// Create and run pipeline
+		pipeline, err := ai.NewPipeline(cfg, transcribeAccountFlag, pin)
 		if err != nil {
 			return fmt.Errorf("failed to initialize AI pipeline: %w", err)
 		}
 
 		ctx := context.Background()
 		opts := ai.Options{
-			Transcribe: transcribeFlag,
-			Summarize:  summarizeFlag,
+			Transcribe: true,
 		}
 
-		_, err = pipeline.Process(ctx, filePath, opts)
+		_, err = pipeline.Process(ctx, inputPath, opts)
+		return err
+	},
+}
+
+// Summarize command flags
+var (
+	summarizePasswordFlag string
+	summarizeAccountFlag  string
+)
+
+var aiSummarizeCmd = &cobra.Command{
+	Use:   "summarize <file|chunks-dir>",
+	Short: "Summarize text",
+	Long: `Summarize a text file or transcript.
+
+Input can be:
+  - A text file (md, txt)
+  - A chunks directory with transcripts
+
+Output:
+  - {filename}.summary.md
+
+Examples:
+  vget ai summarize transcript.md
+  vget ai summarize ./podcast.chunks/
+  vget ai summarize notes.txt --account work`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		inputPath := args[0]
+
+		// Check if path exists
+		if _, err := os.Stat(inputPath); os.IsNotExist(err) {
+			return fmt.Errorf("path not found: %s", inputPath)
+		}
+
+		// Load config
+		cfg := config.LoadOrDefault()
+
+		// Validate account exists
+		account := cfg.AI.GetAccount(summarizeAccountFlag)
+		if account == nil {
+			if summarizeAccountFlag == "" {
+				return fmt.Errorf("no AI accounts configured\nRun: vget ai config")
+			}
+			return fmt.Errorf("AI account '%s' not found\nRun: vget ai config", summarizeAccountFlag)
+		}
+
+		// Validate summarization is configured
+		if account.Summarization.APIKeyEncrypted == "" {
+			return fmt.Errorf("summarization not configured for account '%s'\nRun: vget ai config", summarizeAccountFlag)
+		}
+
+		// Get PIN
+		pin := summarizePasswordFlag
+		if pin == "" {
+			var err error
+			pin, err = promptPIN()
+			if err != nil {
+				return fmt.Errorf("failed to read PIN: %w", err)
+			}
+		}
+
+		if err := crypto.ValidatePIN(pin); err != nil {
+			return err
+		}
+
+		// Create and run pipeline
+		pipeline, err := ai.NewPipeline(cfg, summarizeAccountFlag, pin)
+		if err != nil {
+			return fmt.Errorf("failed to initialize AI pipeline: %w", err)
+		}
+
+		ctx := context.Background()
+		opts := ai.Options{
+			Summarize: true,
+		}
+
+		_, err = pipeline.Process(ctx, inputPath, opts)
 		return err
 	},
 }
@@ -222,51 +323,24 @@ func promptPIN() (string, error) {
 }
 
 func init() {
-	// Add config subcommand
+	// Add subcommands
 	aiCmd.AddCommand(aiConfigCmd)
-
-	// Add accounts subcommand
 	aiCmd.AddCommand(aiAccountsCmd)
+	aiCmd.AddCommand(aiSliceCmd)
+	aiCmd.AddCommand(aiTranscribeCmd)
+	aiCmd.AddCommand(aiSummarizeCmd)
 
-	// Add flags to ai command for processing
-	aiCmd.Flags().BoolVar(&transcribeFlag, "transcribe", false, "Transcribe audio/video to text")
-	aiCmd.Flags().BoolVar(&summarizeFlag, "summarize", false, "Generate summary from text")
-	aiCmd.Flags().StringVar(&passwordFlag, "password", "", "4-digit PIN to decrypt API keys")
-	aiCmd.Flags().StringVar(&accountFlag, "account", "", "Use specific AI account (default: uses default account)")
+	// Slice command flags
+	aiSliceCmd.Flags().DurationVar(&chunkDurationFlag, "chunk-duration", 10*time.Minute, "Duration of each chunk")
+	aiSliceCmd.Flags().DurationVar(&overlapFlag, "overlap", 10*time.Second, "Overlap between chunks")
 
-	// Set up ai command to handle files directly
-	aiCmd.RunE = func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			// No args, show help
-			return cmd.Help()
-		}
+	// Transcribe command flags
+	aiTranscribeCmd.Flags().StringVar(&transcribePasswordFlag, "password", "", "4-digit PIN to decrypt API keys")
+	aiTranscribeCmd.Flags().StringVar(&transcribeAccountFlag, "account", "", "Use specific AI account")
 
-		// If args provided but it's a subcommand, let cobra handle it
-		// Otherwise, process as a file
-		filePath := args[0]
-
-		// Check if it's a subcommand
-		for _, subCmd := range cmd.Commands() {
-			if subCmd.Name() == filePath || contains(subCmd.Aliases, filePath) {
-				return nil // Let cobra handle subcommand
-			}
-		}
-
-		// Process as file
-		return aiProcessCmd.RunE(cmd, args)
-	}
-
-	// Allow ai command to accept args
-	aiCmd.Args = cobra.ArbitraryArgs
+	// Summarize command flags
+	aiSummarizeCmd.Flags().StringVar(&summarizePasswordFlag, "password", "", "4-digit PIN to decrypt API keys")
+	aiSummarizeCmd.Flags().StringVar(&summarizeAccountFlag, "account", "", "Use specific AI account")
 
 	rootCmd.AddCommand(aiCmd)
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }

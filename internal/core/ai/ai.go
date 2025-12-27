@@ -30,8 +30,15 @@ type Options struct {
 	Summarize  bool
 }
 
+// ChunkOptions configures audio chunking parameters.
+type ChunkOptions struct {
+	ChunkDuration time.Duration
+	Overlap       time.Duration
+}
+
 // Result contains the output of pipeline processing.
 type Result struct {
+	ChunksDir      string
 	TranscriptPath string
 	SummaryPath    string
 	Transcript     *transcriber.Result
@@ -258,4 +265,59 @@ type Segment struct {
 	Start time.Duration
 	End   time.Duration
 	Text  string
+}
+
+// SliceOnly performs audio/video slicing without requiring API keys.
+// This is a standalone operation useful as the first step before transcription.
+func SliceOnly(filePath string, opts ChunkOptions) error {
+	// Validate file type
+	fileType := detectFileType(filePath)
+	if !isAudioVideo(fileType) {
+		return fmt.Errorf("--slice requires audio/video input, got %s file", fileType)
+	}
+
+	chunker := NewChunkerWithOptions(opts)
+
+	// Check ffmpeg availability
+	if !chunker.HasFFmpeg() {
+		return fmt.Errorf("--slice requires ffmpeg\nInstall: brew install ffmpeg (macOS) or apt install ffmpeg (Linux)")
+	}
+
+	fmt.Printf("Slicing %s...\n", filepath.Base(filePath))
+	fmt.Printf("  Chunk duration: %s, Overlap: %s\n", chunker.chunkDuration, chunker.overlapDuration)
+
+	// Get file info for display
+	needsChunking, err := chunker.NeedsChunking(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to check file: %w", err)
+	}
+
+	if !needsChunking {
+		fmt.Printf("  File is small enough for direct transcription (<%dMB)\n", MaxFileSize/(1024*1024))
+		fmt.Println("  Slicing anyway for preparation...")
+	}
+
+	// Perform slicing and generate manifest
+	chunks, manifest, err := chunker.SplitWithManifest(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to slice file: %w", err)
+	}
+
+	fmt.Printf("  Created %d chunks in: %s\n", len(chunks), manifest.ChunksDir)
+	fmt.Printf("  Manifest: %s/manifest.json\n", manifest.ChunksDir)
+	fmt.Println("\nChunks:")
+	for _, chunk := range chunks {
+		fmt.Printf("  [%d] %s (%.0fs - %.0fs)\n",
+			chunk.Index,
+			filepath.Base(chunk.FilePath),
+			chunk.Start.Seconds(),
+			chunk.End.Seconds(),
+		)
+	}
+
+	fmt.Println("\nComplete!")
+	fmt.Printf("  Chunks directory: %s\n", manifest.ChunksDir)
+	fmt.Println("  Ready for transcription with: vget ai <file> --transcribe")
+
+	return nil
 }

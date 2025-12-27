@@ -1,7 +1,10 @@
 package ai
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,10 +27,24 @@ const (
 
 // ChunkInfo represents a chunk of audio.
 type ChunkInfo struct {
-	Index    int
-	FilePath string
-	Start    time.Duration
-	End      time.Duration
+	Index    int           `json:"index"`
+	FilePath string        `json:"file"`
+	Start    time.Duration `json:"start"`
+	End      time.Duration `json:"end"`
+	Status   string        `json:"status"` // pending, transcribed, failed
+}
+
+// Manifest stores metadata about chunked audio files for resumability.
+type Manifest struct {
+	Source           string      `json:"source"`
+	SourceHash       string      `json:"source_hash"`
+	ChunksDir        string      `json:"chunks_dir"`
+	CreatedAt        time.Time   `json:"created_at"`
+	Strategy         string      `json:"strategy"`
+	OverlapSeconds   int         `json:"overlap_seconds"`
+	ChunkDurSeconds  int         `json:"chunk_duration_seconds"`
+	TotalDurSeconds  float64     `json:"total_duration_seconds"`
+	Chunks           []ChunkInfo `json:"chunks"`
 }
 
 // Chunker splits large audio files into smaller chunks.
@@ -44,6 +61,19 @@ func NewChunker() *Chunker {
 		chunkDuration:   ChunkDuration,
 		overlapDuration: OverlapDuration,
 	}
+}
+
+// NewChunkerWithOptions creates a new Chunker with custom settings.
+// Zero values for ChunkDuration or Overlap will use defaults.
+func NewChunkerWithOptions(opts ChunkOptions) *Chunker {
+	c := NewChunker()
+	if opts.ChunkDuration > 0 {
+		c.chunkDuration = opts.ChunkDuration
+	}
+	if opts.Overlap > 0 {
+		c.overlapDuration = opts.Overlap
+	}
+	return c
 }
 
 // HasFFmpeg checks if ffmpeg is available.
@@ -113,6 +143,128 @@ func (c *Chunker) Split(filePath string) ([]ChunkInfo, error) {
 	}
 
 	return chunks, nil
+}
+
+// SplitWithManifest splits an audio file and generates a manifest for resumability.
+func (c *Chunker) SplitWithManifest(filePath string) ([]ChunkInfo, *Manifest, error) {
+	// Get audio duration
+	duration, err := c.getAudioDuration(filePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get audio duration: %w", err)
+	}
+
+	// Calculate file hash for integrity
+	hash, err := c.calculateFileHash(filePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to calculate file hash: %w", err)
+	}
+
+	// Calculate chunk boundaries
+	var chunks []ChunkInfo
+	chunkDur := c.chunkDuration
+	overlap := c.overlapDuration
+	stride := chunkDur - overlap
+
+	// Create chunk directory
+	ext := filepath.Ext(filePath)
+	base := strings.TrimSuffix(filepath.Base(filePath), ext)
+	chunkDir := filepath.Join(filepath.Dir(filePath), base+".chunks")
+	if err := os.MkdirAll(chunkDir, 0755); err != nil {
+		return nil, nil, fmt.Errorf("failed to create chunk directory: %w", err)
+	}
+
+	// Split into chunks
+	for i := 0; ; i++ {
+		start := time.Duration(i) * stride
+		end := start + chunkDur
+
+		if start >= duration {
+			break
+		}
+
+		if end > duration {
+			end = duration
+		}
+
+		chunkPath := filepath.Join(chunkDir, fmt.Sprintf("chunk_%03d%s", i+1, ext))
+
+		// Use ffmpeg to extract chunk
+		if err := c.extractChunk(filePath, chunkPath, start, end-start); err != nil {
+			return nil, nil, fmt.Errorf("failed to extract chunk %d: %w", i+1, err)
+		}
+
+		chunks = append(chunks, ChunkInfo{
+			Index:    i + 1,
+			FilePath: chunkPath,
+			Start:    start,
+			End:      end,
+			Status:   "pending",
+		})
+	}
+
+	// Create manifest
+	absPath, _ := filepath.Abs(filePath)
+	manifest := &Manifest{
+		Source:          absPath,
+		SourceHash:      hash,
+		ChunksDir:       chunkDir,
+		CreatedAt:       time.Now(),
+		Strategy:        "overlap",
+		OverlapSeconds:  int(c.overlapDuration.Seconds()),
+		ChunkDurSeconds: int(c.chunkDuration.Seconds()),
+		TotalDurSeconds: duration.Seconds(),
+		Chunks:          chunks,
+	}
+
+	// Write manifest to file
+	manifestPath := filepath.Join(chunkDir, "manifest.json")
+	if err := c.writeManifest(manifest, manifestPath); err != nil {
+		return nil, nil, fmt.Errorf("failed to write manifest: %w", err)
+	}
+
+	return chunks, manifest, nil
+}
+
+// calculateFileHash calculates SHA256 hash of a file (first 1MB for speed).
+func (c *Chunker) calculateFileHash(filePath string) (string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	// Read only first 1MB for speed with large files
+	if _, err := io.CopyN(h, f, 1024*1024); err != nil && err != io.EOF {
+		return "", err
+	}
+
+	return fmt.Sprintf("sha256:%x", h.Sum(nil)), nil
+}
+
+// writeManifest writes the manifest to a JSON file.
+func (c *Chunker) writeManifest(manifest *Manifest, path string) error {
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// LoadManifest loads a manifest from the chunks directory.
+func LoadManifest(chunksDir string) (*Manifest, error) {
+	manifestPath := filepath.Join(chunksDir, "manifest.json")
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var manifest Manifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, err
+	}
+
+	return &manifest, nil
 }
 
 // getAudioDuration gets the duration of an audio file using ffprobe.
