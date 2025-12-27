@@ -179,33 +179,106 @@ type Summarizer interface {
 
 ---
 
+## Security: Encrypted API Keys
+
+**API keys are NEVER stored in plain text.** They are encrypted using AES-256-GCM.
+
+### Encryption Scheme
+
+- **Encryption**: AES-256-GCM (authenticated encryption)
+- **Key derivation**: PBKDF2 with 100,000 iterations
+- **User secret**: 4-digit PIN (balance of security and convenience)
+- **Storage format**: base64(salt + nonce + ciphertext)
+
+### Why 4-digit PIN?
+
+- Quick to type for frequent operations
+- Protects against casual file access
+- Not designed for high-security scenarios
+- Users who need more security should use environment variables
+
+### Usage
+
+```bash
+# Configure with TUI wizard (creates encrypted keys)
+vget ai config
+
+# Run with password prompt
+vget ai podcast.mp3 --transcribe
+# Enter PIN: ****
+
+# Run with password flag (scripting)
+vget ai podcast.mp3 --transcribe --password 1234
+
+# Use specific account
+vget ai podcast.mp3 --transcribe --account work --password 1234
+```
+
+---
+
+## Multi-Account Support
+
+Users can configure multiple AI accounts with aliases:
+
+```bash
+# List accounts
+vget ai accounts
+# personal (openai) - default
+# work (openai)
+
+# Use specific account
+vget ai podcast.mp3 --transcribe --account work
+
+# Set default account
+vget ai accounts default work
+
+# Delete account
+vget ai accounts delete old_account
+```
+
+---
+
 ## Config Schema (`internal/core/config/config.go`)
 
 ```go
 type AIConfig struct {
-    Transcription AITranscriptionConfig `yaml:"transcription,omitempty"`
-    Summarization AISummarizationConfig `yaml:"summarization,omitempty"`
+    // Multiple accounts with aliases
+    Accounts       map[string]AIAccount `yaml:"accounts,omitempty"`
+    DefaultAccount string               `yaml:"default_account,omitempty"`
 }
 
-type AITranscriptionConfig struct {
-    Provider string `yaml:"provider,omitempty"`  // openai, ollama, qwen
-    APIKey   string `yaml:"api_key,omitempty"`
-    Model    string `yaml:"model,omitempty"`     // whisper-1, qwen-audio-turbo
-    BaseURL  string `yaml:"base_url,omitempty"`  // custom endpoint
+type AIAccount struct {
+    Provider      string          `yaml:"provider,omitempty"`
+    Transcription AIServiceConfig `yaml:"transcription,omitempty"`
+    Summarization AIServiceConfig `yaml:"summarization,omitempty"`
 }
 
-type AISummarizationConfig struct {
-    Provider string `yaml:"provider,omitempty"`  // openai, anthropic, ollama
-    APIKey   string `yaml:"api_key,omitempty"`
-    Model    string `yaml:"model,omitempty"`     // gpt-4o, claude-sonnet-4-20250514
-    BaseURL  string `yaml:"base_url,omitempty"`
-    Style    string `yaml:"style,omitempty"`     // concise, detailed
+type AIServiceConfig struct {
+    Model           string `yaml:"model,omitempty"`
+    APIKeyEncrypted string `yaml:"api_key_encrypted,omitempty"` // AES-256-GCM encrypted
+    BaseURL         string `yaml:"base_url,omitempty"`
 }
 ```
 
-**Config CLI keys:**
-- `ai.transcription.provider`, `ai.transcription.api_key`, `ai.transcription.model`
-- `ai.summarization.provider`, `ai.summarization.api_key`, `ai.summarization.model`
+**Config file example:**
+```yaml
+ai:
+  default_account: personal
+  accounts:
+    personal:
+      provider: openai
+      transcription:
+        model: whisper-1
+        api_key_encrypted: "YWJjZGVm..."
+      summarization:
+        model: gpt-4o
+        api_key_encrypted: "YWJjZGVm..."
+    work:
+      provider: openai
+      transcription:
+        model: whisper-1
+        api_key_encrypted: "eHl6MTIz..."
+```
 
 ---
 

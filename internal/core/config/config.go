@@ -81,12 +81,110 @@ type Config struct {
 
 	// Bilibili configuration
 	Bilibili BilibiliConfig `yaml:"bilibili,omitempty"`
+
+	// AI transcription and summarization configuration
+	AI AIConfig `yaml:"ai,omitempty"`
 }
 
 // BilibiliConfig holds Bilibili authentication settings
 type BilibiliConfig struct {
 	// Cookie is the full cookie string (SESSDATA, bili_jct, DedeUserID)
 	Cookie string `yaml:"cookie,omitempty"`
+}
+
+// AIConfig holds AI transcription and summarization settings with multi-account support
+type AIConfig struct {
+	// Multiple accounts with aliases (e.g., "personal", "work")
+	Accounts map[string]AIAccount `yaml:"accounts,omitempty"`
+
+	// Default account to use when --account flag is not specified
+	DefaultAccount string `yaml:"default_account,omitempty"`
+}
+
+// AIAccount represents a configured AI provider account
+type AIAccount struct {
+	// Provider name: "openai", "anthropic", "ollama", etc.
+	Provider string `yaml:"provider,omitempty"`
+
+	// Transcription settings for speech-to-text
+	Transcription AIServiceConfig `yaml:"transcription,omitempty"`
+
+	// Summarization settings for text summarization
+	Summarization AIServiceConfig `yaml:"summarization,omitempty"`
+}
+
+// AIServiceConfig holds settings for a specific AI service (transcription or summarization)
+type AIServiceConfig struct {
+	// Model to use (e.g., "whisper-1", "gpt-4o")
+	Model string `yaml:"model,omitempty"`
+
+	// APIKeyEncrypted is the AES-256-GCM encrypted API key (base64 encoded)
+	// Format: base64(salt + nonce + ciphertext)
+	// NEVER store plain text API keys
+	APIKeyEncrypted string `yaml:"api_key_encrypted,omitempty"`
+
+	// BaseURL for custom API endpoints (optional)
+	BaseURL string `yaml:"base_url,omitempty"`
+}
+
+// GetAccount returns the specified account or the default account
+func (c *AIConfig) GetAccount(name string) *AIAccount {
+	if c.Accounts == nil {
+		return nil
+	}
+
+	// If no name specified, use default
+	if name == "" {
+		name = c.DefaultAccount
+	}
+
+	if account, ok := c.Accounts[name]; ok {
+		return &account
+	}
+	return nil
+}
+
+// SetAccount adds or updates an account
+func (c *AIConfig) SetAccount(name string, account AIAccount) {
+	if c.Accounts == nil {
+		c.Accounts = make(map[string]AIAccount)
+	}
+	c.Accounts[name] = account
+
+	// Set as default if it's the first account
+	if c.DefaultAccount == "" {
+		c.DefaultAccount = name
+	}
+}
+
+// DeleteAccount removes an account by name
+func (c *AIConfig) DeleteAccount(name string) {
+	if c.Accounts != nil {
+		delete(c.Accounts, name)
+
+		// Clear default if it was the deleted account
+		if c.DefaultAccount == name {
+			c.DefaultAccount = ""
+			// Set first remaining account as default
+			for n := range c.Accounts {
+				c.DefaultAccount = n
+				break
+			}
+		}
+	}
+}
+
+// ListAccounts returns all account names
+func (c *AIConfig) ListAccounts() []string {
+	if c.Accounts == nil {
+		return nil
+	}
+
+	names := make([]string, 0, len(c.Accounts))
+	for name := range c.Accounts {
+		names = append(names, name)
+	}
+	return names
 }
 
 // TorrentConfig holds configuration for remote torrent client integration
