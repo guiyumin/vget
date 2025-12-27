@@ -522,7 +522,8 @@ func convertTsToMp4(tsPath string) (string, error) {
 	}
 
 	// Run ffmpeg with stream copy (fast, no re-encoding)
-	cmd := exec.Command("ffmpeg", "-i", tsPath, "-c", "copy", "-y", mp4Path)
+	// -threads 1: Limit threads to work on resource-constrained systems (Docker, low ulimits)
+	cmd := exec.Command("ffmpeg", "-threads", "1", "-i", tsPath, "-c", "copy", "-y", mp4Path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		// Conversion failed, keep the .ts file
