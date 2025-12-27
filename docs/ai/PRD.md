@@ -10,7 +10,13 @@ Add `vget ai` command for local audio transcription and summarization.
 
 ```bash
 # User has a downloaded podcast
-vget ai podcast.mp3 --transcribe --summarize
+vget ai transcribe podcast.mp3
+vget ai summarize podcast.transcript.md
+
+# Or with slicing for large files:
+vget ai slice podcast.mp3
+vget ai transcribe ./podcast.chunks/
+vget ai summarize ./podcast.chunks/
 
 # Output:
 # → podcast.transcript.md (full transcript with timestamps)
@@ -32,24 +38,32 @@ vget ai podcast.mp3 --transcribe --summarize
 
 ```bash
 # Configure via TUI wizard (recommended)
-vget ai config       # Primary - creates account with encrypted API key
+vget ai config       # Creates account with encrypted API key
 vget config ai       # Alias (same wizard)
 
-# Run with password prompt
-vget ai podcast.mp3 --transcribe
+# Slice audio into chunks (no API key needed)
+vget ai slice podcast.mp3
+vget ai slice podcast.mp3 --chunk-duration 5m --overlap 5s
+
+# Transcribe (with password prompt)
+vget ai transcribe podcast.mp3
 # Enter PIN: ****
 
-# Run with password flag (for scripting)
-vget ai podcast.mp3 --transcribe --password 1234
+# Transcribe with password flag (for scripting)
+vget ai transcribe podcast.mp3 --password 1234
+
+# Transcribe from chunks directory
+vget ai transcribe ./podcast.chunks/ --password 1234
+
+# Summarize
+vget ai summarize transcript.md --password 1234
+vget ai summarize ./podcast.chunks/ --password 1234
 
 # Use specific account (if multiple configured)
-vget ai podcast.mp3 --transcribe --account work --password 1234
+vget ai transcribe podcast.mp3 --account work --password 1234
 
 # List configured accounts
 vget ai accounts
-
-# Delete an account
-vget ai accounts delete my_openai
 ```
 
 ## Security: Encrypted API Keys
@@ -189,11 +203,17 @@ Step 6: Review & Save
 ## Output Files
 
 ```
-podcast.mp3 --transcribe
+vget ai slice podcast.mp3
+  → podcast.chunks/
+    ├── manifest.json
+    ├── chunk_001.mp3
+    ├── chunk_002.mp3
+    └── ...
+
+vget ai transcribe podcast.mp3
   → podcast.transcript.md
 
-podcast.mp3 --transcribe --summarize
-  → podcast.transcript.md
+vget ai summarize podcast.transcript.md
   → podcast.summary.md
 ```
 
@@ -350,12 +370,17 @@ type Summarizer interface {
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Load MP3   │ ──▶ │   Chunk     │ ──▶ │ Transcribe  │ ──▶ │  Summarize  │
+│  Load MP3   │ ──▶ │   Slice     │ ──▶ │ Transcribe  │ ──▶ │  Summarize  │
 │             │     │  (ffmpeg)   │     │  (Whisper)  │     │  (GPT-4o)   │
 └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
                            │                   │                   │
                            ▼                   ▼                   ▼
                     .chunks/ dir        .transcript.md       .summary.md
+
+Commands:
+  vget ai slice podcast.mp3           # Optional: manual slicing
+  vget ai transcribe podcast.mp3      # Auto-slices if needed
+  vget ai summarize transcript.md     # Summarize text
 ```
 
 ### Step 1: Chunking
@@ -409,26 +434,42 @@ type ChunkInfo struct {
 ## Progress Display
 
 ```
-Transcribing podcast.mp3...
-  Checking file size... 45MB (needs chunking)
-  Splitting into chunks... 5 chunks
-  [1/5] Transcribing chunk 1... done (23s)
-  [2/5] Transcribing chunk 2... done (21s)
-  [3/5] Transcribing chunk 3... done (24s)
-  [4/5] Transcribing chunk 4... done (22s)
-  [5/5] Transcribing chunk 5... done (18s)
-  Merging transcripts... done
-  Writing podcast.transcript.md... done
+# vget ai slice podcast.mp3
+Slicing podcast.mp3...
+  Chunk duration: 10m0s, Overlap: 10s
+  Created 5 chunks in: ./podcast.chunks
+  Manifest: ./podcast.chunks/manifest.json
 
-Summarizing...
-  Reading transcript... 12,456 words
-  Generating summary... done
-  Writing podcast.summary.md... done
+Chunks:
+  [1] chunk_001.mp3 (0s - 600s)
+  [2] chunk_002.mp3 (590s - 1200s)
+  [3] chunk_003.mp3 (1190s - 1800s)
+  [4] chunk_004.mp3 (1790s - 2400s)
+  [5] chunk_005.mp3 (2390s - 2700s)
 
 Complete!
-  Transcript: podcast.transcript.md
-  Summary:    podcast.summary.md
-  Cost:       ~$0.42 (transcription) + ~$0.08 (summary)
+  Chunks directory: ./podcast.chunks
+  Ready for transcription with: vget ai transcribe ./podcast.chunks/
+
+# vget ai transcribe podcast.mp3
+Transcribing podcast.mp3...
+  File exceeds size limit, splitting into chunks...
+  Created 5 chunks
+  [1/5] Transcribing chunk... done (23s)
+  [2/5] Transcribing chunk... done (21s)
+  [3/5] Transcribing chunk... done (24s)
+  [4/5] Transcribing chunk... done (22s)
+  [5/5] Transcribing chunk... done (18s)
+  Merging transcripts... done
+  Written: podcast.transcript.md
+
+Complete!
+
+# vget ai summarize podcast.transcript.md
+Summarizing...
+  Written: podcast.summary.md
+
+Complete!
 ```
 
 ## Implementation Steps

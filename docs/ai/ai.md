@@ -24,66 +24,64 @@ vget ai <url-or-file> ...     # AI operations. If URL, download first.
 - `vget ai` is the AI entry point - handles everything AI-related
 - If you pass a URL to `vget ai`, it downloads first then processes
 
-### `vget ai` Command
+### `vget ai` Commands
+
+vget ai uses subcommands for each operation:
+
 ```bash
-vget ai <url-or-file> --operation1 --operation2 ...
+vget ai slice <file>            # Slice audio into chunks
+vget ai transcribe <file>       # Transcribe audio/video to text
+vget ai summarize <file>        # Summarize text
 ```
 
-- **Input**: URL (downloads first) or local file path
-- **Operations**: Flags like `--transcribe`, `--summarize`, `--translate`, etc.
-- **Order matters**: Flags are processed left-to-right as a pipeline
-- **Validation**: Each operation validates its input type, helpful errors on mismatch
+Each command has focused flags - no need to remember which flags work with which operations.
 
 ### Examples
 ```bash
-# From URL (downloads first, then processes)
-vget ai https://xiaoyuzhoufm.com/episode/xxx --transcribe --summarize
+# Slice audio into chunks (local operation, no API key needed)
+vget ai slice podcast.mp3
+vget ai slice podcast.mp3 --chunk-duration 5m --overlap 5s
 
-# From local file
-vget ai podcast.mp3 --transcribe --summarize
-vget ai podcast.mp3 --transcribe                # transcribe only
-vget ai transcript.md --summarize               # summarize existing text
+# Transcribe audio/video
+vget ai transcribe podcast.mp3
+vget ai transcribe podcast.mp3 --password 1234
+vget ai transcribe ./podcast.chunks/    # Resume from chunks directory
 
-# Future: translation pipeline
-vget ai podcast.mp3 --transcribe --translate --summarize
+# Summarize text
+vget ai summarize transcript.md
+vget ai summarize ./podcast.chunks/     # Summarize from chunks directory
 ```
 
-### Operation Flags
+### Commands
 
-| Flag | Input Types | Output | Description |
-|------|-------------|--------|-------------|
-| `--transcribe` | audio, video | text (.transcript.md, .srt for video) | Speech-to-text |
-| `--summarize` | text | text (.summary.md) | LLM summarization |
-| `--translate` | text | text | (future) Translation |
-| `--chapters` | text + timestamps | chapter list | (future) Chapter generation |
+| Command | Input Types | Output | Description |
+|---------|-------------|--------|-------------|
+| `slice` | audio, video | `.chunks/` directory + manifest | Split into chunks for transcription |
+| `transcribe` | audio, video, chunks dir | `.transcript.md` | Speech-to-text |
+| `summarize` | text, chunks dir | `.summary.md` | LLM summarization |
 
-### Validation Rules
+### Slice Command Flags
 ```bash
-# Valid
-vget ai podcast.mp3 --transcribe                    # audio → transcribe ✓
-vget ai podcast.mp3 --transcribe --summarize        # audio → transcribe → summarize ✓
-vget ai notes.md --summarize                        # text → summarize ✓
-
-# Invalid - helpful errors
-vget ai podcast.mp3 --summarize
-# Error: --summarize requires text input, but got audio file.
-# Hint: Add --transcribe first: vget ai podcast.mp3 --transcribe --summarize
-
-vget ai notes.md --transcribe
-# Error: --transcribe requires audio/video input, but got text file.
+vget ai slice podcast.mp3 --chunk-duration 5m --overlap 10s
 ```
+- `--chunk-duration` - Duration of each chunk (default: 10m)
+- `--overlap` - Overlap between chunks (default: 10s)
 
 ### Output Files
-Each operation saves its result:
+Each command saves its result:
 ```
-podcast.mp3 --transcribe
-  → podcast.transcript.md
-  → podcast.srt (if video)
+vget ai slice podcast.mp3
+  → podcast.chunks/
+    ├── manifest.json
+    ├── chunk_001.mp3
+    ├── chunk_002.mp3
+    └── ...
 
-podcast.mp3 --transcribe --summarize
+vget ai transcribe podcast.mp3
   → podcast.transcript.md
-  → podcast.srt (if video)
-  → podcast.summary.md
+
+vget ai summarize transcript.md
+  → transcript.summary.md
 ```
 
 ---
@@ -846,135 +844,40 @@ Proceed? [y/N]
 
 ```bash
 # Configure via TUI wizard (one-time)
-# Both commands work (aliases):
-vget ai init
-vget init ai
-
-# Multi-step wizard (same as vget init pattern):
-# - Reads existing config as defaults
-# - Skip any operation you don't need
-# - Navigate back/forward to change previous steps
-#
-# Step 1: Transcription Provider
-# ┌─────────────────────────────────────────────────────┐
-# │  AI Configuration (1/4)              [←] [→] [Esc]  │
-# ├─────────────────────────────────────────────────────┤
-# │                                                     │
-# │  Select Transcription Provider:                     │
-# │                                                     │
-# │    ── Cloud APIs (pay per use) ──                   │
-# │      openai/whisper      Whisper API ($0.006/1M tokens) │
-# │    > qwen/qwen3-asr-flash  Qwen3-ASR ($0.000035!) ← CHEAPEST  │
-# │      deepgram            Deepgram API               │
-# │                                                     │
-# │    ── Local (free, requires setup) ──               │
-# │      ollama/whisper      Ollama + Whisper model     │
-# │      whisper.cpp         Local whisper.cpp          │
-# │                                                     │
-# │    ── Skip ──                                       │
-# │      (none)              Skip transcription config  │
-# │                                                     │
-# └─────────────────────────────────────────────────────┘
-#
-# Step 2: Transcription Config (if cloud provider)
-# ┌─────────────────────────────────────────────────────┐
-# │  AI Configuration (2/4)              [←] [→] [Esc]  │
-# ├─────────────────────────────────────────────────────┤
-# │                                                     │
-# │  OpenAI Whisper Configuration:                      │
-# │                                                     │
-# │  API Key: sk-xxx____________________________        │
-# │                                                     │
-# │  Model:                                             │
-# │  > whisper-1                                        │
-# │                                                     │
-# └─────────────────────────────────────────────────────┘
-#
-# Step 3: Summarization Provider
-# ┌─────────────────────────────────────────────────────┐
-# │  AI Configuration (3/4)              [←] [→] [Esc]  │
-# ├─────────────────────────────────────────────────────┤
-# │                                                     │
-# │  Select Summarization Provider:                     │
-# │                                                     │
-# │    ── Cloud APIs (pay per use) ──                   │
-# │      openai/gpt-4o       GPT-4o (128k context)      │
-# │    > anthropic/claude    Claude Sonnet (200k)       │  ← current config
-# │      qwen/turbo          Qwen Turbo                 │
-# │                                                     │
-# │    ── Local (free, requires setup) ──               │
-# │      ollama/llama3       Llama 3 (8B/70B)           │
-# │      ollama/qwen         Qwen 2.5 local             │
-# │                                                     │
-# │    ── AI Routers (OpenAI-compatible) ──            │
-# │      openrouter          OpenRouter (300+ models)   │
-# │      groq                Groq (fast inference)      │
-# │      custom              Custom base_url...         │
-# │                                                     │
-# │    ── CLI Tools (use existing installation) ──     │
-# │      cli/gemini          Gemini CLI (FREE!)         │
-# │      cli/claude          Claude Code CLI            │
-# │      cli/codex           Codex CLI                  │
-# │                                                     │
-# │    ── Skip ──                                       │
-# │      (none)              Skip summarization config  │
-# │                                                     │
-# └─────────────────────────────────────────────────────┘
-#
-# Step 4: Review & Save
-# ┌─────────────────────────────────────────────────────┐
-# │  AI Configuration (4/4)              [←] [Save]     │
-# ├─────────────────────────────────────────────────────┤
-# │                                                     │
-# │  Review your AI configuration:                      │
-# │                                                     │
-# │  Transcription:                                     │
-# │    Provider: openai/whisper                         │
-# │    Model:    whisper-1                              │
-# │    API Key:  sk-xxx...xxx (configured)              │
-# │                                                     │
-# │  Summarization:                                     │
-# │    Provider: anthropic/claude                       │
-# │    Model:    claude-sonnet-4-20250514               │
-# │    API Key:  sk-ant...xxx (configured)              │
-# │                                                     │
-# │  [Save]  [Back]  [Cancel]                           │
-# └─────────────────────────────────────────────────────┘
-#
-# If user skipped an operation:
-# ┌─────────────────────────────────────────────────────┐
-# │  Review your AI configuration:                      │
-# │                                                     │
-# │  Transcription:                                     │
-# │    Provider: openai/whisper                         │
-# │    Model:    whisper-1                              │
-# │    API Key:  sk-xxx...xxx (configured)              │
-# │                                                     │
-# │  Summarization:                                     │
-# │    (not configured)                                 │
-# │                                                     │
-# └─────────────────────────────────────────────────────┘
+vget ai config       # Primary
+vget config ai       # Alias (same wizard)
 
 # Or use CLI for scripting/Docker:
 vget config set ai.transcription.provider openai
 vget config set ai.transcription.api_key sk-xxx
 
-# From URL (downloads first, then processes)
-vget ai https://xiaoyuzhoufm.com/episode/xxx --transcribe --summarize
-# → Downloads podcast.mp3
+# Slice audio into chunks (optional, for manual control)
+vget ai slice podcast.mp3
+vget ai slice podcast.mp3 --chunk-duration 5m --overlap 5s
+# → podcast.chunks/
+#   ├── manifest.json
+#   ├── chunk_001.mp3
+#   ├── chunk_002.mp3
+#   └── ...
+
+# Transcribe audio/video
+vget ai transcribe podcast.mp3
 # → podcast.transcript.md
+
+# Transcribe from chunks directory (resume capability)
+vget ai transcribe ./podcast.chunks/
+# → podcast.transcript.md
+
+# Summarize text
+vget ai summarize transcript.md
+# → transcript.summary.md
+
+# Summarize from chunks directory
+vget ai summarize ./podcast.chunks/
 # → podcast.summary.md
 
-# From local file
-vget ai podcast.mp3 --transcribe --summarize
-
-# Transcribe only (no summary)
-vget ai podcast.mp3 --transcribe
-
-# Summarize existing transcript
-vget ai podcast.transcript.md --summarize
-
-# Video with subtitles
-vget ai lecture.mp4 --transcribe --summarize
-# → lecture.srt + lecture.transcript.md + lecture.summary.md
+# Full workflow example:
+vget ai slice podcast.mp3                  # Step 1: Slice
+vget ai transcribe ./podcast.chunks/       # Step 2: Transcribe
+vget ai summarize ./podcast.chunks/        # Step 3: Summarize
 ```
