@@ -240,6 +240,10 @@ func runWebDAVDownload(rawURL, lang string) error {
 	outputFile := output
 	if outputFile == "" {
 		outputFile = webdav.ExtractFilename(filePath)
+		// Prepend outputDir if configured
+		if cfg.OutputDir != "" {
+			outputFile = filepath.Join(cfg.OutputDir, outputFile)
+		}
 	}
 
 	fmt.Printf("  WebDAV: %s (%s)\n", fileInfo.Name, formatSize(fileInfo.Size))
