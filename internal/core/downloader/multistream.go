@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -245,6 +247,22 @@ func MultiStreamDownload(ctx context.Context, url, output string, config MultiSt
 	if errs := msState.getErrors(); len(errs) > 0 {
 		return fmt.Errorf("download failed with %d errors: %v", len(errs), errs[0])
 	}
+
+	// File download complete, check for magic bytes and rename if needed
+	// Close file first to allow renaming
+	file.Close()
+
+	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
+		ext := filepath.Ext(output)
+		currentExt := strings.TrimPrefix(ext, ".")
+		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
+			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
+			if err := os.Rename(output, newOutput); err == nil {
+				output = newOutput
+			}
+		}
+	}
+	state.setFinalPath(output)
 
 	return nil
 }
@@ -530,6 +548,22 @@ func MultiStreamDownloadWithAuth(ctx context.Context, url, authHeader, output st
 		return fmt.Errorf("download failed with %d errors: %v", len(errs), errs[0])
 	}
 
+	// File download complete, check for magic bytes and rename if needed
+	// Close file first to allow renaming
+	file.Close()
+
+	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
+		ext := filepath.Ext(output)
+		currentExt := strings.TrimPrefix(ext, ".")
+		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
+			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
+			if err := os.Rename(output, newOutput); err == nil {
+				output = newOutput
+			}
+		}
+	}
+	state.setFinalPath(output)
+
 	return nil
 }
 
@@ -693,6 +727,22 @@ func downloadWithAuthSingleStream(ctx context.Context, client *http.Client, url,
 			return fmt.Errorf("download failed: %w", err)
 		}
 	}
+
+	// File download complete, check for magic bytes and rename if needed
+	// Close file first to allow renaming
+	file.Close()
+
+	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
+		ext := filepath.Ext(output)
+		currentExt := strings.TrimPrefix(ext, ".")
+		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
+			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
+			if err := os.Rename(output, newOutput); err == nil {
+				output = newOutput
+			}
+		}
+	}
+	state.setFinalPath(output)
 
 	return nil
 }

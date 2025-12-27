@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,6 +36,7 @@ type downloadState struct {
 	startTime   time.Time
 	endTime     time.Time
 	finalSpeed  float64
+	finalPath   string
 }
 
 func (s *downloadState) update(current, total int64) {
@@ -64,6 +66,18 @@ func (s *downloadState) setError(err error) {
 	defer s.mu.Unlock()
 	s.err = err
 	s.done = true
+}
+
+func (s *downloadState) setFinalPath(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.finalPath = path
+}
+
+func (s *downloadState) getFinalPath() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.finalPath
 }
 
 func (s *downloadState) get() (int64, int64, float64, bool, error) {
@@ -190,7 +204,10 @@ func (m downloadModel) View() string {
 		elapsed, avgSpeed := m.state.getFinal()
 		// Display full path
 		displayPath := m.output
-		if absPath, err := filepath.Abs(m.output); err == nil {
+		if finalPath := m.state.getFinalPath(); finalPath != "" {
+			displayPath = finalPath
+		}
+		if absPath, err := filepath.Abs(displayPath); err == nil {
 			displayPath = absPath
 		}
 		return fmt.Sprintf("\n  %s %s\n  %s: %s (%s)\n  %s: %s  |  %s: %s/s\n\n",
@@ -356,6 +373,23 @@ func downloadWithProgress(client *http.Client, url, output string, state *downlo
 		}
 	}
 
+	// File download complete, check for magic bytes and rename if needed
+	// Close file first to allow renaming
+	file.Close()
+
+	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
+		ext := filepath.Ext(output)
+		currentExt := strings.TrimPrefix(ext, ".")
+		// Only rename if extension is different (case-insensitive) and not empty
+		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
+			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
+			if err := os.Rename(output, newOutput); err == nil {
+				output = newOutput
+			}
+		}
+	}
+	state.setFinalPath(output)
+
 	return nil
 }
 
@@ -425,6 +459,21 @@ func downloadFromReaderWithProgress(reader io.ReadCloser, total int64, output st
 			return fmt.Errorf("download failed: %w", err)
 		}
 	}
+
+	// File download complete, check for magic bytes and rename if needed
+	file.Close()
+
+	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
+		ext := filepath.Ext(output)
+		currentExt := strings.TrimPrefix(ext, ".")
+		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
+			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
+			if err := os.Rename(output, newOutput); err == nil {
+				output = newOutput
+			}
+		}
+	}
+	state.setFinalPath(output)
 
 	return nil
 }
