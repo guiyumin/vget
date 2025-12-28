@@ -34,7 +34,7 @@ func NewOpenAI(cfg config.AIServiceConfig, apiKey string) (*OpenAI, error) {
 
 	model := openai.ChatModel(cfg.Model)
 	if cfg.Model == "" {
-		model = openai.ChatModelGPT4o
+		model = openai.ChatModel(DefaultOpenAIModel)
 	}
 
 	return &OpenAI{
