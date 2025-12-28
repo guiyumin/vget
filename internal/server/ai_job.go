@@ -480,35 +480,61 @@ func (q *AIJobQueue) executeWithProgress(ctx context.Context, pipeline *ai.Pipel
 			return nil, ctx.Err()
 		}
 
-		// Steps 1-5: Transcription (handled by pipeline)
+		// Steps 1-5: Transcription (handled by pipeline with progress reporting)
 		q.startStep(job.ID, StepCompress)
-		progressFn(StepCompress, 0, "Compressing audio...")
 
-		// Run the actual pipeline (transcription only for now)
+		// Create a progress callback that maps ai.ProgressStep to our StepKey
+		pipelineProgressFn := func(step ai.ProgressStep, progress float64, detail string) {
+			switch step {
+			case ai.ProgressStepCompress:
+				progressFn(StepCompress, progress, detail)
+				if progress >= 100 {
+					q.completeStep(job.ID, StepCompress)
+					q.startStep(job.ID, StepChunk)
+				}
+			case ai.ProgressStepChunk:
+				progressFn(StepChunk, progress, detail)
+				if progress >= 100 {
+					q.completeStep(job.ID, StepChunk)
+					q.startStep(job.ID, StepTranscribe)
+				} else if progress == 0 {
+					// Starting chunk step
+					q.completeStep(job.ID, StepCompress)
+					q.startStep(job.ID, StepChunk)
+				}
+			case ai.ProgressStepTranscribe:
+				progressFn(StepTranscribe, progress, detail)
+				if progress >= 100 {
+					q.completeStep(job.ID, StepTranscribe)
+					q.startStep(job.ID, StepMerge)
+				} else if progress == 0 {
+					// Starting transcribe step
+					q.startStep(job.ID, StepTranscribe)
+				}
+			case ai.ProgressStepMerge:
+				progressFn(StepMerge, progress, detail)
+				if progress >= 100 {
+					q.completeStep(job.ID, StepMerge)
+					q.startStep(job.ID, StepCleanup)
+				}
+			case ai.ProgressStepCleanup:
+				progressFn(StepCleanup, progress, detail)
+				if progress >= 100 {
+					q.completeStep(job.ID, StepCleanup)
+				}
+			}
+		}
+
+		// Run the actual pipeline with progress callback
 		opts := ai.Options{
 			Transcribe: true,
 			Summarize:  false, // We'll handle summarization separately for resume support
 		}
 
-		pipelineResult, err := pipeline.Process(ctx, job.FilePath, opts)
+		pipelineResult, err := pipeline.ProcessWithProgress(ctx, job.FilePath, opts, pipelineProgressFn)
 		if err != nil {
 			return nil, err
 		}
-
-		// Update steps based on pipeline result
-		q.completeStep(job.ID, StepCompress)
-
-		// Check if chunking was used
-		if pipelineResult.ChunksDir != "" {
-			q.completeStep(job.ID, StepChunk)
-			q.completeStep(job.ID, StepMerge)
-		} else {
-			q.skipStep(job.ID, StepChunk, "File small enough")
-			q.skipStep(job.ID, StepMerge, "No chunks to merge")
-		}
-
-		q.completeStep(job.ID, StepTranscribe)
-		q.completeStep(job.ID, StepCleanup)
 
 		// Build result
 		result.TranscriptPath = pipelineResult.TranscriptPath

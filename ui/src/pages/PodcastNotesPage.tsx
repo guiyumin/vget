@@ -86,13 +86,18 @@ export function PodcastNotesPage() {
           const provider = acc?.provider || "openai";
           if (models) {
             // Set default transcription model
-            const transcriptionModels = models.transcription[provider as keyof typeof models.transcription] || [];
+            const transcriptionModels =
+              models.transcription[
+                provider as keyof typeof models.transcription
+              ] || [];
             setTranscriptionModel(transcriptionModels[0] || "whisper-1");
 
             // Set default summarization model
             const summaryProvider = provider as "openai" | "anthropic" | "qwen";
             const summaryModels = models.summarization[summaryProvider];
-            setSummarizationModel(summaryModels?.[0]?.id || models.summarization.default);
+            setSummarizationModel(
+              summaryModels?.[0]?.id || models.summarization.default
+            );
           }
         }
       }
@@ -141,7 +146,11 @@ export function PodcastNotesPage() {
   };
 
   const getTranscriptionModels = (provider: string) => {
-    return aiModels?.transcription[provider as keyof typeof aiModels.transcription] || [];
+    return (
+      aiModels?.transcription[
+        provider as keyof typeof aiModels.transcription
+      ] || []
+    );
   };
 
   const getSummarizationModels = (provider: string) => {
@@ -159,7 +168,9 @@ export function PodcastNotesPage() {
 
     // Update summarization model
     const summaryModels = getSummarizationModels(provider);
-    setSummarizationModel(summaryModels[0]?.id || aiModels?.summarization.default || "");
+    setSummarizationModel(
+      summaryModels[0]?.id || aiModels?.summarization.default || ""
+    );
   };
 
   const handleSelectFile = (file: AudioFile) => {
@@ -274,7 +285,7 @@ export function PodcastNotesPage() {
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-4 h-[calc(100vh-8rem)]">
-      <h1 className="text-xl font-medium text-zinc-900 dark:text-white flex-shrink-0">
+      <h1 className="text-xl font-medium text-zinc-900 dark:text-white shrink-0">
         {t.ai_speech_to_text}
       </h1>
 
@@ -334,7 +345,7 @@ export function PodcastNotesPage() {
       </div>
 
       {/* Section 2: Model Configuration */}
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 flex-shrink-0">
+      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 shrink-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
           {t.ai_settings || "Settings"}
         </h3>
@@ -372,11 +383,13 @@ export function PodcastNotesPage() {
                 className={`${selectClass} flex-1`}
                 disabled={isProcessing}
               >
-                {getTranscriptionModels(getAccountProvider(account)).map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
+                {getTranscriptionModels(getAccountProvider(account)).map(
+                  (m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -391,11 +404,13 @@ export function PodcastNotesPage() {
                 className={`${selectClass} flex-1`}
                 disabled={isProcessing || !includeSummary}
               >
-                {getSummarizationModels(getAccountProvider(account)).map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
+                {getSummarizationModels(getAccountProvider(account)).map(
+                  (m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  )
+                )}
               </select>
             </div>
           </div>
@@ -442,7 +457,7 @@ export function PodcastNotesPage() {
       </div>
 
       {/* Section 3: Processing Steps */}
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 flex-shrink-0">
+      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 shrink-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
           {t.ai_processing || "Processing Steps"}
         </h3>
@@ -454,58 +469,64 @@ export function PodcastNotesPage() {
         />
       </div>
 
-      {/* Section 4: Outputs */}
-      {selectedFile &&
+      {/* Section 4: Outputs - always rendered to maintain consistent layout */}
+      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 shrink-0 min-h-30">
+        <h2 className="font-medium text-zinc-900 dark:text-white mb-3">
+          {t.download || "Outputs"}
+        </h2>
+
+        {selectedFile &&
         (selectedFile.has_transcript ||
           selectedFile.has_summary ||
-          isComplete) && (
-          <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 flex-shrink-0">
-            <h2 className="font-medium text-zinc-900 dark:text-white mb-3">
-              {t.download || "Outputs"}
-            </h2>
-
-            <div className="space-y-2">
-              {/* Chunks directory */}
-              <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <FaFolderOpen className="text-yellow-500 shrink-0" />
-                <span>{getBaseName(selectedFile.filename)}.chunks/</span>
-                <span className="text-xs text-zinc-400">(audio chunks)</span>
-              </div>
-
-              {/* Transcript file */}
-              {(selectedFile.has_transcript ||
-                processingState.result?.transcript_path) && (
-                <a
-                  href={`/api/download?path=${encodeURIComponent(
-                    selectedFile.path.replace(/\.[^.]+$/, ".transcript.md")
-                  )}`}
-                  download
-                  className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                >
-                  <FaFileLines className="text-blue-500 shrink-0" />
-                  <span>{getBaseName(selectedFile.filename)}.transcript.md</span>
-                  <FaDownload className="text-xs" />
-                </a>
-              )}
-
-              {/* Summary file */}
-              {(selectedFile.has_summary ||
-                processingState.result?.summary_path) && (
-                <a
-                  href={`/api/download?path=${encodeURIComponent(
-                    selectedFile.path.replace(/\.[^.]+$/, ".summary.md")
-                  )}`}
-                  download
-                  className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
-                >
-                  <FaFileLines className="text-purple-500 shrink-0" />
-                  <span>{getBaseName(selectedFile.filename)}.summary.md</span>
-                  <FaDownload className="text-xs" />
-                </a>
-              )}
+          isComplete) ? (
+          <div className="space-y-2">
+            {/* Chunks directory */}
+            <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <FaFolderOpen className="text-yellow-500 shrink-0" />
+              <span>{getBaseName(selectedFile.filename)}.chunks/</span>
+              <span className="text-xs text-zinc-400">(audio chunks)</span>
             </div>
+
+            {/* Transcript file */}
+            {(selectedFile.has_transcript ||
+              processingState.result?.transcript_path) && (
+              <a
+                href={`/api/download?path=${encodeURIComponent(
+                  selectedFile.path.replace(/\.[^.]+$/, ".transcript.md")
+                )}`}
+                download
+                className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                <FaFileLines className="text-blue-500 shrink-0" />
+                <span>{getBaseName(selectedFile.filename)}.transcript.md</span>
+                <FaDownload className="text-xs" />
+              </a>
+            )}
+
+            {/* Summary file */}
+            {(selectedFile.has_summary ||
+              processingState.result?.summary_path) && (
+              <a
+                href={`/api/download?path=${encodeURIComponent(
+                  selectedFile.path.replace(/\.[^.]+$/, ".summary.md")
+                )}`}
+                download
+                className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+              >
+                <FaFileLines className="text-purple-500 shrink-0" />
+                <span>{getBaseName(selectedFile.filename)}.summary.md</span>
+                <FaDownload className="text-xs" />
+              </a>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-zinc-400 dark:text-zinc-500">
+            {selectedFile
+              ? "No outputs yet. Start processing to generate transcript and summary."
+              : "Select a file to see available outputs."}
           </div>
         )}
+      </div>
     </div>
   );
 }

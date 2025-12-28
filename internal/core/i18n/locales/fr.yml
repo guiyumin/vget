@@ -170,7 +170,7 @@ ui:
   ai_settings: "Paramètres IA"
   ai_no_accounts: "Aucun compte IA configuré. Ajoutez-en un pour utiliser la transcription et le résumé."
   ai_encryption_note: "Les clés API sont chiffrées avec votre PIN en AES-256-GCM. Laissez le PIN vide pour stocker en clair."
-  ai_account_name: "Nom du compte"
+  ai_account_name: "Sélectionner le compte"
   ai_provider: "Fournisseur"
   ai_api_key: "Clé API"
   ai_same_key_for_summary: "Même clé pour le résumé"

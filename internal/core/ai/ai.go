@@ -32,6 +32,23 @@ type Options struct {
 	Summarize  bool
 }
 
+// ProgressStep represents a processing step for progress reporting.
+type ProgressStep string
+
+const (
+	ProgressStepCompress   ProgressStep = "compress"
+	ProgressStepChunk      ProgressStep = "chunk"
+	ProgressStepTranscribe ProgressStep = "transcribe"
+	ProgressStepCleanup    ProgressStep = "cleanup"
+	ProgressStepMerge      ProgressStep = "merge"
+)
+
+// ProgressCallback is called to report progress during pipeline processing.
+// step: the current processing step
+// progress: 0-100 progress within the step
+// detail: human-readable detail about current operation
+type ProgressCallback func(step ProgressStep, progress float64, detail string)
+
 // ChunkOptions configures audio chunking parameters.
 type ChunkOptions struct {
 	ChunkDuration time.Duration
@@ -132,7 +149,17 @@ func NewPipelineWithAccount(account *config.AIAccount, transcriptionModel, summa
 
 // Process runs the AI pipeline on the given file.
 func (p *Pipeline) Process(ctx context.Context, filePath string, opts Options) (*Result, error) {
+	return p.ProcessWithProgress(ctx, filePath, opts, nil)
+}
+
+// ProcessWithProgress runs the AI pipeline with progress reporting.
+func (p *Pipeline) ProcessWithProgress(ctx context.Context, filePath string, opts Options, progressFn ProgressCallback) (*Result, error) {
 	result := &Result{}
+
+	// No-op progress function if not provided
+	if progressFn == nil {
+		progressFn = func(step ProgressStep, progress float64, detail string) {}
+	}
 
 	// Determine file type
 	fileType := detectFileType(filePath)
@@ -153,8 +180,11 @@ func (p *Pipeline) Process(ctx context.Context, filePath string, opts Options) (
 
 		fmt.Printf("Transcribing %s...\n", filepath.Base(filePath))
 
-		// Transcribe the file
-		transcript, chunksDir, err := p.transcribe(ctx, filePath)
+		// Report compression start
+		progressFn(ProgressStepCompress, 0, "Compressing audio...")
+
+		// Transcribe the file with progress reporting
+		transcript, chunksDir, err := p.transcribeWithProgress(ctx, filePath, progressFn)
 		if err != nil {
 			return nil, fmt.Errorf("transcription failed: %w", err)
 		}
@@ -171,14 +201,19 @@ func (p *Pipeline) Process(ctx context.Context, filePath string, opts Options) (
 
 		// Clean the transcript using LLM (post-transcription cleanup)
 		if p.cleaner != nil && transcript.RawText != "" {
+			progressFn(ProgressStepCleanup, 0, "Cleaning transcript...")
 			fmt.Println("  Cleaning transcript...")
 			cleanedText, err := p.cleaner.Clean(ctx, transcript.RawText)
 			if err != nil {
 				// Log warning but don't fail - raw transcript is still available
 				fmt.Printf("  Warning: failed to clean transcript: %v\n", err)
+				progressFn(ProgressStepCleanup, 100, "Skipped (cleanup failed)")
 			} else {
 				transcript.CleanedText = cleanedText
+				progressFn(ProgressStepCleanup, 100, "Transcript cleaned")
 			}
+		} else {
+			progressFn(ProgressStepCleanup, 100, "Skipped")
 		}
 
 		// Write transcript to file
@@ -276,6 +311,16 @@ func (p *Pipeline) SummarizeText(ctx context.Context, text string, originalFileP
 
 // transcribe handles the transcription process, including chunking for large files.
 func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcriber.Result, string, error) {
+	return p.transcribeWithProgress(ctx, filePath, nil)
+}
+
+// transcribeWithProgress handles transcription with progress reporting.
+func (p *Pipeline) transcribeWithProgress(ctx context.Context, filePath string, progressFn ProgressCallback) (*transcriber.Result, string, error) {
+	// No-op progress function if not provided
+	if progressFn == nil {
+		progressFn = func(step ProgressStep, progress float64, detail string) {}
+	}
+
 	// Check if file needs chunking
 	needsChunking, err := p.chunker.NeedsChunking(filePath)
 	if err != nil {
@@ -283,9 +328,19 @@ func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcribe
 	}
 
 	if !needsChunking {
-		// Direct transcription
+		// Direct transcription - no chunking needed
+		progressFn(ProgressStepCompress, 100, "Audio ready")
+		progressFn(ProgressStepChunk, 100, "File small enough")
+		progressFn(ProgressStepTranscribe, 0, "Transcribing...")
+
 		result, err := p.transcriber.Transcribe(ctx, filePath)
-		return result, "", err
+		if err != nil {
+			return nil, "", err
+		}
+
+		progressFn(ProgressStepTranscribe, 100, "Transcription complete")
+		progressFn(ProgressStepMerge, 100, "No chunks to merge")
+		return result, "", nil
 	}
 
 	// Check ffmpeg availability
@@ -294,17 +349,25 @@ func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcribe
 	}
 
 	// Split into chunks with manifest (preserves all intermediate files)
+	progressFn(ProgressStepCompress, 50, "Compressing and preparing audio...")
 	fmt.Println("  File exceeds size limit, splitting into chunks...")
+
+	progressFn(ProgressStepChunk, 0, "Splitting into chunks...")
 	chunks, manifest, err := p.chunker.SplitWithManifest(filePath)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to split file: %w", err)
 	}
 
+	progressFn(ProgressStepCompress, 100, "Audio compressed")
+	progressFn(ProgressStepChunk, 100, fmt.Sprintf("Created %d chunks", len(chunks)))
 	fmt.Printf("  Created %d chunks in: %s\n", len(chunks), manifest.ChunksDir)
 
 	// Transcribe each chunk
 	var results []*transcriber.Result
 	for i, chunk := range chunks {
+		progress := float64(i) / float64(len(chunks)) * 100
+		detail := fmt.Sprintf("Transcribing chunk %d/%d...", i+1, len(chunks))
+		progressFn(ProgressStepTranscribe, progress, detail)
 		fmt.Printf("  [%d/%d] Transcribing chunk...\n", i+1, len(chunks))
 
 		result, err := p.transcriber.Transcribe(ctx, chunk.FilePath)
@@ -318,11 +381,18 @@ func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcribe
 		manifestPath := filepath.Join(manifest.ChunksDir, "manifest.json")
 		p.chunker.writeManifest(manifest, manifestPath)
 	}
+	progressFn(ProgressStepTranscribe, 100, "All chunks transcribed")
 
 	// Merge results
+	progressFn(ProgressStepMerge, 0, "Merging transcripts...")
 	fmt.Println("  Merging transcripts...")
 	merged, err := p.chunker.MergeTranscripts(results, chunks)
-	return merged, manifest.ChunksDir, err
+	if err != nil {
+		return nil, manifest.ChunksDir, err
+	}
+	progressFn(ProgressStepMerge, 100, "Transcripts merged")
+
+	return merged, manifest.ChunksDir, nil
 }
 
 // getOutputPath generates output file path with the given suffix.

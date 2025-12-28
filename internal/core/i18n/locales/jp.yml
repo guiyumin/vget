@@ -170,7 +170,7 @@ ui:
   ai_settings: "AI設定"
   ai_no_accounts: "AIアカウントが設定されていません。文字起こしと要約機能を使用するには追加してください。"
   ai_encryption_note: "APIキーはPINを使用してAES-256-GCMで暗号化されます。空のPINで平文保存。"
-  ai_account_name: "アカウント名"
+  ai_account_name: "アカウント選択"
   ai_provider: "プロバイダー"
   ai_api_key: "APIキー"
   ai_same_key_for_summary: "要約に同じキーを使用"

@@ -170,7 +170,7 @@ ui:
   ai_settings: "AI 설정"
   ai_no_accounts: "AI 계정이 설정되지 않았습니다. 전사 및 요약 기능을 사용하려면 추가하세요."
   ai_encryption_note: "API 키는 PIN을 사용하여 AES-256-GCM으로 암호화됩니다. PIN을 비워두면 평문으로 저장됩니다."
-  ai_account_name: "계정 이름"
+  ai_account_name: "계정 선택"
   ai_provider: "제공업체"
   ai_api_key: "API 키"
   ai_same_key_for_summary: "요약에 동일한 키 사용"

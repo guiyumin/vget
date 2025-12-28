@@ -18,7 +18,15 @@ interface FileSelectorProps {
   disabled: boolean;
 }
 
-const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mkv", ".avi", ".mov", ".flv", ".wmv"];
+const VIDEO_EXTENSIONS = [
+  ".mp4",
+  ".webm",
+  ".mkv",
+  ".avi",
+  ".mov",
+  ".flv",
+  ".wmv",
+];
 
 function isVideoFile(filename: string): boolean {
   const ext = filename.toLowerCase().slice(filename.lastIndexOf("."));
@@ -120,10 +128,8 @@ export function FileSelector({
                   {/* Icon */}
                   <div
                     className={clsx(
-                      "w-5 h-5 flex items-center justify-center flex-shrink-0",
-                      isVideo
-                        ? "text-purple-500"
-                        : "text-blue-500"
+                      "w-5 h-5 flex items-center justify-center shrink-0",
+                      isVideo ? "text-purple-500" : "text-blue-500"
                     )}
                   >
                     {isVideo ? <FaVideo /> : <FaMusic />}
@@ -144,12 +150,12 @@ export function FileSelector({
                   </div>
 
                   {/* Size */}
-                  <div className="text-xs text-zinc-400 dark:text-zinc-500 flex-shrink-0">
+                  <div className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">
                     {formatFileSize(file.size)}
                   </div>
 
                   {/* Status badges */}
-                  <div className="flex gap-1 flex-shrink-0">
+                  <div className="flex gap-1 shrink-0">
                     {file.has_transcript && (
                       <span className="w-4 h-4 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
                         <FaCheck className="text-[8px]" />

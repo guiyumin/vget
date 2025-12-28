@@ -170,7 +170,7 @@ ui:
   ai_settings: "Configuración de IA"
   ai_no_accounts: "No hay cuentas de IA configuradas. Añade una para usar transcripción y resumen."
   ai_encryption_note: "Las claves API están cifradas con tu PIN usando AES-256-GCM. Deja el PIN vacío para guardar en texto plano."
-  ai_account_name: "Nombre de cuenta"
+  ai_account_name: "Seleccionar cuenta"
   ai_provider: "Proveedor"
   ai_api_key: "Clave API"
   ai_same_key_for_summary: "Misma clave para resumen"

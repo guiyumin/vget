@@ -170,7 +170,7 @@ ui:
   ai_settings: "KI-Einstellungen"
   ai_no_accounts: "Keine KI-Konten konfiguriert. Fügen Sie eines hinzu, um Transkription und Zusammenfassung zu nutzen."
   ai_encryption_note: "API-Schlüssel werden mit Ihrer PIN mittels AES-256-GCM verschlüsselt. Lassen Sie die PIN leer für Klartext."
-  ai_account_name: "Kontoname"
+  ai_account_name: "Konto auswählen"
   ai_provider: "Anbieter"
   ai_api_key: "API-Schlüssel"
   ai_same_key_for_summary: "Gleicher Schlüssel für Zusammenfassung"

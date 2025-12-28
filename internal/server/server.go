@@ -1242,7 +1242,8 @@ func (s *Server) downloadWebDAV(ctx context.Context, rawURL, filename string, pr
 		if outputFile == "" {
 			outputFile = webdav.ExtractFilename(filePath)
 		}
-		outputPath := filepath.Join(s.outputDir, outputFile)
+		// Sanitize the filename to remove invalid path characters
+		outputPath := filepath.Join(s.outputDir, extractor.SanitizeFilename(outputFile))
 
 		// Update job filename
 		s.updateJobFilename(rawURL, outputPath)
@@ -1278,7 +1279,8 @@ func (s *Server) downloadWebDAV(ctx context.Context, rawURL, filename string, pr
 	if outputFile == "" {
 		outputFile = webdav.ExtractFilename(filePath)
 	}
-	outputPath := filepath.Join(s.outputDir, outputFile)
+	// Sanitize the filename to remove invalid path characters
+	outputPath := filepath.Join(s.outputDir, extractor.SanitizeFilename(outputFile))
 
 	s.updateJobFilename(rawURL, outputPath)
 
@@ -1346,7 +1348,8 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 		headers = format.Headers
 
 		if filename != "" {
-			outputPath = filepath.Join(s.outputDir, filename)
+			// Sanitize the provided filename to remove invalid path characters
+			outputPath = filepath.Join(s.outputDir, extractor.SanitizeFilename(filename))
 		} else {
 			title := extractor.SanitizeFilename(m.Title)
 			ext := format.Ext
@@ -1371,7 +1374,8 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 		downloadURL = m.URL
 
 		if filename != "" {
-			outputPath = filepath.Join(s.outputDir, filename)
+			// Sanitize the provided filename to remove invalid path characters
+			outputPath = filepath.Join(s.outputDir, extractor.SanitizeFilename(filename))
 		} else {
 			title := extractor.SanitizeFilename(m.Title)
 			if title != "" {

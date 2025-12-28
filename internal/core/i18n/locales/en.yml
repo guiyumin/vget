@@ -182,7 +182,7 @@ ui:
   ai_settings: "AI Settings"
   ai_no_accounts: "No AI accounts configured. Add one to use transcription and summarization."
   ai_encryption_note: "API keys are encrypted with your PIN using AES-256-GCM. Leave PIN empty to store keys in plain text."
-  ai_account_name: "Account Name"
+  ai_account_name: "Select Account"
   ai_provider: "Provider"
   ai_api_key: "API Key"
   ai_same_key_for_summary: "Same Key for Summary"

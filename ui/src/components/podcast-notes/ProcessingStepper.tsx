@@ -89,11 +89,10 @@ export function ProcessingStepper({
               index === currentStepIndex &&
                 step.status === "in_progress" &&
                 "bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500",
-              step.status === "failed" &&
-                "bg-red-50 dark:bg-red-900/20"
+              step.status === "failed" && "bg-red-50 dark:bg-red-900/20"
             )}
           >
-            <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+            <div className="w-4 h-4 flex items-center justify-center shrink-0">
               {getStepIcon(step.status)}
             </div>
             <div className="flex-1 min-w-0">
@@ -111,11 +110,13 @@ export function ProcessingStepper({
                 </div>
               )}
             </div>
-            {step.status === "in_progress" && step.progress > 0 && step.progress < 100 && (
-              <div className="text-xs text-blue-500 flex-shrink-0">
-                {Math.round(step.progress)}%
-              </div>
-            )}
+            {step.status === "in_progress" &&
+              step.progress > 0 &&
+              step.progress < 100 && (
+                <div className="text-xs text-blue-500 shrink-0">
+                  {Math.round(step.progress)}%
+                </div>
+              )}
           </div>
         ))}
       </div>
