@@ -100,8 +100,11 @@ export interface UITranslations {
   ai_transcribe: string;
   ai_summarize: string;
   ai_processing: string;
+  ai_processing_steps: string;
   ai_run: string;
   ai_select_model: string;
+  ai_select_file_hint: string;
+  ai_outputs: string;
 }
 
 export interface ServerTranslations {
@@ -211,8 +214,11 @@ export const defaultTranslations: UITranslations = {
   ai_transcribe: "Transcribe",
   ai_summarize: "Summarize",
   ai_processing: "Processing...",
+  ai_processing_steps: "Processing Steps",
   ai_run: "Run",
   ai_select_model: "Select AI and Model",
+  ai_select_file_hint: "Select a file to start",
+  ai_outputs: "Outputs",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

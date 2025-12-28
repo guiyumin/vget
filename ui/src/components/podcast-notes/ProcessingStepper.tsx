@@ -13,6 +13,7 @@ interface ProcessingStepperProps {
   currentStepIndex: number;
   overallProgress: number;
   isProcessing: boolean;
+  emptyText?: string;
 }
 
 function getStepIcon(status: StepStatus) {
@@ -52,11 +53,12 @@ export function ProcessingStepper({
   currentStepIndex,
   overallProgress,
   isProcessing,
+  emptyText = "Select a file to start",
 }: ProcessingStepperProps) {
   if (steps.length === 0) {
     return (
       <div className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
-        Select a file to start
+        {emptyText}
       </div>
     );
   }

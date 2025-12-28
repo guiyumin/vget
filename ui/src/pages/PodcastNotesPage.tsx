@@ -459,20 +459,21 @@ export function PodcastNotesPage() {
       {/* Section 3: Processing Steps */}
       <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 shrink-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
-          {t.ai_processing || "Processing Steps"}
+          {isProcessing ? t.ai_processing : t.ai_processing_steps}
         </h3>
         <ProcessingStepper
           steps={processingState.steps}
           currentStepIndex={processingState.currentStepIndex}
           overallProgress={processingState.overallProgress}
           isProcessing={isProcessing}
+          emptyText={t.ai_select_file_hint}
         />
       </div>
 
       {/* Section 4: Outputs - always rendered to maintain consistent layout */}
       <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 shrink-0 min-h-30">
         <h2 className="font-medium text-zinc-900 dark:text-white mb-3">
-          {t.download || "Outputs"}
+          {t.ai_outputs}
         </h2>
 
         {selectedFile &&

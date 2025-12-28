@@ -185,8 +185,11 @@ ui:
   ai_transcribe: "文字起こし"
   ai_summarize: "要約"
   ai_processing: "処理中..."
+  ai_processing_steps: "処理ステップ"
   ai_run: "実行"
   ai_select_model: "AIとモデルを選択"
+  ai_select_file_hint: "ファイルを選択して開始"
+  ai_outputs: "出力"
 
 # サーバーメッセージ
 server:

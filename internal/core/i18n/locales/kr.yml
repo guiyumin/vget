@@ -185,8 +185,11 @@ ui:
   ai_transcribe: "전사"
   ai_summarize: "요약"
   ai_processing: "처리 중..."
+  ai_processing_steps: "처리 단계"
   ai_run: "실행"
   ai_select_model: "AI 및 모델 선택"
+  ai_select_file_hint: "파일을 선택하여 시작"
+  ai_outputs: "출력"
 
 # 서버 메시지
 server:

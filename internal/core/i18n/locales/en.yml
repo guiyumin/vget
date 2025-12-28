@@ -197,8 +197,11 @@ ui:
   ai_transcribe: "Transcribe"
   ai_summarize: "Summarize"
   ai_processing: "Processing..."
+  ai_processing_steps: "Processing Steps"
   ai_run: "Run"
   ai_select_model: "Select AI and Model"
+  ai_select_file_hint: "Select a file to start"
+  ai_outputs: "Outputs"
 
 # Server messages
 server:

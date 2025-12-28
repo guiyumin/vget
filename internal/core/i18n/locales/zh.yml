@@ -197,8 +197,11 @@ ui:
   ai_transcribe: "转录"
   ai_summarize: "总结"
   ai_processing: "处理中..."
+  ai_processing_steps: "处理步骤"
   ai_run: "运行"
   ai_select_model: "选择 AI 和模型"
+  ai_select_file_hint: "选择文件以开始"
+  ai_outputs: "输出结果"
 
 # 服务器消息
 server:
