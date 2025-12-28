@@ -347,7 +347,7 @@ export function PodcastNotesPage() {
       {/* Section 2: Model Configuration */}
       <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 shrink-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
-          {t.ai_settings || "Settings"}
+          {t.ai_settings}
         </h3>
 
         <div className="grid grid-cols-2 gap-4">
@@ -356,7 +356,7 @@ export function PodcastNotesPage() {
             {/* Account Selection */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 w-28">
-                {t.ai_account_name || "Account"}:
+                {t.ai_account_name}:
               </label>
               <select
                 value={account}
@@ -375,7 +375,7 @@ export function PodcastNotesPage() {
             {/* Transcription Model */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 w-28">
-                {t.ai_transcription_model || "Transcription"}:
+                {t.ai_transcription_model}:
               </label>
               <select
                 value={transcriptionModel}
@@ -396,7 +396,7 @@ export function PodcastNotesPage() {
             {/* Summarization Model */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-zinc-600 dark:text-zinc-400 w-28">
-                {t.ai_summary_model || "Summarization"}:
+                {t.ai_summary_model}:
               </label>
               <select
                 value={summarizationModel}
@@ -427,7 +427,7 @@ export function PodcastNotesPage() {
                 className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                {t.ai_summarize || "Include Summary"}
+                {t.ai_summarize}
               </span>
             </label>
 
@@ -448,7 +448,7 @@ export function PodcastNotesPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaPlay />
-                  {t.ai_run || "Start Processing"}
+                  {t.ai_run}
                 </button>
               )}
             </div>
