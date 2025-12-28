@@ -190,6 +190,8 @@ ui:
   ai_select_model: "AIとモデルを選択"
   ai_select_file_hint: "ファイルを選択して開始"
   ai_outputs: "出力"
+  ai_no_outputs_yet: "出力がありません。処理を開始して文字起こしと要約を生成してください。"
+  ai_select_file_for_outputs: "ファイルを選択して出力を表示。"
 
 # サーバーメッセージ
 server:

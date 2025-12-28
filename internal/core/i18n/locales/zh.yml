@@ -202,6 +202,8 @@ ui:
   ai_select_model: "选择 AI 和模型"
   ai_select_file_hint: "选择文件以开始"
   ai_outputs: "输出结果"
+  ai_no_outputs_yet: "暂无输出。开始处理以生成转录和摘要。"
+  ai_select_file_for_outputs: "选择文件以查看输出。"
 
 # 服务器消息
 server:

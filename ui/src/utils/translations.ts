@@ -105,6 +105,8 @@ export interface UITranslations {
   ai_select_model: string;
   ai_select_file_hint: string;
   ai_outputs: string;
+  ai_no_outputs_yet: string;
+  ai_select_file_for_outputs: string;
 }
 
 export interface ServerTranslations {
@@ -219,6 +221,8 @@ export const defaultTranslations: UITranslations = {
   ai_select_model: "Select AI and Model",
   ai_select_file_hint: "Select a file to start",
   ai_outputs: "Outputs",
+  ai_no_outputs_yet: "No outputs yet. Start processing to generate transcript and summary.",
+  ai_select_file_for_outputs: "Select a file to see available outputs.",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

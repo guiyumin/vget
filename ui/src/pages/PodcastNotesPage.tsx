@@ -523,8 +523,8 @@ export function PodcastNotesPage() {
         ) : (
           <div className="text-sm text-zinc-400 dark:text-zinc-500">
             {selectedFile
-              ? "No outputs yet. Start processing to generate transcript and summary."
-              : "Select a file to see available outputs."}
+              ? t.ai_no_outputs_yet
+              : t.ai_select_file_for_outputs}
           </div>
         )}
       </div>

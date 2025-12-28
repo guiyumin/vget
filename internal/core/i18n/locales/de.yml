@@ -190,6 +190,8 @@ ui:
   ai_select_model: "KI und Modell auswählen"
   ai_select_file_hint: "Datei auswählen, um zu starten"
   ai_outputs: "Ausgaben"
+  ai_no_outputs_yet: "Noch keine Ausgaben. Verarbeitung starten, um Transkript und Zusammenfassung zu erstellen."
+  ai_select_file_for_outputs: "Datei auswählen, um Ausgaben anzuzeigen."
 
 # Server-Nachrichten
 server:

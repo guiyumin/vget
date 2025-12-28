@@ -190,6 +190,8 @@ ui:
   ai_select_model: "Seleccionar IA y modelo"
   ai_select_file_hint: "Seleccionar archivo para comenzar"
   ai_outputs: "Resultados"
+  ai_no_outputs_yet: "Sin resultados aún. Inicia el procesamiento para generar transcripción y resumen."
+  ai_select_file_for_outputs: "Selecciona un archivo para ver los resultados."
 
 # Mensajes del servidor
 server:

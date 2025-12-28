@@ -202,6 +202,8 @@ ui:
   ai_select_model: "Select AI and Model"
   ai_select_file_hint: "Select a file to start"
   ai_outputs: "Outputs"
+  ai_no_outputs_yet: "No outputs yet. Start processing to generate transcript and summary."
+  ai_select_file_for_outputs: "Select a file to see available outputs."
 
 # Server messages
 server:

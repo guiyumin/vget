@@ -190,6 +190,8 @@ ui:
   ai_select_model: "AI 및 모델 선택"
   ai_select_file_hint: "파일을 선택하여 시작"
   ai_outputs: "출력"
+  ai_no_outputs_yet: "출력이 없습니다. 처리를 시작하여 전사 및 요약을 생성하세요."
+  ai_select_file_for_outputs: "파일을 선택하여 출력을 확인하세요."
 
 # 서버 메시지
 server:
