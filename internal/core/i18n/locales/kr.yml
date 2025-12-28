@@ -192,6 +192,20 @@ ui:
   ai_outputs: "출력"
   ai_no_outputs_yet: "출력이 없습니다. 처리를 시작하여 전사 및 요약을 생성하세요."
   ai_select_file_for_outputs: "파일을 선택하여 출력을 확인하세요."
+  # AI 단계 이름
+  ai_step_extract_audio: "오디오 추출"
+  ai_step_compress_audio: "오디오 압축"
+  ai_step_chunk_audio: "오디오 분할"
+  ai_step_transcribe: "전사"
+  ai_step_merge: "청크 병합"
+  ai_step_summarize: "요약 생성"
+  # AI 단계 상세
+  ai_detail_already_audio: "이미 오디오"
+  ai_detail_audio_ready: "오디오 준비됨"
+  ai_detail_file_small_enough: "파일 크기 적절"
+  ai_detail_transcription_complete: "전사 완료"
+  ai_detail_no_chunks_to_merge: "병합 불필요"
+  ai_detail_summary_generated: "요약 완료"
 
 # 서버 메시지
 server:

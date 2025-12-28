@@ -192,6 +192,20 @@ ui:
   ai_outputs: "Ausgaben"
   ai_no_outputs_yet: "Noch keine Ausgaben. Verarbeitung starten, um Transkript und Zusammenfassung zu erstellen."
   ai_select_file_for_outputs: "Datei auswählen, um Ausgaben anzuzeigen."
+  # AI-Schrittnamen
+  ai_step_extract_audio: "Audio extrahieren"
+  ai_step_compress_audio: "Audio komprimieren"
+  ai_step_chunk_audio: "Audio aufteilen"
+  ai_step_transcribe: "Transkribieren"
+  ai_step_merge: "Chunks zusammenführen"
+  ai_step_summarize: "Zusammenfassung erstellen"
+  # AI-Schrittdetails
+  ai_detail_already_audio: "Bereits Audio"
+  ai_detail_audio_ready: "Audio bereit"
+  ai_detail_file_small_enough: "Dateigröße OK"
+  ai_detail_transcription_complete: "Transkription abgeschlossen"
+  ai_detail_no_chunks_to_merge: "Keine Chunks zu verbinden"
+  ai_detail_summary_generated: "Zusammenfassung erstellt"
 
 # Server-Nachrichten
 server:

@@ -235,6 +235,20 @@ type UITranslations struct {
 	AIProcessing          string `yaml:"ai_processing" json:"ai_processing"`
 	AIRun                 string `yaml:"ai_run" json:"ai_run"`
 	AISelectModel         string `yaml:"ai_select_model" json:"ai_select_model"`
+	// AI step names
+	AIStepExtractAudio  string `yaml:"ai_step_extract_audio" json:"ai_step_extract_audio"`
+	AIStepCompressAudio string `yaml:"ai_step_compress_audio" json:"ai_step_compress_audio"`
+	AIStepChunkAudio    string `yaml:"ai_step_chunk_audio" json:"ai_step_chunk_audio"`
+	AIStepTranscribe    string `yaml:"ai_step_transcribe" json:"ai_step_transcribe"`
+	AIStepMerge         string `yaml:"ai_step_merge" json:"ai_step_merge"`
+	AIStepSummarize     string `yaml:"ai_step_summarize" json:"ai_step_summarize"`
+	// AI step details
+	AIDetailAlreadyAudio          string `yaml:"ai_detail_already_audio" json:"ai_detail_already_audio"`
+	AIDetailAudioReady            string `yaml:"ai_detail_audio_ready" json:"ai_detail_audio_ready"`
+	AIDetailFileSmallEnough       string `yaml:"ai_detail_file_small_enough" json:"ai_detail_file_small_enough"`
+	AIDetailTranscriptionComplete string `yaml:"ai_detail_transcription_complete" json:"ai_detail_transcription_complete"`
+	AIDetailNoChunksToMerge       string `yaml:"ai_detail_no_chunks_to_merge" json:"ai_detail_no_chunks_to_merge"`
+	AIDetailSummaryGenerated      string `yaml:"ai_detail_summary_generated" json:"ai_detail_summary_generated"`
 }
 
 // ServerTranslations holds translations for server messages

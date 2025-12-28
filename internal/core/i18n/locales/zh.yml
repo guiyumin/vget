@@ -204,6 +204,20 @@ ui:
   ai_outputs: "输出结果"
   ai_no_outputs_yet: "暂无输出。开始处理以生成转录和摘要。"
   ai_select_file_for_outputs: "选择文件以查看输出。"
+  # AI 步骤名称
+  ai_step_extract_audio: "提取音频"
+  ai_step_compress_audio: "压缩音频"
+  ai_step_chunk_audio: "分割音频"
+  ai_step_transcribe: "转录"
+  ai_step_merge: "合并转录"
+  ai_step_summarize: "生成摘要"
+  # AI 步骤详情
+  ai_detail_already_audio: "已是音频"
+  ai_detail_audio_ready: "音频已就绪"
+  ai_detail_file_small_enough: "文件足够小"
+  ai_detail_transcription_complete: "转录完成"
+  ai_detail_no_chunks_to_merge: "无需合并"
+  ai_detail_summary_generated: "摘要已生成"
 
 # 服务器消息
 server:

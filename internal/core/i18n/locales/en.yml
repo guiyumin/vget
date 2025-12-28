@@ -204,6 +204,20 @@ ui:
   ai_outputs: "Outputs"
   ai_no_outputs_yet: "No outputs yet. Start processing to generate transcript and summary."
   ai_select_file_for_outputs: "Select a file to see available outputs."
+  # AI step names
+  ai_step_extract_audio: "Extract Audio"
+  ai_step_compress_audio: "Compress Audio"
+  ai_step_chunk_audio: "Chunk Audio"
+  ai_step_transcribe: "Transcribe"
+  ai_step_merge: "Merge Chunks"
+  ai_step_summarize: "Generate Summary"
+  # AI step details
+  ai_detail_already_audio: "Already audio"
+  ai_detail_audio_ready: "Audio ready"
+  ai_detail_file_small_enough: "File small enough"
+  ai_detail_transcription_complete: "Transcription complete"
+  ai_detail_no_chunks_to_merge: "No chunks to merge"
+  ai_detail_summary_generated: "Summary generated"
 
 # Server messages
 server:

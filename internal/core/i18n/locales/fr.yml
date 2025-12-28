@@ -192,6 +192,20 @@ ui:
   ai_outputs: "Résultats"
   ai_no_outputs_yet: "Aucun résultat. Lancez le traitement pour générer la transcription et le résumé."
   ai_select_file_for_outputs: "Sélectionnez un fichier pour voir les résultats."
+  # Noms des étapes AI
+  ai_step_extract_audio: "Extraire l'audio"
+  ai_step_compress_audio: "Compresser l'audio"
+  ai_step_chunk_audio: "Découper l'audio"
+  ai_step_transcribe: "Transcrire"
+  ai_step_merge: "Fusionner les segments"
+  ai_step_summarize: "Générer le résumé"
+  # Détails des étapes AI
+  ai_detail_already_audio: "Déjà audio"
+  ai_detail_audio_ready: "Audio prêt"
+  ai_detail_file_small_enough: "Fichier assez petit"
+  ai_detail_transcription_complete: "Transcription terminée"
+  ai_detail_no_chunks_to_merge: "Pas de segments à fusionner"
+  ai_detail_summary_generated: "Résumé généré"
 
 # Messages du serveur
 server:

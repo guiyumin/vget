@@ -107,6 +107,13 @@ export interface UITranslations {
   ai_outputs: string;
   ai_no_outputs_yet: string;
   ai_select_file_for_outputs: string;
+  // AI step names (used by frontend to translate step.key)
+  ai_step_extract_audio: string;
+  ai_step_compress_audio: string;
+  ai_step_chunk_audio: string;
+  ai_step_transcribe: string;
+  ai_step_merge: string;
+  ai_step_summarize: string;
 }
 
 export interface ServerTranslations {
@@ -223,6 +230,13 @@ export const defaultTranslations: UITranslations = {
   ai_outputs: "Outputs",
   ai_no_outputs_yet: "No outputs yet. Start processing to generate transcript and summary.",
   ai_select_file_for_outputs: "Select a file to see available outputs.",
+  // AI step names (used by frontend to translate step.key)
+  ai_step_extract_audio: "Extract Audio",
+  ai_step_compress_audio: "Compress Audio",
+  ai_step_chunk_audio: "Chunk Audio",
+  ai_step_transcribe: "Transcribe",
+  ai_step_merge: "Merge Chunks",
+  ai_step_summarize: "Generate Summary",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

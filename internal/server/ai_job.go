@@ -13,6 +13,7 @@ import (
 
 	"github.com/guiyumin/vget/internal/core/ai"
 	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/i18n"
 )
 
 // AIJobStatus represents the current state of an AI processing job
@@ -255,12 +256,15 @@ func (q *AIJobQueue) initializeSteps(filePath string, includeSummary bool) []AIJ
 	hasTranscript := fileExists(transcriptPath)
 	hasSummary := fileExists(summaryPath)
 
+	// Get translations for current language
+	t := i18n.T(q.cfg.Language)
+
 	steps := []AIJobStep{
-		{Key: StepExtractAudio, Name: "Extract Audio", Status: StepStatusPending},
-		{Key: StepCompress, Name: "Compress Audio", Status: StepStatusPending},
-		{Key: StepChunk, Name: "Chunk Audio", Status: StepStatusPending},
-		{Key: StepTranscribe, Name: "Transcribe", Status: StepStatusPending},
-		{Key: StepMerge, Name: "Merge Chunks", Status: StepStatusPending},
+		{Key: StepExtractAudio, Name: t.UI.AIStepExtractAudio, Status: StepStatusPending},
+		{Key: StepCompress, Name: t.UI.AIStepCompressAudio, Status: StepStatusPending},
+		{Key: StepChunk, Name: t.UI.AIStepChunkAudio, Status: StepStatusPending},
+		{Key: StepTranscribe, Name: t.UI.AIStepTranscribe, Status: StepStatusPending},
+		{Key: StepMerge, Name: t.UI.AIStepMerge, Status: StepStatusPending},
 	}
 
 	// If transcript exists, mark transcription steps as completed (resume point)
@@ -278,7 +282,7 @@ func (q *AIJobQueue) initializeSteps(filePath string, includeSummary bool) []AIJ
 		}
 		steps = append(steps, AIJobStep{
 			Key:      StepSummarize,
-			Name:     "Generate Summary",
+			Name:     t.UI.AIStepSummarize,
 			Status:   summaryStatus,
 			Progress: func() float64 { if hasSummary { return 100 }; return 0 }(),
 		})
@@ -428,6 +432,9 @@ func (q *AIJobQueue) processJob(job *AIJob) {
 func (q *AIJobQueue) executeWithProgress(ctx context.Context, pipeline *ai.Pipeline, job *AIJob, progressFn func(StepKey, float64, string)) (*AIJobResult, error) {
 	result := &AIJobResult{}
 
+	// Get translations for current language
+	t := i18n.T(q.cfg.Language)
+
 	// Check if transcription is already done (resume capability)
 	transcriptionDone := q.isStepCompleted(job.ID, StepTranscribe)
 
@@ -440,11 +447,11 @@ func (q *AIJobQueue) executeWithProgress(ctx context.Context, pipeline *ai.Pipel
 
 	if transcriptionDone {
 		// Resume: Load existing transcript
-		progressFn(StepExtractAudio, 100, "Skipped (transcript exists)")
-		progressFn(StepCompress, 100, "Skipped (transcript exists)")
-		progressFn(StepChunk, 100, "Skipped (transcript exists)")
-		progressFn(StepTranscribe, 100, "Skipped (transcript exists)")
-		progressFn(StepMerge, 100, "Skipped (transcript exists)")
+		progressFn(StepExtractAudio, 100, t.UI.AIDetailTranscriptionComplete)
+		progressFn(StepCompress, 100, t.UI.AIDetailTranscriptionComplete)
+		progressFn(StepChunk, 100, t.UI.AIDetailTranscriptionComplete)
+		progressFn(StepTranscribe, 100, t.UI.AIDetailTranscriptionComplete)
+		progressFn(StepMerge, 100, t.UI.AIDetailTranscriptionComplete)
 
 		// Read existing transcript
 		data, err := readTranscriptText(transcriptPath)
@@ -461,12 +468,12 @@ func (q *AIJobQueue) executeWithProgress(ctx context.Context, pipeline *ai.Pipel
 		// Step 0: Extract audio (if video)
 		if isVideo {
 			q.startStep(job.ID, StepExtractAudio)
-			progressFn(StepExtractAudio, 0, "Extracting audio from video...")
+			progressFn(StepExtractAudio, 0, "")
 			// Note: Actual extraction happens in chunker, we track it here
-			progressFn(StepExtractAudio, 100, "Audio extracted")
+			progressFn(StepExtractAudio, 100, t.UI.AIDetailAudioReady)
 			q.completeStep(job.ID, StepExtractAudio)
 		} else {
-			q.skipStep(job.ID, StepExtractAudio, "Already audio")
+			q.skipStep(job.ID, StepExtractAudio, t.UI.AIDetailAlreadyAudio)
 		}
 
 		// Check for cancellation
@@ -543,12 +550,12 @@ func (q *AIJobQueue) executeWithProgress(ctx context.Context, pipeline *ai.Pipel
 
 		if summaryDone {
 			// Resume: Load existing summary
-			progressFn(StepSummarize, 100, "Skipped (summary exists)")
+			progressFn(StepSummarize, 100, t.UI.AIDetailSummaryGenerated)
 			result.SummaryPath = summaryPath
 		} else {
 			// Run summarization
 			q.startStep(job.ID, StepSummarize)
-			progressFn(StepSummarize, 0, "Generating summary...")
+			progressFn(StepSummarize, 0, "")
 
 			// Run summarization through pipeline
 			summaryResult, err := pipeline.SummarizeText(ctx, transcriptText, job.FilePath)
@@ -556,7 +563,7 @@ func (q *AIJobQueue) executeWithProgress(ctx context.Context, pipeline *ai.Pipel
 				return nil, fmt.Errorf("summarization failed: %w", err)
 			}
 
-			progressFn(StepSummarize, 100, "Summary generated")
+			progressFn(StepSummarize, 100, t.UI.AIDetailSummaryGenerated)
 			q.completeStep(job.ID, StepSummarize)
 
 			result.SummaryPath = summaryResult.SummaryPath

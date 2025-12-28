@@ -467,6 +467,7 @@ export function PodcastNotesPage() {
           overallProgress={processingState.overallProgress}
           isProcessing={isProcessing}
           emptyText={t.ai_select_file_hint}
+          translations={t}
         />
       </div>
 

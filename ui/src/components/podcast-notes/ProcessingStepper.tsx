@@ -6,6 +6,8 @@ import {
   FaXmark,
 } from "react-icons/fa6";
 import type { ProcessingStep, StepStatus } from "../../utils/apis";
+import type { StepKey } from "./types";
+import type { UITranslations } from "../../utils/translations";
 import clsx from "clsx";
 
 interface ProcessingStepperProps {
@@ -14,7 +16,19 @@ interface ProcessingStepperProps {
   overallProgress: number;
   isProcessing: boolean;
   emptyText?: string;
+  translations: UITranslations;
 }
+
+// Map step keys to translation keys
+const stepNameMap: Record<StepKey, keyof UITranslations> = {
+  extract_audio: "ai_step_extract_audio",
+  compress_audio: "ai_step_compress_audio",
+  chunk_audio: "ai_step_chunk_audio",
+  transcribe: "ai_step_transcribe",
+  merge: "ai_step_merge",
+  summarize: "ai_step_summarize",
+};
+
 
 function getStepIcon(status: StepStatus) {
   switch (status) {
@@ -48,12 +62,21 @@ function getStepTextColor(status: StepStatus): string {
   }
 }
 
+// Helper to translate step name
+function getStepName(step: ProcessingStep, t: UITranslations): string {
+  const key = step.key as StepKey;
+  const translationKey = stepNameMap[key];
+  return translationKey ? (t[translationKey] as string) : step.name;
+}
+
+
 export function ProcessingStepper({
   steps,
   currentStepIndex,
   overallProgress,
   isProcessing,
   emptyText = "Select a file to start",
+  translations: t,
 }: ProcessingStepperProps) {
   if (steps.length === 0) {
     return (
@@ -104,7 +127,7 @@ export function ProcessingStepper({
                   getStepTextColor(step.status)
                 )}
               >
-                {step.name}
+                {getStepName(step, t)}
               </div>
               {step.detail && step.status !== "pending" && (
                 <div className="text-xs text-zinc-400 dark:text-zinc-500 truncate">
