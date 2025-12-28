@@ -20,6 +20,7 @@ import {
   FaVideo,
   FaMusic,
   FaFolderOpen,
+  FaDownload,
 } from "react-icons/fa6";
 import { Link } from "@tanstack/react-router";
 import clsx from "clsx";
@@ -617,71 +618,40 @@ export function PodcastNotesPage() {
           </h2>
 
           {/* Output files list */}
-          <div className="space-y-2 mb-4">
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              Base name: <code className="bg-zinc-100 dark:bg-zinc-700 px-1 rounded">{getBaseName(selectedFile.filename)}</code>
-            </div>
-
+          <div className="space-y-2">
             {/* Chunks directory */}
             <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <FaFolderOpen className="text-yellow-500" />
+              <FaFolderOpen className="text-yellow-500 shrink-0" />
               <span>{getBaseName(selectedFile.filename)}.chunks/</span>
-              <span className="text-xs text-zinc-400">(audio chunks + transcripts)</span>
+              <span className="text-xs text-zinc-400">(audio chunks)</span>
             </div>
 
             {/* Transcript file */}
             {(selectedFile.has_transcript || transcript) && (
-              <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <FaFileLines className="text-blue-500" />
+              <a
+                href={`/api/download?path=${encodeURIComponent(selectedFile.path.replace(/\.[^.]+$/, ".transcript.md"))}`}
+                download
+                className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                <FaFileLines className="text-blue-500 shrink-0" />
                 <span>{getBaseName(selectedFile.filename)}.transcript.md</span>
-                <FaCheck className="text-green-500 text-xs" />
-              </div>
+                <FaDownload className="text-xs" />
+              </a>
             )}
 
             {/* Summary file */}
             {(selectedFile.has_summary || summary) && (
-              <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <FaFileLines className="text-purple-500" />
+              <a
+                href={`/api/download?path=${encodeURIComponent(selectedFile.path.replace(/\.[^.]+$/, ".summary.md"))}`}
+                download
+                className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+              >
+                <FaFileLines className="text-purple-500 shrink-0" />
                 <span>{getBaseName(selectedFile.filename)}.summary.md</span>
-                <FaCheck className="text-green-500 text-xs" />
-              </div>
+                <FaDownload className="text-xs" />
+              </a>
             )}
           </div>
-
-          {/* Transcript preview */}
-          {transcript && (
-            <div className="mb-4">
-              <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Transcript Preview
-              </h3>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400 max-h-32 overflow-y-auto p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg whitespace-pre-wrap">
-                {transcript.slice(0, 1000)}
-                {transcript.length > 1000 && "..."}
-              </div>
-            </div>
-          )}
-
-          {/* Summary preview */}
-          {summary && (
-            <div>
-              <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Summary
-              </h3>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400 p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg">
-                <p className="mb-3">{summary.summary}</p>
-                {summary.keyPoints.length > 0 && (
-                  <>
-                    <p className="font-medium text-zinc-700 dark:text-zinc-300 mb-1">Key Points:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {summary.keyPoints.map((point, i) => (
-                        <li key={i}>{point}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

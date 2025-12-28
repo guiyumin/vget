@@ -108,6 +108,7 @@ func (s *Server) Start() error {
 	// API routes
 	api := s.engine.Group("/api")
 	api.GET("/health", s.handleHealth)
+	api.GET("/download", s.handleFileDownload) // Download local file by path
 	api.POST("/download", s.handleDownload)
 	api.POST("/bulk-download", s.handleBulkDownload)
 	api.GET("/status/:id", s.handleStatus)
@@ -276,6 +277,55 @@ func (s *Server) handleHealth(c *gin.Context) {
 		},
 		Message: "everything is good",
 	})
+}
+
+// handleFileDownload serves a local file for download
+func (s *Server) handleFileDownload(c *gin.Context) {
+	filePath := c.Query("path")
+	if filePath == "" {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "path parameter is required",
+		})
+		return
+	}
+
+	// Security: ensure the file is within the output directory
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "invalid path",
+		})
+		return
+	}
+
+	absOutputDir, _ := filepath.Abs(s.outputDir)
+	if !strings.HasPrefix(absPath, absOutputDir) {
+		c.JSON(http.StatusForbidden, Response{
+			Code:    403,
+			Data:    nil,
+			Message: "access denied: file outside output directory",
+		})
+		return
+	}
+
+	// Check file exists
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, Response{
+			Code:    404,
+			Data:    nil,
+			Message: "file not found",
+		})
+		return
+	}
+
+	// Serve the file
+	filename := filepath.Base(absPath)
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.File(absPath)
 }
 
 func (s *Server) handleDownload(c *gin.Context) {
