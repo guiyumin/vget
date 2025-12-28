@@ -147,6 +147,7 @@ func (s *Server) Start() error {
 
 	// AI routes
 	api.GET("/ai/config", s.handleGetAIConfig)
+	api.GET("/ai/models", s.handleGetAIModels)
 	api.POST("/ai/config/account", s.handleAddAIAccount)
 	api.DELETE("/ai/config/account/:name", s.handleDeleteAIAccount)
 	api.POST("/ai/config/default", s.handleSetDefaultAIAccount)

@@ -38,6 +38,56 @@ type AISummarizeRequest struct {
 	PIN      string `json:"pin"`       // Optional if account uses plain text keys
 }
 
+// handleGetAIModels returns available AI models for each provider
+func (s *Server) handleGetAIModels(c *gin.Context) {
+	// Build OpenAI models list from ai package
+	openaiModels := make([]gin.H, len(ai.OpenAIModels))
+	for i, m := range ai.OpenAIModels {
+		openaiModels[i] = gin.H{
+			"id":          m.ID,
+			"name":        m.Name,
+			"description": m.Description,
+			"tier":        m.Tier,
+		}
+	}
+
+	// Anthropic models (for summarization)
+	anthropicModels := []gin.H{
+		{"id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4", "description": "Latest balanced model", "tier": "standard"},
+		{"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "description": "Fast and capable", "tier": "standard"},
+		{"id": "claude-3-5-haiku-20241022", "name": "Claude 3.5 Haiku", "description": "Fastest model", "tier": "fast"},
+		{"id": "claude-3-opus-20240229", "name": "Claude 3 Opus", "description": "Most capable", "tier": "flagship"},
+	}
+
+	// Qwen models (for summarization)
+	qwenModels := []gin.H{
+		{"id": "qwen-max", "name": "Qwen Max", "description": "Most capable Qwen model", "tier": "flagship"},
+		{"id": "qwen-plus", "name": "Qwen Plus", "description": "Balanced performance", "tier": "standard"},
+		{"id": "qwen-turbo", "name": "Qwen Turbo", "description": "Fast responses", "tier": "fast"},
+	}
+
+	// Transcription models by provider
+	transcriptionModels := gin.H{
+		"openai":    []string{"whisper-1"},
+		"anthropic": []string{"whisper-1"},
+		"qwen":      []string{"paraformer-v2", "whisper-large-v3"},
+	}
+
+	c.JSON(http.StatusOK, Response{
+		Code: 200,
+		Data: gin.H{
+			"summarization": gin.H{
+				"openai":    openaiModels,
+				"anthropic": anthropicModels,
+				"qwen":      qwenModels,
+				"default":   ai.DefaultOpenAIModel,
+			},
+			"transcription": transcriptionModels,
+		},
+		Message: "AI models retrieved",
+	})
+}
+
 // handleGetAIConfig returns AI configuration
 func (s *Server) handleGetAIConfig(c *gin.Context) {
 	cfg := config.LoadOrDefault()

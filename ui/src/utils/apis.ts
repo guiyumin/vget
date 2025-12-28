@@ -350,6 +350,27 @@ export interface AIConfigData {
   default_account: string;
 }
 
+export interface AIModel {
+  id: string;
+  name: string;
+  description: string;
+  tier: string;
+}
+
+export interface AIModelsData {
+  summarization: {
+    openai: AIModel[];
+    anthropic: AIModel[];
+    qwen: AIModel[];
+    default: string;
+  };
+  transcription: {
+    openai: string[];
+    anthropic: string[];
+    qwen: string[];
+  };
+}
+
 export interface AudioFile {
   name: string;
   path: string;
@@ -375,6 +396,11 @@ export interface SummarizeResult {
 
 export async function fetchAIConfig(): Promise<ApiResponse<AIConfigData>> {
   const res = await fetch("/api/ai/config");
+  return res.json();
+}
+
+export async function fetchAIModels(): Promise<ApiResponse<AIModelsData>> {
+  const res = await fetch("/api/ai/models");
   return res.json();
 }
 

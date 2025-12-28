@@ -10,6 +10,9 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
+// defaultOpenAIModel is the default model for summarization.
+const defaultOpenAIModel = "gpt-5-nano"
+
 // OpenAI implements Summarizer using OpenAI GPT (official SDK).
 type OpenAI struct {
 	client openai.Client
@@ -34,7 +37,7 @@ func NewOpenAI(cfg config.AIServiceConfig, apiKey string) (*OpenAI, error) {
 
 	model := openai.ChatModel(cfg.Model)
 	if cfg.Model == "" {
-		model = openai.ChatModel(DefaultOpenAIModel)
+		model = openai.ChatModel(defaultOpenAIModel)
 	}
 
 	return &OpenAI{

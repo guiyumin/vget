@@ -1,4 +1,4 @@
-package summarizer
+package ai
 
 // OpenAIModel represents an OpenAI model suitable for summarization.
 type OpenAIModel struct {

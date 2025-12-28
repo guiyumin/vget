@@ -266,8 +266,8 @@ func getOutputPath(inputPath, suffix string) string {
 	base := strings.TrimSuffix(inputPath, ext)
 
 	// Handle .transcript.md -> .summary.md case
-	if strings.HasSuffix(base, ".transcript") {
-		base = strings.TrimSuffix(base, ".transcript")
+	if before, ok :=strings.CutSuffix(base, ".transcript"); ok  {
+		base = before
 	}
 
 	return base + suffix

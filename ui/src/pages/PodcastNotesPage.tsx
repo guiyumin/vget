@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import {
   fetchAIConfig,
+  fetchAIModels,
   fetchAudioFiles,
   uploadAudioFile,
   transcribeAudio,
   summarizeText,
   type AIConfigData,
+  type AIModelsData,
   type AudioFile,
 } from "../utils/apis";
 import {
@@ -25,23 +27,6 @@ import {
 import { Link } from "@tanstack/react-router";
 import clsx from "clsx";
 
-// Common models for each provider
-const TRANSCRIPTION_MODELS: Record<string, string[]> = {
-  openai: ["whisper-1"],
-  anthropic: ["whisper-1"],
-  qwen: ["paraformer-v2", "whisper-large-v3"],
-};
-
-const SUMMARIZATION_MODELS: Record<string, string[]> = {
-  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
-  anthropic: [
-    "claude-3-5-sonnet-20241022",
-    "claude-3-5-haiku-20241022",
-    "claude-3-opus-20240229",
-  ],
-  qwen: ["qwen-plus", "qwen-turbo", "qwen-max"],
-};
-
 const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mkv", ".avi", ".mov", ".flv", ".wmv"];
 
 interface SelectedFile {
@@ -57,6 +42,7 @@ export function PodcastNotesPage() {
   const { t, showToast } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [aiConfig, setAIConfig] = useState<AIConfigData | null>(null);
+  const [aiModels, setAIModels] = useState<AIModelsData | null>(null);
   const [downloadedFiles, setDownloadedFiles] = useState<AudioFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -87,10 +73,17 @@ export function PodcastNotesPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [aiRes, filesRes] = await Promise.all([
+      const [aiRes, modelsRes, filesRes] = await Promise.all([
         fetchAIConfig(),
+        fetchAIModels(),
         fetchAudioFiles(),
       ]);
+
+      let models: AIModelsData | null = null;
+      if (modelsRes.code === 200) {
+        models = modelsRes.data;
+        setAIModels(models);
+      }
 
       if (aiRes.code === 200) {
         setAIConfig(aiRes.data);
@@ -102,10 +95,16 @@ export function PodcastNotesPage() {
             (acc) => acc.label === defaultAcc
           );
           const provider = account?.provider || "openai";
-          setTranscribeModel(
-            TRANSCRIPTION_MODELS[provider]?.[0] || "whisper-1"
-          );
-          setSummarizeModel(SUMMARIZATION_MODELS[provider]?.[0] || "gpt-4o");
+          if (models) {
+            const transcriptionProvider = provider as keyof typeof models.transcription;
+            setTranscribeModel(
+              models.transcription[transcriptionProvider]?.[0] || "whisper-1"
+            );
+            const defaultModel = models.summarization.default || "gpt-5-nano";
+            const summaryProvider = provider as "openai" | "anthropic" | "qwen";
+            const summaryModels = models.summarization[summaryProvider];
+            setSummarizeModel(summaryModels?.[0]?.id || defaultModel);
+          }
         }
       }
 
@@ -137,16 +136,27 @@ export function PodcastNotesPage() {
     return getAccount(label)?.provider || "openai";
   };
 
+  const getTranscriptionModels = (provider: string) => {
+    const p = provider as keyof NonNullable<typeof aiModels>["transcription"];
+    return aiModels?.transcription[p] || [];
+  };
+
+  const getSummarizationModels = (provider: string) => {
+    const p = provider as "openai" | "anthropic" | "qwen";
+    return aiModels?.summarization[p] || [];
+  };
+
   const handleTranscribeAccountChange = (accountName: string) => {
     setTranscribeAccount(accountName);
-    const provider = getAccountProvider(accountName);
-    setTranscribeModel(TRANSCRIPTION_MODELS[provider]?.[0] || "whisper-1");
+    const provider = getAccountProvider(accountName) as keyof NonNullable<typeof aiModels>["transcription"];
+    setTranscribeModel(aiModels?.transcription[provider]?.[0] || "whisper-1");
   };
 
   const handleSummarizeAccountChange = (accountName: string) => {
     setSummarizeAccount(accountName);
-    const provider = getAccountProvider(accountName);
-    setSummarizeModel(SUMMARIZATION_MODELS[provider]?.[0] || "gpt-4o");
+    const provider = getAccountProvider(accountName) as "openai" | "anthropic" | "qwen";
+    const defaultModel = aiModels?.summarization.default || "gpt-5-nano";
+    setSummarizeModel(aiModels?.summarization[provider]?.[0]?.id || defaultModel);
   };
 
   const handleSelectDownloadedFile = (file: AudioFile) => {
@@ -535,7 +545,7 @@ export function PodcastNotesPage() {
               className={selectClass}
               disabled={processing !== null}
             >
-              {TRANSCRIPTION_MODELS[getAccountProvider(transcribeAccount)]?.map(
+              {getTranscriptionModels(getAccountProvider(transcribeAccount)).map(
                 (model) => (
                   <option key={model} value={model}>
                     {model}
@@ -580,10 +590,10 @@ export function PodcastNotesPage() {
               className={selectClass}
               disabled={processing !== null || !canSummarize}
             >
-              {SUMMARIZATION_MODELS[getAccountProvider(summarizeAccount)]?.map(
+              {getSummarizationModels(getAccountProvider(summarizeAccount)).map(
                 (model) => (
-                  <option key={model} value={model}>
-                    {model}
+                  <option key={model.id} value={model.id}>
+                    {model.name}
                   </option>
                 )
               )}
