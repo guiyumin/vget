@@ -212,6 +212,24 @@ type UITranslations struct {
 	PodcastEpisodesCount   string `yaml:"podcast_episodes_count" json:"podcast_episodes_count"`
 	PodcastBack            string `yaml:"podcast_back" json:"podcast_back"`
 	PodcastDownloadStarted string `yaml:"podcast_download_started" json:"podcast_download_started"`
+	// AI
+	AI                    string `yaml:"ai" json:"ai"`
+	AIPodcastNotes        string `yaml:"ai_podcast_notes" json:"ai_podcast_notes"`
+	AISettings            string `yaml:"ai_settings" json:"ai_settings"`
+	AINoAccounts          string `yaml:"ai_no_accounts" json:"ai_no_accounts"`
+	AIEncryptionNote      string `yaml:"ai_encryption_note" json:"ai_encryption_note"`
+	AIAccountName         string `yaml:"ai_account_name" json:"ai_account_name"`
+	AIProvider            string `yaml:"ai_provider" json:"ai_provider"`
+	AIApiKey              string `yaml:"ai_api_key" json:"ai_api_key"`
+	AISameKeyForSummary   string `yaml:"ai_same_key_for_summary" json:"ai_same_key_for_summary"`
+	AISummaryApiKey       string `yaml:"ai_summary_api_key" json:"ai_summary_api_key"`
+	AIPin                 string `yaml:"ai_pin" json:"ai_pin"`
+	AIPinHint             string `yaml:"ai_pin_hint" json:"ai_pin_hint"`
+	AIAdvancedOptions     string `yaml:"ai_advanced_options" json:"ai_advanced_options"`
+	AITranscriptionModel  string `yaml:"ai_transcription_model" json:"ai_transcription_model"`
+	AITranscriptionURL    string `yaml:"ai_transcription_url" json:"ai_transcription_url"`
+	AISummaryModel        string `yaml:"ai_summary_model" json:"ai_summary_model"`
+	AISummaryURL          string `yaml:"ai_summary_url" json:"ai_summary_url"`
 }
 
 // ServerTranslations holds translations for server messages

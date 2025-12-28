@@ -167,6 +167,21 @@ ui:
   # AI
   ai: "IA"
   ai_podcast_notes: "Notas de Podcast"
+  ai_settings: "Configuración de IA"
+  ai_no_accounts: "No hay cuentas de IA configuradas. Añade una para usar transcripción y resumen."
+  ai_encryption_note: "Las claves API están cifradas con tu PIN usando AES-256-GCM. Deja el PIN vacío para guardar en texto plano."
+  ai_account_name: "Nombre de cuenta"
+  ai_provider: "Proveedor"
+  ai_api_key: "Clave API"
+  ai_same_key_for_summary: "Misma clave para resumen"
+  ai_summary_api_key: "Clave API de resumen"
+  ai_pin: "PIN de 4 dígitos"
+  ai_pin_hint: "Opcional. Usado para cifrar tus claves API"
+  ai_advanced_options: "Opciones avanzadas"
+  ai_transcription_model: "Modelo de transcripción"
+  ai_transcription_url: "URL de transcripción"
+  ai_summary_model: "Modelo de resumen"
+  ai_summary_url: "URL de resumen"
 
 # Mensajes del servidor
 server:

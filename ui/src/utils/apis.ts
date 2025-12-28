@@ -335,3 +335,113 @@ export async function fetchPodcastEpisodes(
   });
   return res.json();
 }
+
+// AI APIs
+
+export interface AIAccount {
+  provider: string;
+  is_encrypted: boolean;
+}
+
+export interface AIConfigData {
+  accounts: Record<string, AIAccount>;
+  default_account: string;
+}
+
+export interface AudioFile {
+  name: string;
+  path: string;
+  full_path: string;
+  size: number;
+  mod_time: string;
+  has_transcript: boolean;
+  has_summary: boolean;
+}
+
+export interface TranscribeResult {
+  text: string;
+  output_path: string;
+  duration: number;
+  language: string;
+}
+
+export interface SummarizeResult {
+  summary: string;
+  key_points: string[];
+  output_path: string;
+}
+
+export async function fetchAIConfig(): Promise<ApiResponse<AIConfigData>> {
+  const res = await fetch("/api/ai/config");
+  return res.json();
+}
+
+export async function addAIAccount(params: {
+  name: string;
+  provider: string;
+  api_key: string;
+  pin?: string;
+}): Promise<ApiResponse<{ name: string }>> {
+  const res = await fetch("/api/ai/config/account", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export async function deleteAIAccount(
+  name: string
+): Promise<ApiResponse<{ name: string }>> {
+  const res = await fetch(`/api/ai/config/account/${encodeURIComponent(name)}`, {
+    method: "DELETE",
+  });
+  return res.json();
+}
+
+export async function setDefaultAIAccount(
+  name: string
+): Promise<ApiResponse<{ default_account: string }>> {
+  const res = await fetch("/api/ai/config/default", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  return res.json();
+}
+
+export async function fetchAudioFiles(): Promise<
+  ApiResponse<{ files: AudioFile[]; output_dir: string }>
+> {
+  const res = await fetch("/api/ai/files");
+  return res.json();
+}
+
+export async function transcribeAudio(params: {
+  file_path: string;
+  account?: string;
+  model?: string;
+  pin?: string;
+}): Promise<ApiResponse<TranscribeResult>> {
+  const res = await fetch("/api/ai/transcribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export async function summarizeText(params: {
+  file_path?: string;
+  text?: string;
+  account?: string;
+  model?: string;
+  pin?: string;
+}): Promise<ApiResponse<SummarizeResult>> {
+  const res = await fetch("/api/ai/summarize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}

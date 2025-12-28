@@ -70,10 +70,17 @@ func NewPipeline(cfg *config.Config, accountName string, pin string) (*Pipeline,
 
 	// Initialize transcriber if configured
 	if account.Transcription.APIKeyEncrypted != "" {
-		// Decrypt transcription API key
-		apiKey, err := crypto.Decrypt(account.Transcription.APIKeyEncrypted, pin)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt transcription API key: %w\nHint: Check your PIN", err)
+		var apiKey string
+		if strings.HasPrefix(account.Transcription.APIKeyEncrypted, "plain:") {
+			// Plain text key - no decryption needed
+			apiKey = strings.TrimPrefix(account.Transcription.APIKeyEncrypted, "plain:")
+		} else {
+			// Encrypted key - decrypt with PIN
+			var err error
+			apiKey, err = crypto.Decrypt(account.Transcription.APIKeyEncrypted, pin)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt transcription API key: %w\nHint: Check your PIN", err)
+			}
 		}
 
 		t, err := transcriber.New(account.Provider, account.Transcription, apiKey)
@@ -85,10 +92,17 @@ func NewPipeline(cfg *config.Config, accountName string, pin string) (*Pipeline,
 
 	// Initialize summarizer if configured
 	if account.Summarization.APIKeyEncrypted != "" {
-		// Decrypt summarization API key
-		apiKey, err := crypto.Decrypt(account.Summarization.APIKeyEncrypted, pin)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt summarization API key: %w\nHint: Check your PIN", err)
+		var apiKey string
+		if strings.HasPrefix(account.Summarization.APIKeyEncrypted, "plain:") {
+			// Plain text key - no decryption needed
+			apiKey = strings.TrimPrefix(account.Summarization.APIKeyEncrypted, "plain:")
+		} else {
+			// Encrypted key - decrypt with PIN
+			var err error
+			apiKey, err = crypto.Decrypt(account.Summarization.APIKeyEncrypted, pin)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt summarization API key: %w\nHint: Check your PIN", err)
+			}
 		}
 
 		s, err := summarizer.New(account.Provider, account.Summarization, apiKey)

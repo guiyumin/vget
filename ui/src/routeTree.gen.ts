@@ -17,6 +17,7 @@ import { Route as ConfigRouteImport } from './routes/config'
 import { Route as BulkRouteImport } from './routes/bulk'
 import { Route as BilibiliRouteImport } from './routes/bilibili'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiSettingsRouteImport } from './routes/ai/settings'
 import { Route as AiPodcastNotesRouteImport } from './routes/ai/podcast-notes'
 
 const WebdavRoute = WebdavRouteImport.update({
@@ -59,6 +60,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiSettingsRoute = AiSettingsRouteImport.update({
+  id: '/ai/settings',
+  path: '/ai/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiPodcastNotesRoute = AiPodcastNotesRouteImport.update({
   id: '/ai/podcast-notes',
   path: '/ai/podcast-notes',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
   '/ai/podcast-notes': typeof AiPodcastNotesRoute
+  '/ai/settings': typeof AiSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
   '/ai/podcast-notes': typeof AiPodcastNotesRoute
+  '/ai/settings': typeof AiSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
   '/ai/podcast-notes': typeof AiPodcastNotesRoute
+  '/ai/settings': typeof AiSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/torrent'
     | '/webdav'
     | '/ai/podcast-notes'
+    | '/ai/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/torrent'
     | '/webdav'
     | '/ai/podcast-notes'
+    | '/ai/settings'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/torrent'
     | '/webdav'
     | '/ai/podcast-notes'
+    | '/ai/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   TorrentRoute: typeof TorrentRoute
   WebdavRoute: typeof WebdavRoute
   AiPodcastNotesRoute: typeof AiPodcastNotesRoute
+  AiSettingsRoute: typeof AiSettingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai/settings': {
+      id: '/ai/settings'
+      path: '/ai/settings'
+      fullPath: '/ai/settings'
+      preLoaderRoute: typeof AiSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai/podcast-notes': {
       id: '/ai/podcast-notes'
       path: '/ai/podcast-notes'
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   TorrentRoute: TorrentRoute,
   WebdavRoute: WebdavRoute,
   AiPodcastNotesRoute: AiPodcastNotesRoute,
+  AiSettingsRoute: AiSettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

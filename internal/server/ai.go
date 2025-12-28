@@ -16,24 +16,20 @@ import (
 // AI Configuration request types
 
 // AIAccountRequest is the request body for creating/updating an AI account
+// Simplified: just name + provider + API key + optional PIN
 type AIAccountRequest struct {
-	Name                  string `json:"name" binding:"required"`
-	Provider              string `json:"provider" binding:"required"`
-	TranscriptionKey      string `json:"transcription_key" binding:"required"`
-	TranscriptionModel    string `json:"transcription_model"`    // e.g., "whisper-1" (default if empty)
-	TranscriptionBaseURL  string `json:"transcription_base_url"` // Custom base URL (optional)
-	SummarizationKey      string `json:"summarization_key"`
-	SummarizationModel    string `json:"summarization_model"`    // e.g., "gpt-4o", "claude-3-5-sonnet-20241022"
-	SummarizationBaseURL  string `json:"summarization_base_url"` // Custom base URL (optional)
-	PIN                   string `json:"pin" binding:"required"`
-	ReuseKey              bool   `json:"reuse_key"`
+	Name     string `json:"name" binding:"required"`
+	Provider string `json:"provider" binding:"required"`
+	APIKey   string `json:"api_key" binding:"required"`
+	PIN      string `json:"pin"` // Optional - if empty, key stored as plain text
 }
 
 // AITranscribeRequest is the request body for transcribing audio
 type AITranscribeRequest struct {
 	FilePath string `json:"file_path" binding:"required"`
 	Account  string `json:"account"`
-	PIN      string `json:"pin" binding:"required"`
+	Model    string `json:"model"` // Model to use for transcription (e.g., "whisper-1")
+	PIN      string `json:"pin"`   // Optional if account uses plain text keys
 }
 
 // AISummarizeRequest is the request body for summarizing text
@@ -41,7 +37,8 @@ type AISummarizeRequest struct {
 	FilePath string `json:"file_path"` // Path to transcript file
 	Text     string `json:"text"`      // Or direct text input
 	Account  string `json:"account"`
-	PIN      string `json:"pin" binding:"required"`
+	Model    string `json:"model"` // Model to use for summarization (e.g., "gpt-4o", "claude-3-5-sonnet")
+	PIN      string `json:"pin"`   // Optional if account uses plain text keys
 }
 
 // handleGetAIConfig returns AI configuration
@@ -50,18 +47,13 @@ func (s *Server) handleGetAIConfig(c *gin.Context) {
 
 	accounts := make(map[string]gin.H)
 	for name, account := range cfg.AI.Accounts {
+		// Check if the key is encrypted or plain text
+		isEncrypted := account.Transcription.APIKeyEncrypted != "" &&
+			!strings.HasPrefix(account.Transcription.APIKeyEncrypted, "plain:")
+
 		accounts[name] = gin.H{
-			"provider": account.Provider,
-			"transcription": gin.H{
-				"model":    account.Transcription.Model,
-				"has_key":  account.Transcription.APIKeyEncrypted != "",
-				"base_url": account.Transcription.BaseURL,
-			},
-			"summarization": gin.H{
-				"model":    account.Summarization.Model,
-				"has_key":  account.Summarization.APIKeyEncrypted != "",
-				"base_url": account.Summarization.BaseURL,
-			},
+			"provider":     account.Provider,
+			"is_encrypted": isEncrypted,
 		}
 	}
 
@@ -82,19 +74,21 @@ func (s *Server) handleAddAIAccount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, Response{
 			Code:    400,
 			Data:    nil,
-			Message: "name, provider, transcription_key, and pin are required",
+			Message: "name, provider, and api_key are required",
 		})
 		return
 	}
 
-	// Validate PIN format
-	if err := crypto.ValidatePIN(req.PIN); err != nil {
-		c.JSON(http.StatusBadRequest, Response{
-			Code:    400,
-			Data:    nil,
-			Message: "PIN must be exactly 4 digits",
-		})
-		return
+	// Validate PIN format if provided
+	if req.PIN != "" {
+		if err := crypto.ValidatePIN(req.PIN); err != nil {
+			c.JSON(http.StatusBadRequest, Response{
+				Code:    400,
+				Data:    nil,
+				Message: "PIN must be exactly 4 digits",
+			})
+			return
+		}
 	}
 
 	// Validate provider
@@ -110,75 +104,36 @@ func (s *Server) handleAddAIAccount(c *gin.Context) {
 		return
 	}
 
-	// Encrypt API keys
-	transcriptionKeyEnc, err := crypto.Encrypt(req.TranscriptionKey, req.PIN)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, Response{
-			Code:    500,
-			Data:    nil,
-			Message: fmt.Sprintf("failed to encrypt transcription key: %v", err),
-		})
-		return
-	}
-
-	// Handle summarization key
-	summarizationKey := req.SummarizationKey
-	if req.ReuseKey || summarizationKey == "" {
-		summarizationKey = req.TranscriptionKey
-	}
-
-	summarizationKeyEnc, err := crypto.Encrypt(summarizationKey, req.PIN)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, Response{
-			Code:    500,
-			Data:    nil,
-			Message: fmt.Sprintf("failed to encrypt summarization key: %v", err),
-		})
-		return
-	}
-
-	// Determine models - use user-provided or defaults based on provider
-	transcriptionModel := req.TranscriptionModel
-	if transcriptionModel == "" {
-		transcriptionModel = "whisper-1" // Default for all providers
-	}
-
-	summarizationModel := req.SummarizationModel
-	if summarizationModel == "" {
-		// Default based on provider
-		switch req.Provider {
-		case "openai":
-			summarizationModel = "gpt-4o"
-		case "anthropic":
-			summarizationModel = "claude-3-5-sonnet-20241022"
-		case "qwen":
-			summarizationModel = "qwen-plus"
-		default:
-			summarizationModel = "gpt-4o"
+	// Encrypt or store plain text
+	var apiKeyEnc string
+	if req.PIN != "" {
+		// Encrypt with PIN
+		var err error
+		apiKeyEnc, err = crypto.Encrypt(req.APIKey, req.PIN)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, Response{
+				Code:    500,
+				Data:    nil,
+				Message: fmt.Sprintf("failed to encrypt API key: %v", err),
+			})
+			return
 		}
-	}
-
-	// Determine base URLs - use user-provided or defaults
-	transcriptionBaseURL := req.TranscriptionBaseURL
-	summarizationBaseURL := req.SummarizationBaseURL
-	if summarizationBaseURL == "" && req.Provider == "qwen" {
-		summarizationBaseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+	} else {
+		// Store as plain text (prefix with "plain:" to distinguish)
+		apiKeyEnc = "plain:" + req.APIKey
 	}
 
 	cfg := config.LoadOrDefault()
 
-	// Create account
+	// Create account - store same key for both transcription and summarization
+	// Models are selected at runtime, not stored in config
 	account := config.AIAccount{
 		Provider: req.Provider,
 		Transcription: config.AIServiceConfig{
-			Model:           transcriptionModel,
-			APIKeyEncrypted: transcriptionKeyEnc,
-			BaseURL:         transcriptionBaseURL,
+			APIKeyEncrypted: apiKeyEnc,
 		},
 		Summarization: config.AIServiceConfig{
-			Model:           summarizationModel,
-			APIKeyEncrypted: summarizationKeyEnc,
-			BaseURL:         summarizationBaseURL,
+			APIKeyEncrypted: apiKeyEnc,
 		},
 	}
 
@@ -301,7 +256,7 @@ func (s *Server) handleTranscribe(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, Response{
 			Code:    400,
 			Data:    nil,
-			Message: "file_path and pin are required",
+			Message: "file_path is required",
 		})
 		return
 	}
@@ -335,6 +290,13 @@ func (s *Server) handleTranscribe(c *gin.Context) {
 			Message: fmt.Sprintf("file not found: %s", req.FilePath),
 		})
 		return
+	}
+
+	// Set model in config temporarily if provided
+	account := cfg.AI.GetAccount(accountName)
+	if account != nil && req.Model != "" {
+		account.Transcription.Model = req.Model
+		cfg.AI.SetAccount(accountName, *account)
 	}
 
 	// Create AI pipeline
@@ -390,7 +352,7 @@ func (s *Server) handleSummarize(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, Response{
 			Code:    400,
 			Data:    nil,
-			Message: "pin is required, and either file_path or text must be provided",
+			Message: "either file_path or text must be provided",
 		})
 		return
 	}
@@ -459,6 +421,13 @@ func (s *Server) handleSummarize(c *gin.Context) {
 			Message: "no AI account configured. Add an account in Settings first.",
 		})
 		return
+	}
+
+	// Set model in config temporarily if provided
+	account := cfg.AI.GetAccount(accountName)
+	if account != nil && req.Model != "" {
+		account.Summarization.Model = req.Model
+		cfg.AI.SetAccount(accountName, *account)
 	}
 
 	// Create AI pipeline

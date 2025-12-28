@@ -167,6 +167,21 @@ ui:
   # AI
   ai: "AI"
   ai_podcast_notes: "팟캐스트 노트"
+  ai_settings: "AI 설정"
+  ai_no_accounts: "AI 계정이 설정되지 않았습니다. 전사 및 요약 기능을 사용하려면 추가하세요."
+  ai_encryption_note: "API 키는 PIN을 사용하여 AES-256-GCM으로 암호화됩니다. PIN을 비워두면 평문으로 저장됩니다."
+  ai_account_name: "계정 이름"
+  ai_provider: "제공업체"
+  ai_api_key: "API 키"
+  ai_same_key_for_summary: "요약에 동일한 키 사용"
+  ai_summary_api_key: "요약 API 키"
+  ai_pin: "4자리 PIN"
+  ai_pin_hint: "선택 사항. API 키 암호화에 사용"
+  ai_advanced_options: "고급 옵션"
+  ai_transcription_model: "전사 모델"
+  ai_transcription_url: "전사 URL"
+  ai_summary_model: "요약 모델"
+  ai_summary_url: "요약 URL"
 
 # 서버 메시지
 server:

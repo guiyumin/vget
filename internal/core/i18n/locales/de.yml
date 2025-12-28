@@ -167,6 +167,21 @@ ui:
   # AI
   ai: "KI"
   ai_podcast_notes: "Podcast-Notizen"
+  ai_settings: "KI-Einstellungen"
+  ai_no_accounts: "Keine KI-Konten konfiguriert. Fügen Sie eines hinzu, um Transkription und Zusammenfassung zu nutzen."
+  ai_encryption_note: "API-Schlüssel werden mit Ihrer PIN mittels AES-256-GCM verschlüsselt. Lassen Sie die PIN leer für Klartext."
+  ai_account_name: "Kontoname"
+  ai_provider: "Anbieter"
+  ai_api_key: "API-Schlüssel"
+  ai_same_key_for_summary: "Gleicher Schlüssel für Zusammenfassung"
+  ai_summary_api_key: "Zusammenfassung API-Schlüssel"
+  ai_pin: "4-stellige PIN"
+  ai_pin_hint: "Optional. Wird zur Verschlüsselung Ihrer API-Schlüssel verwendet"
+  ai_advanced_options: "Erweiterte Optionen"
+  ai_transcription_model: "Transkriptionsmodell"
+  ai_transcription_url: "Transkriptions-URL"
+  ai_summary_model: "Zusammenfassungsmodell"
+  ai_summary_url: "Zusammenfassungs-URL"
 
 # Server-Nachrichten
 server:

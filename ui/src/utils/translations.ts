@@ -82,6 +82,21 @@ export interface UITranslations {
   // AI
   ai: string;
   ai_podcast_notes: string;
+  ai_settings: string;
+  ai_no_accounts: string;
+  ai_encryption_note: string;
+  ai_account_name: string;
+  ai_provider: string;
+  ai_api_key: string;
+  ai_same_key_for_summary: string;
+  ai_summary_api_key: string;
+  ai_pin: string;
+  ai_pin_hint: string;
+  ai_advanced_options: string;
+  ai_transcription_model: string;
+  ai_transcription_url: string;
+  ai_summary_model: string;
+  ai_summary_url: string;
 }
 
 export interface ServerTranslations {
@@ -173,6 +188,21 @@ export const defaultTranslations: UITranslations = {
   // AI
   ai: "AI",
   ai_podcast_notes: "Podcast Notes",
+  ai_settings: "AI Settings",
+  ai_no_accounts: "No AI accounts configured. Add one to use transcription and summarization.",
+  ai_encryption_note: "API keys are encrypted with your PIN using AES-256-GCM. Leave PIN empty to store keys in plain text.",
+  ai_account_name: "Account Name",
+  ai_provider: "Provider",
+  ai_api_key: "API Key",
+  ai_same_key_for_summary: "Same Key for Summary",
+  ai_summary_api_key: "Summary API Key",
+  ai_pin: "4-Digit PIN",
+  ai_pin_hint: "Optional. Used to encrypt your API keys",
+  ai_advanced_options: "Advanced Options",
+  ai_transcription_model: "Transcription Model",
+  ai_transcription_url: "Transcription URL",
+  ai_summary_model: "Summary Model",
+  ai_summary_url: "Summary URL",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

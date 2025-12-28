@@ -55,6 +55,12 @@ export function Sidebar({ lang }: SidebarProps) {
           label: t.ai_podcast_notes,
           show: true,
         },
+        {
+          to: "/ai/settings",
+          icon: <FaGear />,
+          label: t.settings,
+          show: true,
+        },
       ],
     },
     {

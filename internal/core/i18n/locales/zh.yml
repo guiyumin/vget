@@ -179,6 +179,21 @@ ui:
   # AI
   ai: "AI"
   ai_podcast_notes: "播客笔记"
+  ai_settings: "AI 设置"
+  ai_no_accounts: "未配置 AI 账户。添加一个以使用转录和摘要功能。"
+  ai_encryption_note: "API 密钥使用 AES-256-GCM 加密。留空 PIN 则以明文存储密钥。"
+  ai_account_name: "账户名称"
+  ai_provider: "服务商"
+  ai_api_key: "API 密钥"
+  ai_same_key_for_summary: "摘要使用相同密钥"
+  ai_summary_api_key: "摘要 API 密钥"
+  ai_pin: "4位 PIN 码"
+  ai_pin_hint: "可选。用于加密您的 API 密钥"
+  ai_advanced_options: "高级选项"
+  ai_transcription_model: "转录模型"
+  ai_transcription_url: "转录 URL"
+  ai_summary_model: "摘要模型"
+  ai_summary_url: "摘要 URL"
 
 # 服务器消息
 server:

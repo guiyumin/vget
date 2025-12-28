@@ -216,7 +216,7 @@ export function ConfigEditor({
           onChange={setPendingQuality}
         />
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.twitter_auth}
           </span>
           <input
@@ -229,7 +229,7 @@ export function ConfigEditor({
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.server_port}
           </span>
           <span className="flex-1 px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-500 text-sm font-mono">
@@ -237,7 +237,7 @@ export function ConfigEditor({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.max_concurrent}
           </span>
           <input
@@ -251,7 +251,7 @@ export function ConfigEditor({
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.api_key}
           </span>
           <input
@@ -269,7 +269,7 @@ export function ConfigEditor({
           Kuaidi100 (快递查询)
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             API Key
           </span>
           <input
@@ -282,7 +282,7 @@ export function ConfigEditor({
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="min-w-[100px] text-sm text-zinc-700 dark:text-zinc-200">
+          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             Customer ID
           </span>
           <input
@@ -334,7 +334,7 @@ export function ConfigEditor({
         <div className="flex flex-wrap gap-2 mt-2">
           <input
             type="text"
-            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-[100px] focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-25 focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.name}
             value={newWebDAVName}
             onChange={(e) => setNewWebDAVName(e.target.value)}
@@ -342,7 +342,7 @@ export function ConfigEditor({
           />
           <input
             type="text"
-            className="flex-1 min-w-[150px] px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="flex-1 min-w-37.5 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.url}
             value={newWebDAVUrl}
             onChange={(e) => setNewWebDAVUrl(e.target.value)}
@@ -350,7 +350,7 @@ export function ConfigEditor({
           />
           <input
             type="text"
-            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-[100px] focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-25 focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.username}
             value={newWebDAVUsername}
             onChange={(e) => setNewWebDAVUsername(e.target.value)}
@@ -358,7 +358,7 @@ export function ConfigEditor({
           />
           <input
             type="password"
-            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-[100px] focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-25 focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.password}
             value={newWebDAVPassword}
             onChange={(e) => setNewWebDAVPassword(e.target.value)}
