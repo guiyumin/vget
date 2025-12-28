@@ -38,11 +38,12 @@ type ChunkOptions struct {
 
 // Result contains the output of pipeline processing.
 type Result struct {
-	ChunksDir      string
-	TranscriptPath string
-	SummaryPath    string
-	Transcript     *transcriber.Result
-	Summary        *summarizer.Result
+	ExtractedAudioPath string // Path to extracted audio (for video files)
+	ChunksDir          string // Path to chunks directory (for large files)
+	TranscriptPath     string
+	SummaryPath        string
+	Transcript         *transcriber.Result
+	Summary            *summarizer.Result
 }
 
 // NewPipeline creates a new AI processing pipeline.
@@ -138,11 +139,20 @@ func (p *Pipeline) Process(ctx context.Context, filePath string, opts Options) (
 		fmt.Printf("Transcribing %s...\n", filepath.Base(filePath))
 
 		// Transcribe the file
-		transcript, err := p.transcribe(ctx, filePath)
+		transcript, chunksDir, err := p.transcribe(ctx, filePath)
 		if err != nil {
 			return nil, fmt.Errorf("transcription failed: %w", err)
 		}
 		result.Transcript = transcript
+		result.ChunksDir = chunksDir
+
+		// Check for extracted audio path
+		if chunksDir != "" {
+			manifest, _ := LoadManifest(chunksDir)
+			if manifest != nil && manifest.ExtractedAudioPath != "" {
+				result.ExtractedAudioPath = manifest.ExtractedAudioPath
+			}
+		}
 
 		// Write transcript to file
 		transcriptPath := getOutputPath(filePath, ".transcript.md")
@@ -199,32 +209,32 @@ func (p *Pipeline) Process(ctx context.Context, filePath string, opts Options) (
 }
 
 // transcribe handles the transcription process, including chunking for large files.
-func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcriber.Result, error) {
+func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcriber.Result, string, error) {
 	// Check if file needs chunking
 	needsChunking, err := p.chunker.NeedsChunking(filePath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if !needsChunking {
 		// Direct transcription
-		return p.transcriber.Transcribe(ctx, filePath)
+		result, err := p.transcriber.Transcribe(ctx, filePath)
+		return result, "", err
 	}
 
 	// Check ffmpeg availability
 	if !p.chunker.HasFFmpeg() {
-		return nil, fmt.Errorf("large files require ffmpeg for chunking\nInstall: brew install ffmpeg (macOS) or apt install ffmpeg (Linux)")
+		return nil, "", fmt.Errorf("large files require ffmpeg for chunking\nInstall: brew install ffmpeg (macOS) or apt install ffmpeg (Linux)")
 	}
 
-	// Split into chunks
+	// Split into chunks with manifest (preserves all intermediate files)
 	fmt.Println("  File exceeds size limit, splitting into chunks...")
-	chunks, err := p.chunker.Split(filePath)
+	chunks, manifest, err := p.chunker.SplitWithManifest(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to split file: %w", err)
+		return nil, "", fmt.Errorf("failed to split file: %w", err)
 	}
-	defer p.chunker.Cleanup(chunks)
 
-	fmt.Printf("  Created %d chunks\n", len(chunks))
+	fmt.Printf("  Created %d chunks in: %s\n", len(chunks), manifest.ChunksDir)
 
 	// Transcribe each chunk
 	var results []*transcriber.Result
@@ -233,20 +243,33 @@ func (p *Pipeline) transcribe(ctx context.Context, filePath string) (*transcribe
 
 		result, err := p.transcriber.Transcribe(ctx, chunk.FilePath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to transcribe chunk %d: %w", i+1, err)
+			return nil, manifest.ChunksDir, fmt.Errorf("failed to transcribe chunk %d: %w", i+1, err)
 		}
 		results = append(results, result)
+
+		// Update chunk status in manifest
+		manifest.Chunks[i].Status = "transcribed"
+		manifestPath := filepath.Join(manifest.ChunksDir, "manifest.json")
+		p.chunker.writeManifest(manifest, manifestPath)
 	}
 
 	// Merge results
 	fmt.Println("  Merging transcripts...")
-	return p.chunker.MergeTranscripts(results, chunks)
+	merged, err := p.chunker.MergeTranscripts(results, chunks)
+	return merged, manifest.ChunksDir, err
 }
 
 // getOutputPath generates output file path with the given suffix.
+// Handles special cases like .transcript.md -> .summary.md
 func getOutputPath(inputPath, suffix string) string {
 	ext := filepath.Ext(inputPath)
 	base := strings.TrimSuffix(inputPath, ext)
+
+	// Handle .transcript.md -> .summary.md case
+	if strings.HasSuffix(base, ".transcript") {
+		base = strings.TrimSuffix(base, ".transcript")
+	}
+
 	return base + suffix
 }
 

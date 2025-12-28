@@ -95,6 +95,17 @@ func (s *Server) handleAddAIAccount(c *gin.Context) {
 		}
 	}
 
+	// Trim whitespace from label
+	req.Label = strings.TrimSpace(req.Label)
+	if req.Label == "" {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "label cannot be empty",
+		})
+		return
+	}
+
 	// Validate provider
 	switch req.Provider {
 	case "openai", "anthropic", "qwen":

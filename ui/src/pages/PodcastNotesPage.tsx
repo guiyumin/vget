@@ -239,14 +239,15 @@ export function PodcastNotesPage() {
       setShowPINInput(false);
 
       try {
+        // Always use file_path to ensure summary is written next to the original file
+        // Use the transcript file if it exists, otherwise use the original file path
         const transcriptPath = selectedFile.path.replace(
           /\.[^.]+$/,
           ".transcript.md"
         );
 
         const res = await summarizeText({
-          file_path: selectedFile.has_transcript ? transcriptPath : undefined,
-          text: !selectedFile.has_transcript && transcript ? transcript : undefined,
+          file_path: selectedFile.has_transcript || transcript ? transcriptPath : selectedFile.path,
           account: summarizeAccount,
           model: summarizeModel,
           pin: pinToUse || undefined,

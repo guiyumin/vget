@@ -10,26 +10,6 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
-const summarizationPrompt = `You are a helpful assistant that summarizes content.
-
-Please provide a concise summary of the following transcript/text. Include:
-1. A brief 2-3 paragraph summary capturing the main points
-2. A list of key points (3-7 bullet points)
-
-Format your response as:
-## Summary
-[Your summary here]
-
-## Key Points
-- [Point 1]
-- [Point 2]
-- [Point 3]
-...
-
-Here is the content to summarize:
-
-`
-
 // OpenAI implements Summarizer using OpenAI GPT (official SDK).
 type OpenAI struct {
 	client openai.Client
@@ -80,9 +60,9 @@ func (o *OpenAI) Summarize(ctx context.Context, text string) (*Result, error) {
 	resp, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Model: o.model,
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage(summarizationPrompt + text),
+			openai.UserMessage(SummarizationPrompt + text),
 		},
-		MaxTokens:   openai.Int(2000),
+		MaxTokens:   openai.Int(8000),
 		Temperature: openai.Float(0.3),
 	})
 	if err != nil {

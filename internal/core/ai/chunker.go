@@ -36,15 +36,28 @@ type ChunkInfo struct {
 
 // Manifest stores metadata about chunked audio files for resumability.
 type Manifest struct {
-	Source           string      `json:"source"`
-	SourceHash       string      `json:"source_hash"`
-	ChunksDir        string      `json:"chunks_dir"`
-	CreatedAt        time.Time   `json:"created_at"`
-	Strategy         string      `json:"strategy"`
-	OverlapSeconds   int         `json:"overlap_seconds"`
-	ChunkDurSeconds  int         `json:"chunk_duration_seconds"`
-	TotalDurSeconds  float64     `json:"total_duration_seconds"`
-	Chunks           []ChunkInfo `json:"chunks"`
+	Source             string      `json:"source"`
+	SourceHash         string      `json:"source_hash"`
+	ExtractedAudioPath string      `json:"extracted_audio_path,omitempty"` // Path to extracted audio (for video files)
+	ChunksDir          string      `json:"chunks_dir"`
+	CreatedAt          time.Time   `json:"created_at"`
+	Strategy           string      `json:"strategy"`
+	OverlapSeconds     int         `json:"overlap_seconds"`
+	ChunkDurSeconds    int         `json:"chunk_duration_seconds"`
+	TotalDurSeconds    float64     `json:"total_duration_seconds"`
+	Chunks             []ChunkInfo `json:"chunks"`
+}
+
+// videoExtensions are file extensions that indicate video files
+var videoExtensions = map[string]bool{
+	".mp4": true, ".mkv": true, ".webm": true, ".avi": true,
+	".mov": true, ".flv": true, ".wmv": true, ".m4v": true,
+}
+
+// isVideoFile checks if a file is a video file based on extension
+func isVideoFile(filePath string) bool {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	return videoExtensions[ext]
 }
 
 // Chunker splits large audio files into smaller chunks.
@@ -94,8 +107,27 @@ func (c *Chunker) NeedsChunking(filePath string) (bool, error) {
 
 // Split splits an audio file into chunks with overlap.
 func (c *Chunker) Split(filePath string) ([]ChunkInfo, error) {
+	// Create temp directory for chunks
+	ext := filepath.Ext(filePath)
+	base := strings.TrimSuffix(filepath.Base(filePath), ext)
+	chunkDir := filepath.Join(filepath.Dir(filePath), base+".chunks")
+	if err := os.MkdirAll(chunkDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create chunk directory: %w", err)
+	}
+
+	// If input is video, extract full audio track first
+	audioSource := filePath
+	if isVideoFile(filePath) {
+		extractedAudioPath := filepath.Join(filepath.Dir(filePath), base+".audio.mp3")
+		if err := c.extractFullAudio(filePath, extractedAudioPath); err != nil {
+			return nil, fmt.Errorf("failed to extract audio from video: %w", err)
+		}
+		audioSource = extractedAudioPath
+		fmt.Printf("  Extracted audio: %s\n", extractedAudioPath)
+	}
+
 	// Get audio duration
-	duration, err := c.getAudioDuration(filePath)
+	duration, err := c.getAudioDuration(audioSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get audio duration: %w", err)
 	}
@@ -105,14 +137,6 @@ func (c *Chunker) Split(filePath string) ([]ChunkInfo, error) {
 	chunkDur := c.chunkDuration
 	overlap := c.overlapDuration
 	stride := chunkDur - overlap
-
-	// Create temp directory for chunks
-	ext := filepath.Ext(filePath)
-	base := strings.TrimSuffix(filepath.Base(filePath), ext)
-	chunkDir := filepath.Join(filepath.Dir(filePath), base+".chunks")
-	if err := os.MkdirAll(chunkDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create chunk directory: %w", err)
-	}
 
 	// Split into chunks
 	for i := 0; ; i++ {
@@ -130,7 +154,7 @@ func (c *Chunker) Split(filePath string) ([]ChunkInfo, error) {
 		chunkPath := filepath.Join(chunkDir, fmt.Sprintf("chunk_%03d.mp3", i+1))
 
 		// Use ffmpeg to extract chunk (re-encodes to MP3)
-		if err := c.extractChunk(filePath, chunkPath, start, end-start); err != nil {
+		if err := c.extractChunk(audioSource, chunkPath, start, end-start); err != nil {
 			return nil, fmt.Errorf("failed to extract chunk %d: %w", i+1, err)
 		}
 
@@ -147,23 +171,11 @@ func (c *Chunker) Split(filePath string) ([]ChunkInfo, error) {
 
 // SplitWithManifest splits an audio file and generates a manifest for resumability.
 func (c *Chunker) SplitWithManifest(filePath string) ([]ChunkInfo, *Manifest, error) {
-	// Get audio duration
-	duration, err := c.getAudioDuration(filePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get audio duration: %w", err)
-	}
-
 	// Calculate file hash for integrity
 	hash, err := c.calculateFileHash(filePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to calculate file hash: %w", err)
 	}
-
-	// Calculate chunk boundaries
-	var chunks []ChunkInfo
-	chunkDur := c.chunkDuration
-	overlap := c.overlapDuration
-	stride := chunkDur - overlap
 
 	// Create chunk directory
 	ext := filepath.Ext(filePath)
@@ -172,6 +184,30 @@ func (c *Chunker) SplitWithManifest(filePath string) ([]ChunkInfo, *Manifest, er
 	if err := os.MkdirAll(chunkDir, 0755); err != nil {
 		return nil, nil, fmt.Errorf("failed to create chunk directory: %w", err)
 	}
+
+	// If input is video, extract full audio track first
+	var extractedAudioPath string
+	audioSource := filePath
+	if isVideoFile(filePath) {
+		extractedAudioPath = filepath.Join(filepath.Dir(filePath), base+".audio.mp3")
+		if err := c.extractFullAudio(filePath, extractedAudioPath); err != nil {
+			return nil, nil, fmt.Errorf("failed to extract audio from video: %w", err)
+		}
+		audioSource = extractedAudioPath
+		fmt.Printf("  Extracted audio: %s\n", extractedAudioPath)
+	}
+
+	// Get audio duration
+	duration, err := c.getAudioDuration(audioSource)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get audio duration: %w", err)
+	}
+
+	// Calculate chunk boundaries
+	var chunks []ChunkInfo
+	chunkDur := c.chunkDuration
+	overlap := c.overlapDuration
+	stride := chunkDur - overlap
 
 	// Split into chunks
 	for i := 0; ; i++ {
@@ -189,7 +225,7 @@ func (c *Chunker) SplitWithManifest(filePath string) ([]ChunkInfo, *Manifest, er
 		chunkPath := filepath.Join(chunkDir, fmt.Sprintf("chunk_%03d.mp3", i+1))
 
 		// Use ffmpeg to extract chunk (re-encodes to MP3)
-		if err := c.extractChunk(filePath, chunkPath, start, end-start); err != nil {
+		if err := c.extractChunk(audioSource, chunkPath, start, end-start); err != nil {
 			return nil, nil, fmt.Errorf("failed to extract chunk %d: %w", i+1, err)
 		}
 
@@ -205,15 +241,16 @@ func (c *Chunker) SplitWithManifest(filePath string) ([]ChunkInfo, *Manifest, er
 	// Create manifest
 	absPath, _ := filepath.Abs(filePath)
 	manifest := &Manifest{
-		Source:          absPath,
-		SourceHash:      hash,
-		ChunksDir:       chunkDir,
-		CreatedAt:       time.Now(),
-		Strategy:        "overlap",
-		OverlapSeconds:  int(c.overlapDuration.Seconds()),
-		ChunkDurSeconds: int(c.chunkDuration.Seconds()),
-		TotalDurSeconds: duration.Seconds(),
-		Chunks:          chunks,
+		Source:             absPath,
+		SourceHash:         hash,
+		ExtractedAudioPath: extractedAudioPath,
+		ChunksDir:          chunkDir,
+		CreatedAt:          time.Now(),
+		Strategy:           "overlap",
+		OverlapSeconds:     int(c.overlapDuration.Seconds()),
+		ChunkDurSeconds:    int(c.chunkDuration.Seconds()),
+		TotalDurSeconds:    duration.Seconds(),
+		Chunks:             chunks,
 	}
 
 	// Write manifest to file
@@ -223,6 +260,28 @@ func (c *Chunker) SplitWithManifest(filePath string) ([]ChunkInfo, *Manifest, er
 	}
 
 	return chunks, manifest, nil
+}
+
+// extractFullAudio extracts the complete audio track from a video file.
+// Saves as MP3 with settings optimized for speech transcription.
+func (c *Chunker) extractFullAudio(videoPath, audioPath string) error {
+	cmd := exec.Command("ffmpeg",
+		"-threads", "1",
+		"-y",
+		"-i", videoPath,
+		"-vn",           // Remove video
+		"-ac", "1",      // Mono
+		"-ar", "16000",  // 16kHz sample rate (good for speech)
+		"-b:a", "64k",   // 64kbps bitrate
+		"-f", "mp3",     // Force MP3 format
+		audioPath,
+	)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("ffmpeg failed: %w", err)
+	}
+
+	return nil
 }
 
 // calculateFileHash calculates SHA256 hash of a file (first 1MB for speed).

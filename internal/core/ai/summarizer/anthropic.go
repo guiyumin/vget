@@ -59,9 +59,9 @@ func (a *Anthropic) Summarize(ctx context.Context, text string) (*Result, error)
 	// Create message request
 	message, err := a.client.Messages.New(ctx, anthropic.MessageNewParams{
 		Model:     anthropic.Model(a.model),
-		MaxTokens: 2000,
+		MaxTokens: 8000,
 		Messages: []anthropic.MessageParam{
-			anthropic.NewUserMessage(anthropic.NewTextBlock(summarizationPrompt + text)),
+			anthropic.NewUserMessage(anthropic.NewTextBlock(SummarizationPrompt + text)),
 		},
 	})
 	if err != nil {

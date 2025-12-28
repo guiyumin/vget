@@ -68,9 +68,9 @@ func (q *Qwen) Summarize(ctx context.Context, text string) (*Result, error) {
 	resp, err := q.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Model: openai.ChatModel(q.model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage(summarizationPrompt + text),
+			openai.UserMessage(SummarizationPrompt + text),
 		},
-		MaxTokens:   openai.Int(2000),
+		MaxTokens:   openai.Int(8000),
 		Temperature: openai.Float(0.3),
 	})
 	if err != nil {
