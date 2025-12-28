@@ -151,6 +151,7 @@ func SanitizeFilename(name string) string {
 		"：", "-", // U+FF1A Full-width colon
 		"／", "-", // U+FF0F Full-width solidus
 		"＼", "-", // U+FF3C Full-width reverse solidus
+		"。", "-", // U+3002 CJK full stop
 		"＊", "",  // U+FF0A Full-width asterisk
 		"？", "",  // U+FF1F Full-width question mark
 		"＂", "",  // U+FF02 Full-width quotation mark

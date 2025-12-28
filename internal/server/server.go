@@ -1347,15 +1347,21 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 		downloadURL = format.URL
 		headers = format.Headers
 
+		ext := format.Ext
+		if ext == "m3u8" {
+			ext = "ts"
+		}
+
 		if filename != "" {
 			// Sanitize the provided filename to remove invalid path characters
-			outputPath = filepath.Join(s.outputDir, extractor.SanitizeFilename(filename))
+			sanitized := extractor.SanitizeFilename(filename)
+			// Ensure the filename has the correct extension
+			if !strings.HasSuffix(strings.ToLower(sanitized), "."+ext) {
+				sanitized = fmt.Sprintf("%s.%s", sanitized, ext)
+			}
+			outputPath = filepath.Join(s.outputDir, sanitized)
 		} else {
 			title := extractor.SanitizeFilename(m.Title)
-			ext := format.Ext
-			if ext == "m3u8" {
-				ext = "ts"
-			}
 			if title != "" {
 				outputPath = filepath.Join(s.outputDir, fmt.Sprintf("%s.%s", title, ext))
 			} else {
@@ -1375,7 +1381,12 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 
 		if filename != "" {
 			// Sanitize the provided filename to remove invalid path characters
-			outputPath = filepath.Join(s.outputDir, extractor.SanitizeFilename(filename))
+			sanitized := extractor.SanitizeFilename(filename)
+			// Ensure the filename has the correct extension
+			if !strings.HasSuffix(strings.ToLower(sanitized), "."+m.Ext) {
+				sanitized = fmt.Sprintf("%s.%s", sanitized, m.Ext)
+			}
+			outputPath = filepath.Join(s.outputDir, sanitized)
 		} else {
 			title := extractor.SanitizeFilename(m.Title)
 			if title != "" {

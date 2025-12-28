@@ -263,8 +263,8 @@ func (q *AIJobQueue) initializeSteps(filePath string, includeSummary bool) []AIJ
 		{Key: StepCompress, Name: "Compress Audio", Status: StepStatusPending},
 		{Key: StepChunk, Name: "Chunk Audio", Status: StepStatusPending},
 		{Key: StepTranscribe, Name: "Transcribe", Status: StepStatusPending},
-		{Key: StepCleanup, Name: "Clean Transcript", Status: StepStatusPending},
 		{Key: StepMerge, Name: "Merge Chunks", Status: StepStatusPending},
+		{Key: StepCleanup, Name: "Clean Transcript", Status: StepStatusPending},
 	}
 
 	// If transcript exists, mark transcription steps as completed (resume point)

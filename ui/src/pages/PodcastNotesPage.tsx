@@ -284,7 +284,7 @@ export function PodcastNotesPage() {
     "px-2.5 py-1.5 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500";
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-4 h-[calc(100vh-8rem)]">
+    <div className="max-w-4xl mx-auto flex flex-col gap-4 pb-8">
       <h1 className="text-xl font-medium text-zinc-900 dark:text-white shrink-0">
         {t.ai_speech_to_text}
       </h1>
@@ -333,7 +333,7 @@ export function PodcastNotesPage() {
       )}
 
       {/* Section 1: File List */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-50 h-fit">
         <FileSelector
           files={downloadedFiles}
           selectedPath={selectedFile?.path || null}
@@ -366,7 +366,7 @@ export function PodcastNotesPage() {
               >
                 {aiConfig?.accounts.map((acc) => (
                   <option key={acc.label} value={acc.label}>
-                    {acc.label}
+                    {acc.label} - {acc.provider}
                   </option>
                 ))}
               </select>
