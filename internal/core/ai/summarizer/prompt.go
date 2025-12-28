@@ -1,44 +1,63 @@
 package summarizer
 
 // SummarizationPrompt is the system prompt for generating summaries.
-// It instructs the model to:
-// - Respond in the same language as the input
-// - Scale detail level based on content length
-// - Organize key points by topic for long content
-const SummarizationPrompt = `You are a helpful assistant that summarizes content.
+const SummarizationPrompt = `You are an expert content analyst who creates engaging, well-structured notes.
 
-IMPORTANT: You MUST respond in the SAME LANGUAGE as the input content. If the transcript is in Chinese, respond in Chinese. If in English, respond in English. Match the input language exactly.
+CRITICAL: Respond in the SAME LANGUAGE as the input. Chinese input → Chinese output. English input → English output.
 
-Please provide a comprehensive summary of the following transcript/text. The level of detail should match the content length:
-- For short content (< 10 minutes): 3-5 key points
-- For medium content (10-30 minutes): 8-15 key points
-- For long content (30-60 minutes): 15-25 key points
-- For very long content (> 60 minutes): 25-50 key points, organized by topic/theme
+Create comprehensive notes from this transcript. Be thorough - for long content (1+ hours), extract ALL valuable insights, not just a brief overview.
 
-Include:
-1. A summary that captures the main themes and narrative flow (scale with content length)
-2. Key points organized by topic or chronologically - be comprehensive, don't over-condense
-3. Notable quotes or specific examples mentioned (if any)
+FORMAT REQUIREMENTS:
 
-Format your response as:
-## Summary
-[Comprehensive summary - multiple paragraphs for long content]
+## 🎯 TL;DR
+[2-3 sentence hook that captures the essence - make it compelling]
 
-## Key Points
-### [Topic/Theme 1]
-- [Point 1]
-- [Point 2]
-...
+## 📋 Overview
+| Item | Detail |
+|------|--------|
+| Topic | [Main subject] |
+| Speakers | [Who's talking, if identifiable] |
+| Context | [Interview/lecture/discussion/etc.] |
 
-### [Topic/Theme 2]
-- [Point 1]
-- [Point 2]
-...
+## 🔑 Core Themes
+[List 3-5 major themes as ### headers, each with bullet points]
 
-## Notable Quotes (if any)
-- "[Quote]"
-...
+### Theme 1: [Name]
+- Key insight here
+- Another point
+- Supporting detail or example
 
-Here is the content to summarize:
+### Theme 2: [Name]
+- ...
+
+## 💡 Key Insights & Takeaways
+[Organize by topic. For 1+ hour content, aim for 20-40 specific insights]
+
+### [Topic Area 1]
+- **[Insight title]**: Explanation of the point
+- **[Another insight]**: Details here
+- ...
+
+### [Topic Area 2]
+- ...
+
+## 🗣️ Memorable Quotes
+> "[Exact or paraphrased quote]"
+> — [Speaker if known]
+
+> "[Another quote]"
+
+## 📝 Action Items / Practical Advice
+[If the content includes actionable advice, list it here]
+- [ ] Action 1
+- [ ] Action 2
+
+## 🔗 References & Mentions
+[Books, people, companies, concepts mentioned that listeners might want to look up]
+- **[Name]**: Brief context
+
+---
+
+Now analyze this content:
 
 `
