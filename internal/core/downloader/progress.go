@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -373,22 +372,9 @@ func downloadWithProgress(client *http.Client, url, output string, state *downlo
 		}
 	}
 
-	// File download complete, check for magic bytes and rename if needed
-	// Close file first to allow renaming
+	// Close file and rename by magic bytes if needed
 	file.Close()
-
-	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
-		ext := filepath.Ext(output)
-		currentExt := strings.TrimPrefix(ext, ".")
-		// Only rename if extension is different (case-insensitive) and not empty
-		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
-			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
-			if err := os.Rename(output, newOutput); err == nil {
-				output = newOutput
-			}
-		}
-	}
-	state.setFinalPath(output)
+	state.setFinalPath(RenameByMagicBytes(output))
 
 	return nil
 }
@@ -460,20 +446,9 @@ func downloadFromReaderWithProgress(reader io.ReadCloser, total int64, output st
 		}
 	}
 
-	// File download complete, check for magic bytes and rename if needed
+	// Close file and rename by magic bytes if needed
 	file.Close()
-
-	if detectedExt, err := DetectFileType(output); err == nil && detectedExt != "" {
-		ext := filepath.Ext(output)
-		currentExt := strings.TrimPrefix(ext, ".")
-		if currentExt != "" && !strings.EqualFold(currentExt, detectedExt) {
-			newOutput := output[:len(output)-len(ext)] + "." + detectedExt
-			if err := os.Rename(output, newOutput); err == nil {
-				output = newOutput
-			}
-		}
-	}
-	state.setFinalPath(output)
+	state.setFinalPath(RenameByMagicBytes(output))
 
 	return nil
 }
