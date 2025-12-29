@@ -96,6 +96,9 @@ type BilibiliConfig struct {
 type AIConfig struct {
 	// List of configured accounts
 	Accounts []AIAccount `yaml:"accounts,omitempty"`
+
+	// LocalASR holds settings for local ASR service
+	LocalASR LocalASRConfig `yaml:"local_asr,omitempty"`
 }
 
 // AIAccount represents a configured AI provider account
@@ -116,11 +119,29 @@ type AIAccount struct {
 // AIServiceConfig holds settings for an AI service (transcription or summarization).
 // This is used by the transcriber/summarizer packages.
 type AIServiceConfig struct {
-	// Model to use (e.g., "whisper-1", "gpt-4o")
+	// Model to use (e.g., "whisper-1", "gpt-4o", "parakeet-v3")
 	Model string `yaml:"model,omitempty"`
 
-	// Optional custom base URL
+	// Optional custom base URL (for OpenAI-compatible APIs or local ASR service)
 	BaseURL string `yaml:"base_url,omitempty"`
+}
+
+// LocalASRConfig holds settings for local speech-to-text using whisper.cpp.
+type LocalASRConfig struct {
+	// Enabled determines if local ASR is active (vs cloud API)
+	Enabled bool `yaml:"enabled,omitempty"`
+
+	// Model is the whisper model to use: "tiny", "small", "medium", "large-v3-turbo"
+	// Default: "small" (good balance of speed and accuracy)
+	Model string `yaml:"model,omitempty"`
+
+	// ModelsDir is a custom directory for storing whisper models
+	// Default: ~/.config/vget/models/
+	ModelsDir string `yaml:"models_dir,omitempty"`
+
+	// Language is the target language for transcription
+	// "auto" for auto-detection, or ISO code like "en", "zh", "ja"
+	Language string `yaml:"language,omitempty"`
 }
 
 // GetAccount returns the account with the given label, or the default account

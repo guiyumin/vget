@@ -168,6 +168,10 @@ func (s *Server) Start() error {
 	api.DELETE("/ai/jobs/:id", s.handleCancelAIJob)
 	api.DELETE("/ai/jobs", s.handleClearAIJobs)
 
+	// Local ASR routes
+	api.GET("/ai/local-asr/capabilities", s.handleGetLocalASRCapabilities)
+	api.POST("/ai/local-asr/config", s.handleUpdateLocalASRConfig)
+
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
 		s.setupStaticFiles(distFS)

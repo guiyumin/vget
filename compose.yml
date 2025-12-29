@@ -1,7 +1,13 @@
 # vget Docker Compose
 #
+# Image variants (choose based on your system):
+#   ghcr.io/guiyumin/vget:latest  - No model bundled, downloads on first use (~150MB)
+#   ghcr.io/guiyumin/vget:small   - ggml-small.bin for NAS <8GB RAM (~400MB)
+#   ghcr.io/guiyumin/vget:medium  - ggml-medium.bin for 8-16GB RAM (~900MB)
+#   ghcr.io/guiyumin/vget:large   - ggml-large-v3-turbo for GPU users (~1.7GB)
+#
 # Configure via .env file or environment variables:
-#   VGET_PORT=8080           # Web UI port
+#   VGET_PORT=8080              # Web UI port
 #   VGET_DOWNLOADS=./downloads  # Download directory
 #   VGET_CONFIG=./config        # Config directory
 #   TZ=Asia/Shanghai            # Timezone
@@ -14,6 +20,7 @@
 
 services:
   vget:
+    # Change to :small, :medium, or :large based on your RAM/GPU
     image: ghcr.io/guiyumin/vget:latest
     container_name: vget
     restart: unless-stopped

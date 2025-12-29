@@ -1,5 +1,6 @@
 import { useApp } from "../context/AppContext";
 import { AISettings } from "../components/AISettings";
+import { LocalASRSettings } from "../components/LocalASRSettings";
 
 export function AISettingsPage() {
   const { t, isConnected } = useApp();
@@ -9,6 +10,7 @@ export function AISettingsPage() {
       <h1 className="text-xl font-medium text-zinc-900 dark:text-white">
         {t.ai_settings}
       </h1>
+      <LocalASRSettings isConnected={isConnected} />
       <AISettings isConnected={isConnected} />
     </div>
   );

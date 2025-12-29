@@ -576,3 +576,53 @@ export async function clearAIJobs(): Promise<
   });
   return res.json();
 }
+
+// Local ASR APIs
+
+export interface LocalASRModel {
+  id: string;
+  name: string;
+  status: "ready" | "not_loaded" | "loading" | "error";
+  requires_gpu: boolean;
+  recommended_gpu: boolean;
+  description: string;
+}
+
+export interface LocalASRCapabilities {
+  available: boolean;
+  service_url: string;
+  enabled: boolean;
+  current_model?: string;
+  gpu?: {
+    type: "nvidia" | "metal" | "none";
+    name: string;
+    memory_gb?: number;
+    cuda_version?: string;
+  };
+  models?: LocalASRModel[];
+  default_model?: string;
+  error?: string;
+  message?: string;
+}
+
+export async function fetchLocalASRCapabilities(): Promise<
+  ApiResponse<LocalASRCapabilities>
+> {
+  const res = await fetch("/api/ai/local-asr/capabilities");
+  return res.json();
+}
+
+export async function updateLocalASRConfig(params: {
+  enabled?: boolean;
+  service_url?: string;
+  model?: string;
+}): Promise<
+  ApiResponse<{ enabled: boolean; service_url: string; model: string }>
+> {
+  const res = await fetch("/api/ai/local-asr/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}

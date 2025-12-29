@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/guiyumin/vget/internal/core/ai"
+	"github.com/guiyumin/vget/internal/core/ai/transcriber"
 	"github.com/guiyumin/vget/internal/core/config"
 	"github.com/guiyumin/vget/internal/core/crypto"
 )
@@ -555,5 +556,110 @@ func (s *Server) handleUploadAudio(c *gin.Context) {
 			"size":     file.Size,
 		},
 		Message: "file uploaded",
+	})
+}
+
+// handleGetLocalASRCapabilities returns the capabilities of local whisper.cpp transcription
+func (s *Server) handleGetLocalASRCapabilities(c *gin.Context) {
+	cfg := config.LoadOrDefault()
+
+	// Get models directory
+	modelsDir := cfg.AI.LocalASR.ModelsDir
+	if modelsDir == "" {
+		var err error
+		modelsDir, err = transcriber.DefaultModelsDir()
+		if err != nil {
+			c.JSON(http.StatusOK, Response{
+				Code: 200,
+				Data: gin.H{
+					"available": false,
+					"enabled":   cfg.AI.LocalASR.Enabled,
+					"error":     err.Error(),
+				},
+				Message: "Failed to get models directory",
+			})
+			return
+		}
+	}
+
+	// Create model manager and list available models
+	manager := transcriber.NewModelManager(modelsDir)
+	models := manager.ListAvailableModels()
+
+	// Check if any model is downloaded
+	hasDownloadedModel := false
+	for _, m := range models {
+		if m.Downloaded {
+			hasDownloadedModel = true
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, Response{
+		Code: 200,
+		Data: gin.H{
+			"available":       hasDownloadedModel,
+			"enabled":         cfg.AI.LocalASR.Enabled,
+			"current_model":   cfg.AI.LocalASR.Model,
+			"language":        cfg.AI.LocalASR.Language,
+			"models_dir":      modelsDir,
+			"models":          models,
+			"default_model":   transcriber.DefaultWhisperModel,
+		},
+		Message: "Local ASR capabilities retrieved",
+	})
+}
+
+// LocalASRConfigRequest is the request body for updating local ASR settings
+type LocalASRConfigRequest struct {
+	Enabled  *bool  `json:"enabled"`
+	Model    string `json:"model"`
+	Language string `json:"language"`
+}
+
+// handleUpdateLocalASRConfig updates local ASR settings
+func (s *Server) handleUpdateLocalASRConfig(c *gin.Context) {
+	var req LocalASRConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: "invalid request body",
+		})
+		return
+	}
+
+	cfg := config.LoadOrDefault()
+
+	// Update fields if provided
+	if req.Enabled != nil {
+		cfg.AI.LocalASR.Enabled = *req.Enabled
+	}
+	if req.Model != "" {
+		cfg.AI.LocalASR.Model = req.Model
+	}
+	if req.Language != "" {
+		cfg.AI.LocalASR.Language = req.Language
+	}
+
+	// Save config
+	if err := config.Save(cfg); err != nil {
+		c.JSON(http.StatusInternalServerError, Response{
+			Code:    500,
+			Data:    nil,
+			Message: fmt.Sprintf("failed to save config: %v", err),
+		})
+		return
+	}
+
+	s.cfg = cfg
+	c.JSON(http.StatusOK, Response{
+		Code: 200,
+		Data: gin.H{
+			"enabled":  cfg.AI.LocalASR.Enabled,
+			"model":    cfg.AI.LocalASR.Model,
+			"language": cfg.AI.LocalASR.Language,
+		},
+		Message: "Local ASR config updated",
 	})
 }

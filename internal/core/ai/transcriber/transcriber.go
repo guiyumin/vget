@@ -35,10 +35,18 @@ type Transcriber interface {
 
 // New creates a new Transcriber based on configuration.
 // The apiKey parameter is the decrypted API key (decryption happens at runtime with user PIN).
+// For local transcription, apiKey is not required.
 func New(provider string, cfg config.AIServiceConfig, apiKey string) (Transcriber, error) {
 	switch provider {
 	case "openai":
 		return NewOpenAI(cfg, apiKey)
+	case "local", "whisper-local":
+		// Get models directory
+		modelsDir, err := DefaultModelsDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get models directory: %w", err)
+		}
+		return NewWhisperLocalFromConfig(cfg, modelsDir)
 	default:
 		return nil, fmt.Errorf("unsupported transcription provider: %s", provider)
 	}

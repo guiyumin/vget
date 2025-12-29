@@ -1,4 +1,4 @@
-.PHONY: build build-ui push version patch minor major
+.PHONY: build build-ui build-metal build-cuda build-nocgo build-whisper push version patch minor major
 
 BUILD_DIR := ./build
 VERSION_FILE := internal/core/version/version.go
@@ -8,14 +8,67 @@ SERVER_DIST := ./internal/server/dist
 # Get current version from latest git tag (strips 'v' prefix)
 CURRENT_VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "0.0.0")
 
+# Get whisper.cpp module path
+WHISPER_PATH := $(shell go list -m -f '{{.Dir}}' github.com/ggerganov/whisper.cpp/bindings/go 2>/dev/null)
+
 build-ui:
 	cd $(UI_DIR) && npm install && npm run build
 	rm -rf $(SERVER_DIST)/*
 	cp -r $(UI_DIR)/dist/* $(SERVER_DIST)/
 
+# Build whisper.cpp static library (run once before build)
+build-whisper:
+	@if [ -z "$(WHISPER_PATH)" ]; then \
+		echo "Error: whisper.cpp module not found. Run 'go mod download' first."; \
+		exit 1; \
+	fi
+	cd "$(WHISPER_PATH)" && make whisper
+	@echo "whisper.cpp library built at $(WHISPER_PATH)/libwhisper.a"
+
+# Standard build with CGO for whisper.cpp (CPU only)
+# Requires: make build-whisper (run once)
 build: build-ui
+	CGO_ENABLED=1 \
+	C_INCLUDE_PATH="$(WHISPER_PATH)" \
+	LIBRARY_PATH="$(WHISPER_PATH)" \
 	go build -o $(BUILD_DIR)/vget ./cmd/vget
+	CGO_ENABLED=1 \
+	C_INCLUDE_PATH="$(WHISPER_PATH)" \
+	LIBRARY_PATH="$(WHISPER_PATH)" \
 	go build -o $(BUILD_DIR)/vget-server ./cmd/vget-server
+
+# macOS with Metal acceleration (Apple Silicon)
+# Requires: WHISPER_METAL=1 make build-whisper (run once)
+build-metal: build-ui
+	CGO_ENABLED=1 \
+	C_INCLUDE_PATH="$(WHISPER_PATH)" \
+	LIBRARY_PATH="$(WHISPER_PATH)" \
+	go build -tags metal -o $(BUILD_DIR)/vget ./cmd/vget
+	CGO_ENABLED=1 \
+	C_INCLUDE_PATH="$(WHISPER_PATH)" \
+	LIBRARY_PATH="$(WHISPER_PATH)" \
+	go build -tags metal -o $(BUILD_DIR)/vget-server ./cmd/vget-server
+
+# Linux with CUDA acceleration (NVIDIA GPU)
+# Requires: GGML_CUDA=1 make build-whisper (run once)
+build-cuda: build-ui
+	CGO_ENABLED=1 \
+	C_INCLUDE_PATH="$(WHISPER_PATH)" \
+	LIBRARY_PATH="$(WHISPER_PATH)" \
+	CGO_CFLAGS="-I/usr/local/cuda/include" \
+	CGO_LDFLAGS="-L/usr/local/cuda/lib64" \
+	go build -tags cuda -o $(BUILD_DIR)/vget ./cmd/vget
+	CGO_ENABLED=1 \
+	C_INCLUDE_PATH="$(WHISPER_PATH)" \
+	LIBRARY_PATH="$(WHISPER_PATH)" \
+	CGO_CFLAGS="-I/usr/local/cuda/include" \
+	CGO_LDFLAGS="-L/usr/local/cuda/lib64" \
+	go build -tags cuda -o $(BUILD_DIR)/vget-server ./cmd/vget-server
+
+# Build without CGO (disables local transcription)
+build-nocgo: build-ui
+	CGO_ENABLED=0 go build -o $(BUILD_DIR)/vget ./cmd/vget
+	CGO_ENABLED=0 go build -o $(BUILD_DIR)/vget-server ./cmd/vget-server
 
 push:
 	git push origin main --tags
