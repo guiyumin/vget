@@ -74,16 +74,16 @@ jobs:
   # Build Docker images with different ASR models bundled
   # Uses sherpa-onnx with Parakeet V3 (EU languages) + Whisper (Chinese)
   # Image variants (CPU - multi-arch amd64/arm64):
-  #   :latest      - no models, downloads on first use (~200MB)
-  #   :full-small  - Parakeet V3 + Whisper Small for NAS <8GB RAM (~1.0GB)
-  #   :full-medium - Parakeet V3 + Whisper Medium for 8-16GB RAM (~1.5GB)
-  #   :full-large  - Parakeet V3 + Whisper Large Turbo for 32GB+ RAM (~2.3GB)
+  #   :latest  - no models, downloads on first use (~200MB)
+  #   :small   - Parakeet V3 + Whisper Small for NAS <8GB RAM (~1.0GB)
+  #   :medium  - Parakeet V3 + Whisper Medium for 8-16GB RAM (~1.5GB)
+  #   :large   - Parakeet V3 + Whisper Large Turbo for 32GB+ RAM (~2.3GB)
   #
   # CUDA variants (amd64 only, NVIDIA GPU required):
-  #   :cuda             - CUDA enabled, no models bundled
-  #   :cuda-full-small  - CUDA + Parakeet V3 + Whisper Small
-  #   :cuda-full-medium - CUDA + Parakeet V3 + Whisper Medium
-  #   :cuda-full-large  - CUDA + Parakeet V3 + Whisper Large Turbo (recommended for GPU)
+  #   :cuda        - CUDA enabled, no models bundled
+  #   :cuda-small  - CUDA + Parakeet V3 + Whisper Small
+  #   :cuda-medium - CUDA + Parakeet V3 + Whisper Medium
+  #   :cuda-large  - CUDA + Parakeet V3 + Whisper Large Turbo (recommended for GPU)
 
   # AMD64 builds
   docker-amd64-latest:
@@ -421,46 +421,46 @@ jobs:
             "$IMAGE@${{ needs.docker-amd64-latest.outputs.digest }}" \
             "$IMAGE@${{ needs.docker-arm64-latest.outputs.digest }}"
 
-          # :full-small (Parakeet V3 + Whisper Small for NAS <8GB RAM)
-          docker buildx imagetools create -t "$IMAGE:full-small" -t "$IMAGE:$VERSION-full-small" \
+          # :small (Parakeet V3 + Whisper Small for NAS <8GB RAM)
+          docker buildx imagetools create -t "$IMAGE:small" -t "$IMAGE:$VERSION-small" \
             "$IMAGE@${{ needs.docker-amd64-small.outputs.digest }}" \
             "$IMAGE@${{ needs.docker-arm64-small.outputs.digest }}"
 
-          # :full-medium (Parakeet V3 + Whisper Medium for 8-16GB RAM)
-          docker buildx imagetools create -t "$IMAGE:full-medium" -t "$IMAGE:$VERSION-full-medium" \
+          # :medium (Parakeet V3 + Whisper Medium for 8-16GB RAM)
+          docker buildx imagetools create -t "$IMAGE:medium" -t "$IMAGE:$VERSION-medium" \
             "$IMAGE@${{ needs.docker-amd64-medium.outputs.digest }}" \
             "$IMAGE@${{ needs.docker-arm64-medium.outputs.digest }}"
 
-          # :full-large (Parakeet V3 + Whisper Large Turbo for GPU or 32GB+ RAM)
-          docker buildx imagetools create -t "$IMAGE:full-large" -t "$IMAGE:$VERSION-full-large" \
+          # :large (Parakeet V3 + Whisper Large Turbo for 32GB+ RAM)
+          docker buildx imagetools create -t "$IMAGE:large" -t "$IMAGE:$VERSION-large" \
             "$IMAGE@${{ needs.docker-amd64-large.outputs.digest }}" \
             "$IMAGE@${{ needs.docker-arm64-large.outputs.digest }}"
 
-          # CUDA variants (amd64 only - single arch, no manifest needed but using imagetools for consistency)
+          # CUDA variants (amd64 only)
           # :cuda (CUDA enabled, no models)
           docker buildx imagetools create -t "$IMAGE:cuda" -t "$IMAGE:$VERSION-cuda" \
             "$IMAGE@${{ needs.docker-amd64-cuda-latest.outputs.digest }}"
 
-          # :cuda-full-small
-          docker buildx imagetools create -t "$IMAGE:cuda-full-small" -t "$IMAGE:$VERSION-cuda-full-small" \
+          # :cuda-small
+          docker buildx imagetools create -t "$IMAGE:cuda-small" -t "$IMAGE:$VERSION-cuda-small" \
             "$IMAGE@${{ needs.docker-amd64-cuda-small.outputs.digest }}"
 
-          # :cuda-full-medium
-          docker buildx imagetools create -t "$IMAGE:cuda-full-medium" -t "$IMAGE:$VERSION-cuda-full-medium" \
+          # :cuda-medium
+          docker buildx imagetools create -t "$IMAGE:cuda-medium" -t "$IMAGE:$VERSION-cuda-medium" \
             "$IMAGE@${{ needs.docker-amd64-cuda-medium.outputs.digest }}"
 
-          # :cuda-full-large (recommended for NVIDIA GPU users)
-          docker buildx imagetools create -t "$IMAGE:cuda-full-large" -t "$IMAGE:$VERSION-cuda-full-large" \
+          # :cuda-large (recommended for NVIDIA GPU users)
+          docker buildx imagetools create -t "$IMAGE:cuda-large" -t "$IMAGE:$VERSION-cuda-large" \
             "$IMAGE@${{ needs.docker-amd64-cuda-large.outputs.digest }}"
 
           echo "✅ Published CPU images (multi-arch amd64/arm64):"
           echo "  - $IMAGE:latest / $IMAGE:$VERSION"
-          echo "  - $IMAGE:full-small / $IMAGE:$VERSION-full-small"
-          echo "  - $IMAGE:full-medium / $IMAGE:$VERSION-full-medium"
-          echo "  - $IMAGE:full-large / $IMAGE:$VERSION-full-large"
+          echo "  - $IMAGE:small / $IMAGE:$VERSION-small"
+          echo "  - $IMAGE:medium / $IMAGE:$VERSION-medium"
+          echo "  - $IMAGE:large / $IMAGE:$VERSION-large"
           echo ""
           echo "✅ Published CUDA images (amd64 only):"
           echo "  - $IMAGE:cuda / $IMAGE:$VERSION-cuda"
-          echo "  - $IMAGE:cuda-full-small / $IMAGE:$VERSION-cuda-full-small"
-          echo "  - $IMAGE:cuda-full-medium / $IMAGE:$VERSION-cuda-full-medium"
-          echo "  - $IMAGE:cuda-full-large / $IMAGE:$VERSION-cuda-full-large"
+          echo "  - $IMAGE:cuda-small / $IMAGE:$VERSION-cuda-small"
+          echo "  - $IMAGE:cuda-medium / $IMAGE:$VERSION-cuda-medium"
+          echo "  - $IMAGE:cuda-large / $IMAGE:$VERSION-cuda-large"

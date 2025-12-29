@@ -38,6 +38,36 @@ rm vget.zip
 
 ![](screenshots/vget_server_ui.png)
 
+## Docker
+
+```bash
+docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
+```
+
+### 镜像版本
+
+| 标签           | 模型                              | 架构         | CPU/GPU 支持 |
+|----------------|-----------------------------------|--------------|--------------|
+| `:latest`      | 无（首次使用时下载）              | amd64/arm64  | 仅 CPU       |
+| `:small`       | Parakeet V3 + Whisper Small       | amd64/arm64  | 仅 CPU       |
+| `:medium`      | Parakeet V3 + Whisper Medium      | amd64/arm64  | 仅 CPU       |
+| `:large`       | Parakeet V3 + Whisper Large Turbo | amd64/arm64  | 仅 CPU       |
+| `:cuda`        | 无（首次使用时下载）              | amd64        | CPU 或 GPU   |
+| `:cuda-small`  | Parakeet V3 + Whisper Small       | amd64        | CPU 或 GPU   |
+| `:cuda-medium` | Parakeet V3 + Whisper Medium      | amd64        | CPU 或 GPU   |
+| `:cuda-large`  | Parakeet V3 + Whisper Large Turbo | amd64        | CPU 或 GPU   |
+
+**模型推荐：**
+- **NAS（<8GB 内存）：** `:small`
+- **8-16GB 内存：** `:medium`
+- **32GB+ 内存或 NVIDIA GPU：** `:large` 或 `:cuda-large`
+
+**NVIDIA GPU 用户：**
+
+```bash
+docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:cuda-large
+```
+
 ## 支持的来源
 
 查看 [sites.md](sites.md) 获取完整的支持网站列表。

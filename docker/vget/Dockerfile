@@ -10,10 +10,10 @@ RUN npm run build
 # Uses pre-built base image with sherpa-onnx + whisper.cpp already installed
 # Base image is built by .github/workflows/build-base-image.yml
 ARG ENABLE_CUDA=false
-FROM ghcr.io/guiyumin/vget-base:latest AS go-builder-cpu
-FROM ghcr.io/guiyumin/vget-base:cuda AS go-builder-cuda
+FROM ghcr.io/guiyumin/vget-base:latest AS go-builder-false
+FROM ghcr.io/guiyumin/vget-base:cuda AS go-builder-true
 
-# Select builder based on CUDA
+# Select builder based on CUDA (false=CPU, true=CUDA)
 FROM go-builder-${ENABLE_CUDA} AS go-builder
 WORKDIR /app
 
@@ -32,9 +32,10 @@ RUN go build -ldflags="-s -w" -o /vget-server ./cmd/vget-server
 
 # Final runtime stage - use CUDA runtime for GPU support
 ARG ENABLE_CUDA=false
-FROM debian:bookworm-slim AS runtime-cpu
-FROM nvidia/cuda:12.6.3-runtime-ubuntu24.04 AS runtime-cuda
+FROM debian:bookworm-slim AS runtime-false
+FROM nvidia/cuda:12.6.3-runtime-ubuntu24.04 AS runtime-true
 
+# Select runtime based on CUDA (false=CPU, true=CUDA)
 FROM runtime-${ENABLE_CUDA} AS runtime
 
 # Re-declare args after FROM

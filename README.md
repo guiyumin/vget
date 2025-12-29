@@ -38,6 +38,36 @@ Download `vget-windows-amd64.zip` from [Releases](https://github.com/guiyumin/vg
 
 ![](screenshots/vget_server_ui.png)
 
+## Docker
+
+```bash
+docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
+```
+
+### Image Variants
+
+| Tag            | Models                            | Architecture | CPU/GPU Support |
+|----------------|-----------------------------------|--------------|-----------------|
+| `:latest`      | None (downloads on first use)     | amd64/arm64  | CPU only        |
+| `:small`       | Parakeet V3 + Whisper Small       | amd64/arm64  | CPU only        |
+| `:medium`      | Parakeet V3 + Whisper Medium      | amd64/arm64  | CPU only        |
+| `:large`       | Parakeet V3 + Whisper Large Turbo | amd64/arm64  | CPU only        |
+| `:cuda`        | None (downloads on first use)     | amd64        | CPU or GPU      |
+| `:cuda-small`  | Parakeet V3 + Whisper Small       | amd64        | CPU or GPU      |
+| `:cuda-medium` | Parakeet V3 + Whisper Medium      | amd64        | CPU or GPU      |
+| `:cuda-large`  | Parakeet V3 + Whisper Large Turbo | amd64        | CPU or GPU      |
+
+**Model recommendations:**
+- **NAS with <8GB RAM:** `:small`
+- **8-16GB RAM:** `:medium`
+- **32GB+ RAM or NVIDIA GPU:** `:large` or `:cuda-large`
+
+**For NVIDIA GPU users:**
+
+```bash
+docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:cuda-large
+```
+
 ## Supported Sources
 
 See [sites.md](sites.md) for the full list of supported sites.

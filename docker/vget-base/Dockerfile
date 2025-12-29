@@ -5,10 +5,10 @@
 ARG ENABLE_CUDA=false
 
 # Base image selection based on CUDA support
-FROM golang:1.25-bookworm AS base-cpu
-FROM nvidia/cuda:12.6.3-devel-ubuntu24.04 AS base-cuda
+FROM golang:1.25-bookworm AS base-false
+FROM nvidia/cuda:12.6.3-devel-ubuntu24.04 AS base-true
 
-# Select the appropriate base
+# Select the appropriate base (false=CPU, true=CUDA)
 FROM base-${ENABLE_CUDA} AS base
 
 LABEL org.opencontainers.image.source=https://github.com/guiyumin/vget
