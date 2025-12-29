@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // DetectFileType reads the first few bytes of the file to determine its type
@@ -49,4 +51,25 @@ func DetectFileType(path string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// RenameByMagicBytes checks if the file's actual type differs from its extension
+// and renames it if necessary. Returns the final path (renamed or original).
+func RenameByMagicBytes(path string) string {
+	detectedExt, err := DetectFileType(path)
+	if err != nil || detectedExt == "" {
+		return path
+	}
+
+	ext := filepath.Ext(path)
+	currentExt := strings.TrimPrefix(ext, ".")
+	if currentExt == "" || strings.EqualFold(currentExt, detectedExt) {
+		return path
+	}
+
+	newPath := path[:len(path)-len(ext)] + "." + detectedExt
+	if err := os.Rename(path, newPath); err != nil {
+		return path
+	}
+	return newPath
 }
