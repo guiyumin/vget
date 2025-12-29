@@ -22,6 +22,18 @@ type SherpaTranscriber struct {
 	language   string
 }
 
+// detectProvider returns "cuda" if NVIDIA GPU is available, otherwise "cpu".
+func detectProvider() string {
+	// Check NVIDIA_VISIBLE_DEVICES env var (set in Docker CUDA images)
+	if nvDevices := os.Getenv("NVIDIA_VISIBLE_DEVICES"); nvDevices != "" && nvDevices != "void" {
+		// Verify nvidia-smi works
+		if err := exec.Command("nvidia-smi").Run(); err == nil {
+			return "cuda"
+		}
+	}
+	return "cpu"
+}
+
 // NewSherpaTranscriber creates a new sherpa-onnx transcriber for Parakeet V3.
 func NewSherpaTranscriber(modelPath, language string) (*SherpaTranscriber, error) {
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
@@ -32,7 +44,7 @@ func NewSherpaTranscriber(modelPath, language string) (*SherpaTranscriber, error
 	config.FeatConfig.SampleRate = 16000
 	config.FeatConfig.FeatureDim = 80
 	config.ModelConfig.NumThreads = 4
-	config.ModelConfig.Provider = "cpu"
+	config.ModelConfig.Provider = detectProvider()
 	config.DecodingMethod = "greedy_search"
 
 	// Parakeet V3 uses transducer model
