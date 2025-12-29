@@ -44,16 +44,3 @@ func New(provider string, cfg config.AIServiceConfig, apiKey string) (Transcribe
 		return nil, fmt.Errorf("unsupported transcription provider: %s", provider)
 	}
 }
-
-// NewLocal creates a local transcriber using sherpa-onnx.
-func NewLocal(cfg config.LocalASRConfig) (Transcriber, error) {
-	modelsDir := cfg.ModelsDir
-	if modelsDir == "" {
-		var err error
-		modelsDir, err = DefaultModelsDir()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get models directory: %w", err)
-		}
-	}
-	return NewSherpaTranscriberFromConfig(cfg, modelsDir)
-}

@@ -22,7 +22,7 @@ jobs:
         run: mkdir -p internal/server/dist && touch internal/server/dist/.gitkeep
 
       - name: Run tests
-        run: go test -v ./...
+        run: CGO_ENABLED=0 go test -v ./...
 
   lint:
     name: Lint
@@ -42,3 +42,5 @@ jobs:
         uses: dominikh/staticcheck-action@v1
         with:
           version: "latest"
+        env:
+          CGO_ENABLED: "0"
