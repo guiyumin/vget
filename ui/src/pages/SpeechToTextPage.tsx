@@ -49,9 +49,11 @@ export function SpeechToTextPage() {
   const [transcriptionSelection, setTranscriptionSelection] = useState("");
   const [summarizationSelection, setSummarizationSelection] = useState("");
   const [includeSummary, setIncludeSummary] = useState(true);
+  const [language, setLanguage] = useState("auto"); // Language for transcription
 
   // Local ASR capabilities
-  const [localASRCapabilities, setLocalASRCapabilities] = useState<LocalASRCapabilities | null>(null);
+  const [localASRCapabilities, setLocalASRCapabilities] =
+    useState<LocalASRCapabilities | null>(null);
 
   // PIN handling
   const [pin, setPIN] = useState("");
@@ -94,27 +96,40 @@ export function SpeechToTextPage() {
 
         // Set default transcription selection
         // Prefer local if available and enabled
-        if (localCaps?.available && localCaps?.enabled && localCaps.current_model) {
-          setTranscriptionSelection(`local:${localCaps.current_model}`);
+        if (
+          localCaps?.available &&
+          localCaps?.enabled &&
+          localCaps.current_model
+        ) {
+          setTranscriptionSelection(localCaps.current_model); // e.g., "whisper-medium"
         } else {
           // Fall back to cloud
-          const defaultAcc = aiRes.data.default_account || aiRes.data.accounts[0]?.label || "";
+          const defaultAcc =
+            aiRes.data.default_account || aiRes.data.accounts[0]?.label || "";
           if (defaultAcc && models) {
             const acc = aiRes.data.accounts.find((a) => a.label === defaultAcc);
             const provider = acc?.provider || "openai";
-            const transcriptionModels = models.transcription[provider as keyof typeof models.transcription] || [];
+            const transcriptionModels =
+              models.transcription[
+                provider as keyof typeof models.transcription
+              ] || [];
             if (transcriptionModels.length > 0) {
-              setTranscriptionSelection(`cloud:${defaultAcc}:${transcriptionModels[0]}`);
+              setTranscriptionSelection(
+                `${defaultAcc}:${transcriptionModels[0]}`
+              ); // e.g., "my-openai:whisper-1"
             }
           }
         }
 
         // Set default summarization selection
-        const defaultAcc = aiRes.data.default_account || aiRes.data.accounts[0]?.label || "";
+        const defaultAcc =
+          aiRes.data.default_account || aiRes.data.accounts[0]?.label || "";
         if (defaultAcc && models) {
           const acc = aiRes.data.accounts.find((a) => a.label === defaultAcc);
           const provider = acc?.provider || "openai";
-          const summaryModels = models.summarization[provider as "openai" | "anthropic" | "qwen"] || [];
+          const summaryModels =
+            models.summarization[provider as "openai" | "anthropic" | "qwen"] ||
+            [];
           if (summaryModels.length > 0) {
             setSummarizationSelection(`${defaultAcc}:${summaryModels[0].id}`);
           }
@@ -151,18 +166,19 @@ export function SpeechToTextPage() {
   }, [isError, processingState.error, showToast]);
 
   const hasAIAccount = aiConfig && aiConfig.accounts.length > 0;
-  const hasLocalASR = localASRCapabilities?.available && localASRCapabilities?.enabled;
+  const hasLocalASR =
+    localASRCapabilities?.available && localASRCapabilities?.enabled;
   const canProcess = hasAIAccount || hasLocalASR;
 
-  // Parse transcription selection: "local:model" or "cloud:account:model"
+  // Parse transcription selection: "model" (local) or "account:model" (cloud)
   const parseTranscriptionSelection = (sel: string) => {
-    if (sel.startsWith("local:")) {
-      return { type: "local" as const, model: sel.slice(6), account: "" };
-    } else if (sel.startsWith("cloud:")) {
-      const parts = sel.slice(6).split(":");
-      return { type: "cloud" as const, account: parts[0], model: parts[1] || "" };
+    if (sel.includes(":")) {
+      // Cloud model: "account:model"
+      const [account, model] = sel.split(":");
+      return { type: "cloud" as const, account, model };
     }
-    return { type: "cloud" as const, account: "", model: "" };
+    // Local model: just "model"
+    return { type: "local" as const, model: sel, account: "" };
   };
 
   // Parse summarization selection: "account:model"
@@ -176,28 +192,31 @@ export function SpeechToTextPage() {
     return acc?.is_encrypted ?? true;
   };
 
-  // Build transcription options: local models + cloud models from all accounts
+  // Build transcription options: local models + cloud models
   const getTranscriptionOptions = () => {
     const options: { value: string; label: string }[] = [];
 
-    // Local models - show all models, mark downloaded ones with ✓
+    // Local models
     if (localASRCapabilities?.models) {
       for (const m of localASRCapabilities.models) {
         options.push({
-          value: `local:${m.name}`,
-          label: `Local - ${m.name}${m.downloaded ? " ✓" : ""}`,
+          value: m.name, // e.g., "whisper-medium"
+          label: `Local: ${m.name}${m.downloaded ? " (available)" : ""}`,
         });
       }
     }
 
-    // Cloud models from all accounts
+    // Cloud models
     if (aiConfig?.accounts && aiModels?.transcription) {
       for (const acc of aiConfig.accounts) {
-        const models = aiModels.transcription[acc.provider as keyof typeof aiModels.transcription] || [];
+        const models =
+          aiModels.transcription[
+            acc.provider as keyof typeof aiModels.transcription
+          ] || [];
         for (const model of models) {
           options.push({
-            value: `cloud:${acc.label}:${model}`,
-            label: `Cloud - ${acc.label} - ${model}`,
+            value: `${acc.label}:${model}`, // e.g., "my-openai:whisper-1"
+            label: `Cloud: ${model} (${acc.label})`,
           });
         }
       }
@@ -212,7 +231,10 @@ export function SpeechToTextPage() {
 
     if (aiConfig?.accounts && aiModels?.summarization) {
       for (const acc of aiConfig.accounts) {
-        const models = aiModels.summarization[acc.provider as "openai" | "anthropic" | "qwen"] || [];
+        const models =
+          aiModels.summarization[
+            acc.provider as "openai" | "anthropic" | "qwen"
+          ] || [];
         for (const model of models) {
           options.push({
             value: `${acc.label}:${model.id}`,
@@ -265,11 +287,11 @@ export function SpeechToTextPage() {
 
     const transcription = parseTranscriptionSelection(transcriptionSelection);
     const summarization = parseSummarizationSelection(summarizationSelection);
-    const useLocalASR = transcription.type === "local";
+    const isLocalModel = transcription.type === "local";
 
     // Determine which accounts need PIN
     const accountsNeedingPin = new Set<string>();
-    if (!useLocalASR && transcription.account) {
+    if (!isLocalModel && transcription.account) {
       if (getAccountEncrypted(transcription.account)) {
         accountsNeedingPin.add(transcription.account);
       }
@@ -289,17 +311,22 @@ export function SpeechToTextPage() {
 
     setShowPINInput(false);
 
-    // For summarization, use the summarization account
-    const summaryAccount = includeSummary ? summarization.account : "";
+    // For local models, use summarization account (if summarizing)
+    // For cloud models, use transcription account
+    const account = isLocalModel
+      ? includeSummary
+        ? summarization.account
+        : ""
+      : transcription.account;
 
     const result = await startProcessing(
       selectedFile.path,
-      useLocalASR ? summaryAccount : transcription.account,
+      account,
       transcription.model,
       summarization.model,
       includeSummary,
       pinToUse,
-      useLocalASR
+      language
     );
 
     if (!result.success) {
@@ -427,14 +454,14 @@ export function SpeechToTextPage() {
           {/* Left: Models */}
           <div className="space-y-3">
             {/* Transcription Model - unified dropdown */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-zinc-600 dark:text-zinc-400 w-28">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-sm text-zinc-600 dark:text-zinc-400 w-fit">
                 {t.ai_transcription_model}:
               </label>
               <select
                 value={transcriptionSelection}
                 onChange={(e) => setTranscriptionSelection(e.target.value)}
-                className={`${selectClass} flex-1`}
+                className={clsx(selectClass, "flex-1")}
                 disabled={isProcessing}
               >
                 {getTranscriptionOptions().map((opt) => (
@@ -445,15 +472,47 @@ export function SpeechToTextPage() {
               </select>
             </div>
 
+            {/* Language Selection - for local ASR (no ":" means local model) */}
+            {transcriptionSelection &&
+              !transcriptionSelection.includes(":") && (
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-sm text-zinc-600 dark:text-zinc-400 w-fit">
+                    {t.ai_language}:
+                  </label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className={clsx(selectClass, "flex-1")}
+                    disabled={isProcessing}
+                  >
+                    <option value="auto">{t.ai_select_language}</option>
+                    <option value="zh">Chinese (中文)</option>
+                    <option value="en">English</option>
+                    <option value="ja">Japanese (日本語)</option>
+                    <option value="ko">Korean (한국어)</option>
+                    <option value="es">Spanish (Español)</option>
+                    <option value="fr">French (Français)</option>
+                    <option value="de">German (Deutsch)</option>
+                    <option value="ru">Russian (Русский)</option>
+                    <option value="pt">Portuguese (Português)</option>
+                    <option value="ar">Arabic (العربية)</option>
+                  </select>
+                </div>
+              )}
+
             {/* Summarization Model - unified dropdown */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-zinc-600 dark:text-zinc-400 w-28">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-sm text-zinc-600 dark:text-zinc-400 w-fit">
                 {t.ai_summary_model}:
               </label>
               <select
                 value={summarizationSelection}
                 onChange={(e) => setSummarizationSelection(e.target.value)}
-                className={clsx(selectClass, "flex-1", !includeSummary && "opacity-50")}
+                className={clsx(
+                  selectClass,
+                  "flex-1",
+                  !includeSummary && "opacity-50"
+                )}
                 disabled={isProcessing || !includeSummary}
               >
                 {getSummarizationOptions().map((opt) => (
@@ -563,9 +622,7 @@ export function SpeechToTextPage() {
           </div>
         ) : (
           <div className="text-sm text-zinc-400 dark:text-zinc-500">
-            {selectedFile
-              ? t.ai_no_outputs_yet
-              : t.ai_select_file_for_outputs}
+            {selectedFile ? t.ai_no_outputs_yet : t.ai_select_file_for_outputs}
           </div>
         )}
       </div>

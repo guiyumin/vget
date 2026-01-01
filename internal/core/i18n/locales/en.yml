@@ -204,6 +204,8 @@ ui:
   ai_outputs: "Outputs"
   ai_no_outputs_yet: "No outputs yet. Start processing to generate transcript and summary."
   ai_select_file_for_outputs: "Select a file to see available outputs."
+  ai_language: "Language"
+  ai_select_language: "Select Language"
   # AI step names
   ai_step_extract_audio: "Extract Audio"
   ai_step_compress_audio: "Compress Audio"

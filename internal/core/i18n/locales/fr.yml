@@ -192,6 +192,8 @@ ui:
   ai_outputs: "Résultats"
   ai_no_outputs_yet: "Aucun résultat. Lancez le traitement pour générer la transcription et le résumé."
   ai_select_file_for_outputs: "Sélectionnez un fichier pour voir les résultats."
+  ai_language: "Langue"
+  ai_select_language: "Sélectionner la langue"
   # Noms des étapes AI
   ai_step_extract_audio: "Extraire l'audio"
   ai_step_compress_audio: "Compresser l'audio"

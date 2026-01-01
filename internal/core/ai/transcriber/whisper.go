@@ -101,6 +101,7 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to read audio: %w", err)
 	}
+	fmt.Printf("  Audio: %d samples, %d Hz, %.1f seconds\n", len(samples), sampleRate, float64(len(samples))/float64(sampleRate))
 
 	// Create whisper context
 	wctx, err := w.model.NewContext()
@@ -108,25 +109,38 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 		return nil, fmt.Errorf("failed to create whisper context: %w", err)
 	}
 
+	// ===== WHISPER CONFIGURATION (v2025-12-31) =====
+	fmt.Println("  ========================================")
+	fmt.Println("  WHISPER.CPP TRANSCRIPTION CONFIG v2")
+	fmt.Println("  ========================================")
+
 	// Performance optimization: use all available CPU cores
 	numThreads := runtime.NumCPU()
 	if numThreads > 8 {
 		numThreads = 8 // Cap at 8 threads for diminishing returns
 	}
 	wctx.SetThreads(uint(numThreads))
-	fmt.Printf("  Using %d threads for transcription\n", numThreads)
+	fmt.Printf("  Threads: %d\n", numThreads)
 
-	// Note: VAD requires a separate model file, skip for now
-	// wctx.SetVAD(true)
-	// wctx.SetVADThreshold(0.6)
-	// wctx.SetVADMinSilenceMs(500)
+	// CRITICAL: Disable translation - transcribe in original language, NOT English
+	wctx.SetTranslate(false)
+	fmt.Println("  Translate: false (transcribe, not translate)")
 
-	// Set language
+	// CRITICAL: Use sentence-level segments, not token-level fragments
+	wctx.SetTokenTimestamps(false)
+	fmt.Println("  TokenTimestamps: false (sentence-level output)")
+
+	// Set language if specified
 	if w.language != "" && w.language != "auto" {
 		if err := wctx.SetLanguage(w.language); err != nil {
-			return nil, fmt.Errorf("failed to set language: %w", err)
+			fmt.Printf("  Warning: failed to set language %s: %v\n", w.language, err)
+		} else {
+			fmt.Printf("  Language: %s\n", w.language)
 		}
+	} else {
+		fmt.Println("  Language: auto-detect")
 	}
+	fmt.Println("  ========================================")
 
 	// Progress callback for real-time feedback
 	lastProgress := -1
@@ -146,11 +160,13 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 	var segments []Segment
 	var fullText strings.Builder
 
+	segCount := 0
 	for {
 		segment, err := wctx.NextSegment()
 		if err != nil {
 			break
 		}
+		segCount++
 
 		segments = append(segments, Segment{
 			Start: segment.Start,
@@ -161,6 +177,7 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 		fullText.WriteString(segment.Text)
 		fullText.WriteString(" ")
 	}
+	fmt.Printf("  Segments: %d\n", segCount)
 
 	// Calculate duration
 	duration := time.Duration(float64(len(samples))/float64(sampleRate)) * time.Second

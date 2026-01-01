@@ -204,6 +204,8 @@ ui:
   ai_outputs: "输出结果"
   ai_no_outputs_yet: "暂无输出。开始处理以生成转录和摘要。"
   ai_select_file_for_outputs: "选择文件以查看输出。"
+  ai_language: "语言"
+  ai_select_language: "选择语言"
   # AI 步骤名称
   ai_step_extract_audio: "提取音频"
   ai_step_compress_audio: "压缩音频"

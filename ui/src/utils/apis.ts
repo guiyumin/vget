@@ -536,11 +536,11 @@ export interface AIJob {
 export async function startAIProcessing(params: {
   file_path: string;
   account?: string;
-  transcription_model?: string;
+  transcription_model: string; // Model name (e.g., "whisper-medium", "whisper-1")
   summarization_model?: string;
   pin?: string;
   include_summary: boolean;
-  use_local_asr?: boolean;
+  language?: string; // Language code for transcription (e.g., "zh", "en", "auto")
 }): Promise<ApiResponse<{ job_id: string; status: AIJobStatus }>> {
   const res = await fetch("/api/ai/process", {
     method: "POST",

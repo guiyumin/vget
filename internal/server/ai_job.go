@@ -102,17 +102,34 @@ type AIJob struct {
 	pin                 string             `json:"-"`
 	includeSummary      bool               `json:"-"`
 	useLocalASR         bool               `json:"-"`
+	language            string             `json:"-"`
 }
 
 // AIJobRequest is the request to start an AI processing job
 type AIJobRequest struct {
 	FilePath           string `json:"file_path"`
-	Account            string `json:"account"`
-	TranscriptionModel string `json:"transcription_model"`
+	Account            string `json:"account"`             // Cloud account label (optional for local models)
+	TranscriptionModel string `json:"transcription_model"` // Model name (e.g., "whisper-medium", "whisper-1")
 	SummarizationModel string `json:"summarization_model"`
 	PIN                string `json:"pin"`
 	IncludeSummary     bool   `json:"include_summary"`
-	UseLocalASR        bool   `json:"use_local_asr"`
+	Language           string `json:"language"` // Language code for transcription (e.g., "zh", "en", "auto")
+}
+
+// isLocalModel returns true if the model is a local ASR model (whisper.cpp or sherpa-onnx)
+func isLocalModel(model string) bool {
+	// Local models: whisper-small, whisper-medium, whisper-turbo, parakeet-*
+	// Cloud models: whisper-1 (OpenAI API)
+	if model == "" {
+		return false
+	}
+	if model == "whisper-1" {
+		return false // OpenAI's cloud model
+	}
+	if strings.HasPrefix(model, "whisper-") || strings.HasPrefix(model, "parakeet") {
+		return true
+	}
+	return false
 }
 
 // AIJobQueue manages AI processing jobs with a worker pool
@@ -226,7 +243,8 @@ func (q *AIJobQueue) AddJob(req AIJobRequest) (*AIJob, error) {
 		summarizationModel: req.SummarizationModel,
 		pin:                req.PIN,
 		includeSummary:     req.IncludeSummary,
-		useLocalASR:        req.UseLocalASR,
+		useLocalASR:        isLocalModel(req.TranscriptionModel),
+		language:           req.Language,
 	}
 
 	// Calculate initial overall progress (for resume capability)
@@ -398,7 +416,15 @@ func (q *AIJobQueue) processJob(job *AIJob) {
 				return
 			}
 		}
-		pipeline, err = ai.NewLocalPipeline(cfg.AI.LocalASR, summarizationAccount, job.summarizationModel, job.pin)
+		// Use the model and language from the request, falling back to config if not specified
+		localASRCfg := cfg.AI.LocalASR
+		if job.transcriptionModel != "" {
+			localASRCfg.Model = job.transcriptionModel
+		}
+		if job.language != "" {
+			localASRCfg.Language = job.language
+		}
+		pipeline, err = ai.NewLocalPipeline(localASRCfg, summarizationAccount, job.summarizationModel, job.pin)
 	} else {
 		// Use cloud transcription (OpenAI Whisper API)
 		account := cfg.AI.GetAccount(job.account)

@@ -156,17 +156,17 @@ export function useProcessing() {
       summarizationModel: string,
       includeSummary: boolean,
       pin?: string,
-      useLocalASR?: boolean
+      language?: string
     ) => {
       try {
         const res = await startAIProcessing({
           file_path: filePath,
-          account: useLocalASR ? undefined : account,
-          transcription_model: useLocalASR ? undefined : transcriptionModel,
+          account: account || undefined,
+          transcription_model: transcriptionModel,
           summarization_model: summarizationModel,
           pin,
           include_summary: includeSummary,
-          use_local_asr: useLocalASR,
+          language: language,
         });
 
         if (res.code === 200 && res.data?.job_id) {

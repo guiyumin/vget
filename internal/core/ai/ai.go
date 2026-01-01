@@ -391,8 +391,8 @@ func (p *Pipeline) transcribeWithProgress(ctx context.Context, filePath string, 
 			return nil, manifest.ChunksDir, fmt.Errorf("failed to transcribe chunk %d: %w", i+1, err)
 		}
 
-		// Save chunk transcript to disk immediately
-		if err := os.WriteFile(chunkTranscriptPath, []byte(result.RawText), 0644); err != nil {
+		// Save chunk transcript to disk immediately (with timestamps)
+		if err := os.WriteFile(chunkTranscriptPath, []byte(result.FormattedText()), 0644); err != nil {
 			fmt.Printf("  Warning: failed to save chunk transcript: %v\n", err)
 		} else {
 			fmt.Printf("  [%d/%d] Saved: %s\n", i+1, len(chunks), filepath.Base(chunkTranscriptPath))

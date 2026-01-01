@@ -192,6 +192,8 @@ ui:
   ai_outputs: "出力"
   ai_no_outputs_yet: "出力がありません。処理を開始して文字起こしと要約を生成してください。"
   ai_select_file_for_outputs: "ファイルを選択して出力を表示。"
+  ai_language: "言語"
+  ai_select_language: "言語を選択"
   # AI ステップ名
   ai_step_extract_audio: "音声抽出"
   ai_step_compress_audio: "音声圧縮"

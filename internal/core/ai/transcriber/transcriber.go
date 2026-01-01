@@ -24,6 +24,28 @@ type Result struct {
 	Duration time.Duration // Audio duration
 }
 
+// FormattedText returns the transcript with timestamps in format [HH:MM:SS] Text
+func (r *Result) FormattedText() string {
+	if len(r.Segments) == 0 {
+		return r.RawText
+	}
+
+	var result string
+	for _, seg := range r.Segments {
+		timestamp := formatTimestamp(seg.Start)
+		result += fmt.Sprintf("[%s] %s\n", timestamp, seg.Text)
+	}
+	return result
+}
+
+// formatTimestamp converts duration to HH:MM:SS format
+func formatTimestamp(d time.Duration) string {
+	h := int(d.Hours())
+	m := int(d.Minutes()) % 60
+	s := int(d.Seconds()) % 60
+	return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+}
+
 // Transcriber converts audio to text.
 type Transcriber interface {
 	// Transcribe converts an audio file to text.
