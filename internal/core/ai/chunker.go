@@ -18,8 +18,8 @@ const (
 	// MaxFileSize is the maximum file size for direct transcription (25MB for OpenAI Whisper)
 	MaxFileSize = 25 * 1024 * 1024
 
-	// ChunkDuration is the duration of each chunk (10 minutes)
-	ChunkDuration = 10 * time.Minute
+	// ChunkDuration is the duration of each chunk (5 minutes for faster local processing)
+	ChunkDuration = 5 * time.Minute
 
 	// OverlapDuration is the overlap between chunks (10 seconds)
 	OverlapDuration = 10 * time.Second

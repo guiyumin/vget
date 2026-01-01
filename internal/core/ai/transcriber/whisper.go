@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -79,6 +80,13 @@ func (w *WhisperTranscriber) Name() string {
 
 // Transcribe converts an audio file to text using whisper.cpp.
 func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*Result, error) {
+	// Check for context cancellation before starting
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	// Convert audio to WAV format if needed
 	wavPath, cleanup, err := w.ensureWAV(filePath)
 	if err != nil {
@@ -94,11 +102,23 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 		return nil, fmt.Errorf("failed to read audio: %w", err)
 	}
 
-	// Create context
+	// Create whisper context
 	wctx, err := w.model.NewContext()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create whisper context: %w", err)
 	}
+
+	// Performance optimization: use all available CPU cores
+	numThreads := runtime.NumCPU()
+	if numThreads > 8 {
+		numThreads = 8 // Cap at 8 threads for diminishing returns
+	}
+	wctx.SetThreads(uint(numThreads))
+
+	// Enable VAD (Voice Activity Detection) to skip silence
+	wctx.SetVAD(true)
+	wctx.SetVADThreshold(0.6)
+	wctx.SetVADMinSilenceMs(500)
 
 	// Set language
 	if w.language != "" && w.language != "auto" {
@@ -107,8 +127,17 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 		}
 	}
 
-	// Process audio (4 callbacks: encoder begin, segment, progress, abort)
-	if err := wctx.Process(samples, nil, nil, nil); err != nil {
+	// Progress callback for real-time feedback
+	lastProgress := -1
+	progressCb := func(progress int) {
+		if progress != lastProgress && progress%10 == 0 {
+			fmt.Printf("  Whisper progress: %d%%\n", progress)
+			lastProgress = progress
+		}
+	}
+
+	// Process audio with progress callback
+	if err := wctx.Process(samples, nil, nil, progressCb); err != nil {
 		return nil, fmt.Errorf("failed to process audio: %w", err)
 	}
 
