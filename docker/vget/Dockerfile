@@ -68,7 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs \
     gosu \
     curl \
-    libbz2-1.0 \
+    bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install yt-dlp and youtube-dl

@@ -41,6 +41,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # sherpa-onnx version (for Parakeet)
 ARG SHERPA_VERSION=1.12.20
 
+# Download sherpa-onnx headers from source (not included in pre-built binaries)
+RUN curl -L "https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v${SHERPA_VERSION}.tar.gz" | tar -xzf - && \
+    cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/c-api.h /usr/local/include/ && \
+    cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/cxx-api.h /usr/local/include/ && \
+    rm -rf sherpa-onnx-${SHERPA_VERSION}
+
 # Download and install pre-built sherpa-onnx shared libraries
 # Use GPU version for CUDA, CPU version otherwise
 ARG TARGETARCH
@@ -48,28 +54,29 @@ RUN if [ "$ENABLE_CUDA" = "true" ]; then \
         echo "Downloading sherpa-onnx CUDA version..." && \
         curl -L "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu.tar.bz2" | tar -xjf - && \
         cp sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu/lib/*.so* /usr/local/lib/ && \
-        cp -r sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu/include/* /usr/local/include/ && \
         rm -rf sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu; \
     else \
         if [ "$TARGETARCH" = "arm64" ]; then \
             SHERPA_ARCH="aarch64"; \
+            SHERPA_SUFFIX="-cpu"; \
         else \
             SHERPA_ARCH="x64"; \
+            SHERPA_SUFFIX=""; \
         fi && \
-        curl -L "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared.tar.bz2" | tar -xjf - && \
-        cp sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared/lib/*.so* /usr/local/lib/ && \
-        cp -r sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared/include/* /usr/local/include/ && \
-        rm -rf sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared; \
+        curl -L "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}.tar.bz2" | tar -xjf - && \
+        cp sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}/lib/*.so* /usr/local/lib/ && \
+        rm -rf sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}; \
     fi && \
     ldconfig
 
-# whisper.cpp version (for Whisper)
-ARG WHISPER_VERSION=1.7.3
+# whisper.cpp commit (must match Go bindings in go.mod)
+# Go bindings: github.com/ggerganov/whisper.cpp/bindings/go v0.0.0-20251224075216-6114e692136b
+ARG WHISPER_COMMIT=6114e692136b
 
 # Build whisper.cpp from source with shared library
 # Enable CUDA if ENABLE_CUDA=true
-RUN git clone --depth 1 --branch v${WHISPER_VERSION} https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp && \
-    cd /tmp/whisper.cpp && \
+RUN git clone https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp && \
+    cd /tmp/whisper.cpp && git checkout ${WHISPER_COMMIT} && \
     if [ "$ENABLE_CUDA" = "true" ]; then \
         cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
@@ -108,4 +115,4 @@ WORKDIR /app
 # Metadata
 ENV BASE_IMAGE_VERSION=3.0.0
 ENV SHERPA_ONNX_VERSION=${SHERPA_VERSION}
-ENV WHISPER_CPP_VERSION=${WHISPER_VERSION}
+ENV WHISPER_CPP_COMMIT=${WHISPER_COMMIT}
