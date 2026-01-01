@@ -17,15 +17,15 @@ AI-powered audio/video transcription and summarization, accessible via Docker we
 
 ## Constraints
 
-| Constraint | Decision |
-|------------|----------|
-| Deployment | Docker only (no standalone CLI) |
-| Input | Local audio/video files via web UI |
+| Constraint    | Decision                                                      |
+| ------------- | ------------------------------------------------------------- |
+| Deployment    | Docker only (no standalone CLI)                               |
+| Input         | Local audio/video files via web UI                            |
 | Transcription | **Local-first** (Parakeet V3, Whisper.cpp), cloud as fallback |
-| Translation | LLM-based (local or cloud) |
-| Summarization | LLM-based (local or cloud) |
-| Chunking | Fixed 10-min chunks with 10s overlap |
-| Output | Markdown, SRT subtitle files |
+| Translation   | LLM-based (local or cloud)                                    |
+| Summarization | LLM-based (local or cloud)                                    |
+| Chunking      | Fixed 10-min chunks with 10s overlap                          |
+| Output        | Markdown, SRT subtitle files                                  |
 
 ---
 
@@ -66,16 +66,17 @@ else:
 
 ### Model Options
 
-| Model | Engine | Size | Languages | Best For |
-|-------|--------|------|-----------|----------|
-| Parakeet V3 INT8 | sherpa-onnx | ~640MB | 25 EU | Default, fast |
-| Whisper Small | whisper.cpp | ~466MB | 99 | Quick CJK |
-| Whisper Medium | whisper.cpp | ~1.5GB | 99 | Balanced |
-| Whisper Large V3 Turbo | whisper.cpp | ~1.6GB | 99 | Best accuracy |
+| Model                  | Engine      | Size   | Languages | Best For      |
+| ---------------------- | ----------- | ------ | --------- | ------------- |
+| Parakeet V3 INT8       | sherpa-onnx | ~640MB | 25 EU     | Default, fast |
+| Whisper Small          | whisper.cpp | ~466MB | 99        | Quick CJK     |
+| Whisper Medium         | whisper.cpp | ~1.5GB | 99        | Balanced      |
+| Whisper Large V3 Turbo | whisper.cpp | ~1.6GB | 99        | Best accuracy |
 
 ### Cloud Fallback (Optional)
 
 Only used when:
+
 - User explicitly selects cloud provider
 - Local models not available
 - Requires OpenAI API key
@@ -97,16 +98,16 @@ Only used when:
 
 ### Processing Steps
 
-| Step Key | Name | Description |
-|----------|------|-------------|
-| `extract_audio` | Extract Audio | Extract audio track from video files |
-| `compress_audio` | Compress Audio | Compress for API upload (< 25MB) |
-| `chunk_audio` | Chunk Audio | Split large files into 10-min segments |
-| `transcribe` | Transcribe | Speech-to-text (Whisper API or Local ASR) |
-| `merge` | Merge Chunks | Combine chunk transcripts with deduplication |
-| `translate` | Translate | Translate to target language(s) |
-| `generate_srt` | Generate SRT | Convert to SRT subtitle format |
-| `summarize` | Summarize | Generate summary with key points |
+| Step Key         | Name           | Description                                  |
+| ---------------- | -------------- | -------------------------------------------- |
+| `extract_audio`  | Extract Audio  | Extract audio track from video files         |
+| `compress_audio` | Compress Audio | Compress for API upload (< 25MB)             |
+| `chunk_audio`    | Chunk Audio    | Split large files into 10-min segments       |
+| `transcribe`     | Transcribe     | Speech-to-text (Whisper API or Local ASR)    |
+| `merge`          | Merge Chunks   | Combine chunk transcripts with deduplication |
+| `translate`      | Translate      | Translate to target language(s)              |
+| `generate_srt`   | Generate SRT   | Convert to SRT subtitle format               |
+| `summarize`      | Summarize      | Generate summary with key points             |
 
 ---
 
@@ -288,11 +289,11 @@ interface StartJobRequest {
   options: {
     transcribe: boolean;
     summarize: boolean;
-    translate_to?: string[];      // ["en", "zh"]
+    translate_to?: string[]; // ["en", "zh"]
     output_format?: "text" | "srt";
     summarize_language?: string;
   };
-  pin?: string;  // For encrypted API keys
+  pin?: string; // For encrypted API keys
 }
 
 // GET /api/ai/jobs/:id
@@ -320,7 +321,7 @@ interface ProcessingStep {
 
 interface JobResult {
   transcript_path?: string;
-  translated_paths?: Record<string, string>;  // { "en": "...", "zh": "..." }
+  translated_paths?: Record<string, string>; // { "en": "...", "zh": "..." }
   srt_paths?: Record<string, string>;
   summary_path?: string;
 }
@@ -338,7 +339,7 @@ interface ProcessingConfig {
   model: string;
   transcribe: boolean;
   summarize: boolean;
-  translateTo: string[];        // ["en", "zh", "jp"]
+  translateTo: string[]; // ["en", "zh", "jp"]
   outputFormat: "text" | "srt";
   summarizeInLanguage?: string;
 }
@@ -385,10 +386,12 @@ ai_format_srt: "Subtitles (SRT)",
 ### Use Cases
 
 1. **Transcript → Translate → Text**
+
    - Translate transcript to target language(s)
    - Output: `.{lang}.transcript.md`
 
 2. **Transcript → Translate → SRT**
+
    - Translate with timestamp preservation
    - Output: `.{lang}.srt`
 
@@ -399,6 +402,7 @@ ai_format_srt: "Subtitles (SRT)",
 ### Translation Strategy
 
 1. **Segment-based translation** (for SRT):
+
    - Translate each segment individually
    - Preserve timestamp information
    - Batch segments to reduce API calls (50 per request)
@@ -418,14 +422,14 @@ ai_format_srt: "Subtitles (SRT)",
 
 ## Error Handling
 
-| Error | Behavior |
-|-------|----------|
-| No API key configured | Show error in UI, prompt to add account |
-| API rate limit | Retry with exponential backoff (3 attempts) |
+| Error                     | Behavior                                     |
+| ------------------------- | -------------------------------------------- |
+| No API key configured     | Show error in UI, prompt to add account      |
+| API rate limit            | Retry with exponential backoff (3 attempts)  |
 | Chunk transcription fails | Mark chunk as failed, continue, show warning |
-| Invalid language code | Show supported language list |
-| Translation API error | Retry with backoff, fallback to partial |
-| SRT timestamp mismatch | Warn user, use approximation |
+| Invalid language code     | Show supported language list                 |
+| Translation API error     | Retry with backoff, fallback to partial      |
+| SRT timestamp mismatch    | Warn user, use approximation                 |
 
 ---
 
@@ -448,9 +452,9 @@ ai_format_srt: "Subtitles (SRT)",
 │                                                             │
 │  CPU variants:                                              │
 │  ├── :latest       - No models (~500MB)                     │
-│  ├── :full-small   - Parakeet + Whisper Small (~1.2GB)      │
-│  ├── :full-medium  - Parakeet + Whisper Medium (~2.0GB)     │
-│  └── :full-large   - Parakeet + Whisper Large Turbo (~2.3GB)│
+│  ├── :small        - Parakeet + Whisper Small (~1.2GB)      │
+│  ├── :medium       - Parakeet + Whisper Medium (~2.0GB)     │
+│  └── :large        - Parakeet + Whisper Large Turbo (~2.3GB)│
 │                                                             │
 │  CUDA variants:                                             │
 │  ├── :cuda         - No models + CUDA runtime               │
@@ -462,21 +466,21 @@ ai_format_srt: "Subtitles (SRT)",
 
 ### Image Variants
 
-| Tag | Models | Size | Best For |
-|-----|--------|------|----------|
-| `:latest` | None | ~500MB | Download models on first use |
-| `:full-small` | Parakeet V3 + Whisper Small | ~1.2GB | NAS <8GB RAM |
-| `:full-medium` | Parakeet V3 + Whisper Medium | ~2.0GB | 8-16GB RAM |
-| `:full-large` | Parakeet V3 + Whisper Large Turbo | ~2.3GB | Best accuracy |
-| `:cuda-*` | Same as above + CUDA | +2GB | NVIDIA GPU |
+| Tag       | Models                            | Size   | Best For                     |
+| --------- | --------------------------------- | ------ | ---------------------------- |
+| `:latest` | None                              | ~500MB | Download models on first use |
+| `:small`  | Parakeet V3 + Whisper Small       | ~1.2GB | NAS <8GB RAM                 |
+| `:medium` | Parakeet V3 + Whisper Medium      | ~2.0GB | 8-16GB RAM                   |
+| `:large`  | Parakeet V3 + Whisper Large Turbo | ~2.3GB | Best accuracy                |
+| `:cuda-*` | Same as above + CUDA              | +2GB   | NVIDIA GPU                   |
 
 ### Basic Usage (CPU)
 
 ```yaml
-# docker-compose.yml
+# compose.yml
 services:
   vget:
-    image: ghcr.io/guiyumin/vget:full-medium
+    image: ghcr.io/guiyumin/vget:medium
     ports:
       - "8080:8080"
     volumes:
@@ -506,10 +510,10 @@ services:
 
 ### Build Args
 
-| Arg | Values | Description |
-|-----|--------|-------------|
-| `ENABLE_CUDA` | `true`/`false` | Enable CUDA support |
-| `MODEL_VARIANT` | `none`/`small`/`medium`/`large` | Bundle models |
+| Arg             | Values                          | Description         |
+| --------------- | ------------------------------- | ------------------- |
+| `ENABLE_CUDA`   | `true`/`false`                  | Enable CUDA support |
+| `MODEL_VARIANT` | `none`/`small`/`medium`/`large` | Bundle models       |
 
 ---
 
