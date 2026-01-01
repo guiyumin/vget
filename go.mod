@@ -10,7 +10,7 @@ require (
 	github.com/creativeprojects/go-selfupdate v1.5.1
 	github.com/emersion/go-webdav v0.7.0
 	github.com/fatih/color v1.18.0
-	github.com/ggerganov/whisper.cpp/bindings/go v0.0.0-20251224075216-6114e692136b
+	github.com/ggerganov/whisper.cpp/bindings/go v0.0.0-20251015072942-4979e04f5dca
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-audio/wav v1.1.0
 	github.com/go-rod/rod v0.116.2
