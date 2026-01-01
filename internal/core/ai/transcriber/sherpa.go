@@ -119,6 +119,9 @@ func (s *SherpaTranscriber) Transcribe(ctx context.Context, filePath string) (*R
 	s.recognizer.Decode(stream)
 
 	result := stream.GetResult()
+	if result == nil {
+		return nil, fmt.Errorf("sherpa-onnx returned nil result")
+	}
 
 	// Build segments from timestamps if available
 	var segments []Segment

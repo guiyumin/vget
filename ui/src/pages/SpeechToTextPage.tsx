@@ -23,9 +23,9 @@ import {
   FaDownload,
 } from "react-icons/fa6";
 import { Link } from "@tanstack/react-router";
-import { FileSelector } from "../components/podcast-notes/FileSelector";
-import { ProcessingStepper } from "../components/podcast-notes/ProcessingStepper";
-import { useProcessing } from "../components/podcast-notes/useProcessing";
+import { FileSelector } from "../components/speech-to-text/FileSelector";
+import { ProcessingStepper } from "../components/speech-to-text/ProcessingStepper";
+import { useProcessing } from "../components/speech-to-text/useProcessing";
 
 interface SelectedFile {
   path: string;
@@ -36,7 +36,7 @@ interface SelectedFile {
   has_summary?: boolean;
 }
 
-export function PodcastNotesPage() {
+export function SpeechToTextPage() {
   const { t, showToast } = useApp();
   const [aiConfig, setAIConfig] = useState<AIConfigData | null>(null);
   const [aiModels, setAIModels] = useState<AIModelsData | null>(null);

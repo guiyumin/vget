@@ -60,11 +60,11 @@ var ASRModels = []ASRModel{
 		IsFile:      true,
 	},
 	{
-		Name:        "whisper-large-turbo",
+		Name:        "whisper-turbo",
 		Engine:      "whisper",
 		DirName:     "ggml-large-v3-turbo.bin",
 		Size:        "1.6GB",
-		Description: "Best accuracy, GPU accelerated (whisper.cpp)",
+		Description: "Best accuracy, 8x faster than large (whisper.cpp)",
 		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
 		Languages:   99,
 		IsFile:      true,

@@ -100,6 +100,7 @@ RUN if [ "$MODEL_VARIANT" = "small" ] || [ "$MODEL_VARIANT" = "medium" ] || [ "$
     fi
 
 # Download Whisper ggml models for whisper.cpp
+# Variants: small, medium, turbo
 RUN if [ "$MODEL_VARIANT" = "small" ]; then \
         echo "Downloading Whisper Small ggml model (~466MB)..." && \
         curl -L -o /home/vget/models/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin && \
@@ -108,8 +109,8 @@ RUN if [ "$MODEL_VARIANT" = "small" ]; then \
         echo "Downloading Whisper Medium ggml model (~1.5GB)..." && \
         curl -L -o /home/vget/models/ggml-medium.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin && \
         chown vget:vget /home/vget/models/ggml-medium.bin; \
-    elif [ "$MODEL_VARIANT" = "large" ]; then \
-        echo "Downloading Whisper Large V3 Turbo ggml model (~1.6GB)..." && \
+    elif [ "$MODEL_VARIANT" = "turbo" ]; then \
+        echo "Downloading Whisper Turbo ggml model (~1.6GB)..." && \
         curl -L -o /home/vget/models/ggml-large-v3-turbo.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin && \
         chown vget:vget /home/vget/models/ggml-large-v3-turbo.bin; \
     else \

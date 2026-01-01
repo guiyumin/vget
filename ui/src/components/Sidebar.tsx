@@ -50,7 +50,7 @@ export function Sidebar({ lang }: SidebarProps) {
       show: true,
       children: [
         {
-          to: "/ai/podcast-notes",
+          to: "/ai/speech-to-text",
           icon: <FaMicrophone />,
           label: t.ai_speech_to_text,
           show: true,

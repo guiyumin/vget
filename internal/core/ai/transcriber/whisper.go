@@ -56,7 +56,7 @@ func NewWhisperTranscriberFromConfig(cfg config.LocalASRConfig, modelsDir string
 		modelFile = "ggml-small.bin"
 	case "whisper-medium":
 		modelFile = "ggml-medium.bin"
-	case "whisper-large-turbo":
+	case "whisper-turbo":
 		modelFile = "ggml-large-v3-turbo.bin"
 	default:
 		// Assume it's a direct path or filename
@@ -114,11 +114,12 @@ func (w *WhisperTranscriber) Transcribe(ctx context.Context, filePath string) (*
 		numThreads = 8 // Cap at 8 threads for diminishing returns
 	}
 	wctx.SetThreads(uint(numThreads))
+	fmt.Printf("  Using %d threads for transcription\n", numThreads)
 
-	// Enable VAD (Voice Activity Detection) to skip silence
-	wctx.SetVAD(true)
-	wctx.SetVADThreshold(0.6)
-	wctx.SetVADMinSilenceMs(500)
+	// Note: VAD requires a separate model file, skip for now
+	// wctx.SetVAD(true)
+	// wctx.SetVADThreshold(0.6)
+	// wctx.SetVADMinSilenceMs(500)
 
 	// Set language
 	if w.language != "" && w.language != "auto" {
