@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Build sherpa-onnx
         run: |
-          git clone --depth 1 https://github.com/k2-fsa/sherpa-onnx
+          git clone --depth 1 --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
           cd sherpa-onnx
           cmake -B build -DCMAKE_BUILD_TYPE=Release \
             -DSHERPA_ONNX_ENABLE_TTS=OFF \
@@ -95,7 +95,7 @@ jobs:
       - name: Build sherpa-onnx with CUDA
         shell: bash
         run: |
-          git clone --depth 1 https://github.com/k2-fsa/sherpa-onnx
+          git clone --depth 1 --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
           cd sherpa-onnx
           # Download onnxruntime GPU for CUDA 12.x
           curl -SL -O https://github.com/microsoft/onnxruntime/releases/download/v1.22.0/onnxruntime-win-x64-gpu-1.22.0.zip

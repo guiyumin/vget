@@ -183,7 +183,7 @@ jobs:
     steps:
       - name: Build sherpa-onnx
         run: |
-          git clone https://github.com/k2-fsa/sherpa-onnx
+          git clone --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
           cd sherpa-onnx
           cmake -B build -DSHERPA_ONNX_ENABLE_TTS=OFF -DSHERPA_ONNX_ENABLE_BINARY=ON
           cmake --build build
