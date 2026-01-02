@@ -219,3 +219,13 @@ youtube:
   docker_required: "La descarga de YouTube requiere Docker."
   docker_hint_server: "Ejecute el servidor vget en Docker (recomendado para NAS):"
   docker_hint_cli: "O descargue directamente via CLI:"
+
+# Mensajes de AI CLI
+ai_cli:
+  model_not_found: "Modelo no encontrado."
+  download_with: "Descargue con:"
+  available_models: "Modelos disponibles:"
+  vmirror_hint: "💡 ¿No puede descargar? Use --from=vmirror para acceso más rápido en China"
+  no_models_downloaded: "No hay modelos descargados."
+  download_a_model: "Descargar un modelo:"
+  see_available_models: "Ver modelos disponibles:"

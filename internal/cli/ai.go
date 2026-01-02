@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/guiyumin/vget/internal/core/ai"
 	aioutput "github.com/guiyumin/vget/internal/core/ai/output"
 	"github.com/guiyumin/vget/internal/core/ai/transcriber"
 	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/i18n"
 	"github.com/spf13/cobra"
 )
 
@@ -172,11 +174,32 @@ func runTranscribe(cmd *cobra.Command, args []string) {
 	// Check if model is downloaded
 	mm := transcriber.NewModelManager(modelsDir)
 	if !mm.IsModelDownloaded(modelName) {
-		fmt.Printf("Model not found. Download it with:\n")
-		fmt.Printf("  vget ai models download %s\n\n", modelName)
-		fmt.Println("Available models:")
+		// Get translations
+		cfg, _ := config.Load()
+		lang := "en"
+		if cfg != nil && cfg.Language != "" {
+			lang = cfg.Language
+		}
+		t := i18n.T(lang)
+
+		// Styles
+		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Bold(true) // red
+		cmdStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))               // cyan
+		headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("255")).Bold(true)
+		nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("42"))  // green
+		sizeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245")) // gray
+		descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
+		hintStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("214")) // orange
+
+		fmt.Println(titleStyle.Render(t.AICLI.ModelNotFound) + " " + t.AICLI.DownloadWith)
+		fmt.Printf("  %s\n", cmdStyle.Render(fmt.Sprintf("vget ai models download %s", modelName)))
+		fmt.Printf("  %s\n\n", hintStyle.Render(t.AICLI.VmirrorHint))
+		fmt.Println(headerStyle.Render(t.AICLI.AvailableModels))
 		for _, m := range transcriber.ASRModels {
-			fmt.Printf("  %-24s (%s) - %s\n", m.Name, m.Size, m.Description)
+			name := nameStyle.Render(fmt.Sprintf("%-24s", m.Name))
+			size := sizeStyle.Render(fmt.Sprintf("(%s)", m.Size))
+			desc := descStyle.Render(m.Description)
+			fmt.Printf("  %s %s - %s\n", name, size, desc)
 		}
 		os.Exit(0)
 	}
@@ -256,6 +279,15 @@ func runModels(cmd *cobra.Command, args []string) {
 	mm := transcriber.NewModelManager(modelsDir)
 
 	if aiRemote {
+		// Get translations
+		cfg, _ := config.Load()
+		lang := "en"
+		if cfg != nil && cfg.Language != "" {
+			lang = cfg.Language
+		}
+		t := i18n.T(lang)
+		hintStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
+
 		// Show all available models (remote)
 		fmt.Println("Available models (remote):")
 		fmt.Println()
@@ -267,18 +299,30 @@ func runModels(cmd *cobra.Command, args []string) {
 			fmt.Printf("  %-24s %8s  %s%s\n", m.Name, m.Size, m.Description, downloaded)
 		}
 		fmt.Println()
-		fmt.Println("Download a model:")
+		fmt.Println(t.AICLI.DownloadAModel)
 		fmt.Println("  vget ai models download <model-name>")
+		fmt.Printf("  %s\n", hintStyle.Render(t.AICLI.VmirrorHint))
 	} else {
 		// Show downloaded models only
 		downloaded := mm.ListDownloadedModels()
 		if len(downloaded) == 0 {
-			fmt.Println("No models downloaded.")
+			// Get translations
+			cfg, _ := config.Load()
+			lang := "en"
+			if cfg != nil && cfg.Language != "" {
+				lang = cfg.Language
+			}
+			t := i18n.T(lang)
+
+			hintStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
+
+			fmt.Println(t.AICLI.NoModelsDownloaded)
 			fmt.Println()
-			fmt.Println("Download a model:")
+			fmt.Println(t.AICLI.DownloadAModel)
 			fmt.Println("  vget ai models download whisper-large-v3-turbo")
+			fmt.Printf("  %s\n", hintStyle.Render(t.AICLI.VmirrorHint))
 			fmt.Println()
-			fmt.Println("See available models:")
+			fmt.Println(t.AICLI.SeeAvailableModels)
 			fmt.Println("  vget ai models -r")
 			return
 		}

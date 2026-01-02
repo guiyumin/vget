@@ -219,3 +219,13 @@ youtube:
   docker_required: "YouTube 다운로드에는 Docker가 필요합니다."
   docker_hint_server: "Docker에서 vget 서버 실행 (NAS 사용자 권장):"
   docker_hint_cli: "또는 CLI로 직접 다운로드:"
+
+# AI CLI 메시지
+ai_cli:
+  model_not_found: "모델을 찾을 수 없습니다."
+  download_with: "다음 명령으로 다운로드:"
+  available_models: "사용 가능한 모델:"
+  vmirror_hint: "💡 다운로드 실패 시 --from=vmirror 로 중국 미러 사용"
+  no_models_downloaded: "다운로드된 모델이 없습니다."
+  download_a_model: "모델 다운로드:"
+  see_available_models: "사용 가능한 모델 보기:"

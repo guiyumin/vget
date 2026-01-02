@@ -24,6 +24,7 @@ type Translations struct {
 	UI           UITranslations           `yaml:"ui"`
 	Server       ServerTranslations       `yaml:"server"`
 	YouTube      YouTubeTranslations      `yaml:"youtube"`
+	AICLI        AICLITranslations        `yaml:"ai_cli"`
 }
 
 type ConfigTranslations struct {
@@ -262,6 +263,17 @@ type YouTubeTranslations struct {
 	DockerRequired   string `yaml:"docker_required"`
 	DockerHintServer string `yaml:"docker_hint_server"`
 	DockerHintCLI    string `yaml:"docker_hint_cli"`
+}
+
+// AICLITranslations holds translations for AI CLI messages
+type AICLITranslations struct {
+	ModelNotFound      string `yaml:"model_not_found"`
+	DownloadWith       string `yaml:"download_with"`
+	AvailableModels    string `yaml:"available_models"`
+	VmirrorHint        string `yaml:"vmirror_hint"`
+	NoModelsDownloaded string `yaml:"no_models_downloaded"`
+	DownloadAModel     string `yaml:"download_a_model"`
+	SeeAvailableModels string `yaml:"see_available_models"`
 }
 
 var (

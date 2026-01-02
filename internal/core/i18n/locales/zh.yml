@@ -231,3 +231,13 @@ youtube:
   docker_required: "YouTube 下载需要在 Docker 中运行。"
   docker_hint_server: "部署 vget 服务器（推荐 NAS 用户）："
   docker_hint_cli: "或直接通过命令行下载："
+
+# AI CLI 消息
+ai_cli:
+  model_not_found: "模型未找到。"
+  download_with: "使用以下命令下载："
+  available_models: "可用模型："
+  vmirror_hint: "💡 下载失败？使用 --from=vmirror 从国内镜像下载"
+  no_models_downloaded: "未下载任何模型。"
+  download_a_model: "下载模型："
+  see_available_models: "查看可用模型："
