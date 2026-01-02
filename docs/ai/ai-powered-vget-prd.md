@@ -4,16 +4,33 @@
 
 vget integrates local-first AI capabilities for media processing. The design prioritizes:
 
-- **Zero runtime dependencies** - Single binary, no system libraries required
-- **Download on first use** - Runtime binaries and models fetched from Cloudflare R2
-- **Offline capable** - Once downloaded, works without internet
-- **Cross-platform** - macOS (arm64/amd64), Linux (arm64/amd64), Windows (amd64)
+- **GPU acceleration** - Fast transcription using Metal (macOS) or CUDA (Windows)
+- **Zero runtime dependencies** - Single binary with embedded whisper.cpp
+- **Offline capable** - Once models downloaded, works without internet
+
+## Platform Support
+
+AI features require GPU acceleration for practical performance. CPU-only transcription is too slow for good user experience.
+
+| Platform | AI Features | GPU Acceleration |
+|----------|-------------|------------------|
+| **macOS ARM64** | ✅ Yes | Metal |
+| **Windows AMD64** | ✅ Yes | CUDA (NVIDIA GPU required) |
+| macOS AMD64 | ❌ No | - |
+| Linux AMD64 | ❌ No | - |
+| Linux ARM64 | ❌ No | - |
+
+**Why no Linux/Intel Mac support?**
+- CPU-only transcription takes 10-30x longer than audio duration
+- Poor user experience leads to complaints
+- NAS/VPS users (majority of Linux users) don't have GPUs
+- For Linux with NVIDIA GPU, use the Docker image
 
 ## AI Features
 
 | Feature | Runtime | Use Case | Status |
 |---------|---------|----------|--------|
-| Speech-to-Text (STT) | whisper.cpp, sherpa-onnx | Transcription, subtitles | **Active** |
+| Speech-to-Text (STT) | whisper.cpp | Transcription, subtitles | **Active** |
 | Text-to-Speech (TTS) | Piper | Audiobook generation, accessibility | TODO |
 | OCR | Tesseract | Image text extraction, scanned PDFs | TODO |
 | PDF Processing | pdfcpu, poppler | Text extraction, manipulation | TODO |
@@ -22,24 +39,26 @@ vget integrates local-first AI capabilities for media processing. The design pri
 
 ## Architecture
 
-### Runtime Binary Management
+### Binary Structure
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        vget CLI Binary                          │
-│                       (CGO_ENABLED=0)                           │
+│                      vget CLI Binary                            │
+│                     (CGO_ENABLED=0)                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  Runtime Manager                                                │
-│  ├── Check ~/.config/vget/bin/ for required binary              │
-│  ├── Download from Cloudflare R2 if missing                     │
-│  ├── Verify checksum                                            │
-│  └── Execute via exec.Command()                                 │
+│  Embedded whisper.cpp binary (GPU-enabled)                      │
+│  ├── macOS ARM64: Metal acceleration                            │
+│  └── Windows AMD64: CUDA acceleration                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Audio Decoders (Pure Go)                                       │
+│  ├── MP3  → go-mp3                                              │
+│  ├── WAV  → go-audio/wav                                        │
+│  ├── FLAC → mewkiz/flac                                         │
+│  └── Others → go-ffmpreg (embedded WASM)                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  Model Manager                                                  │
-│  ├── Check ~/.config/vget/models/ for required model            │
-│  ├── Download from Cloudflare R2 if missing                     │
-│  ├── Verify checksum                                            │
-│  └── Pass to runtime binary                                     │
+│  ├── Download models on first use                               │
+│  └── Store in ~/.config/vget/models/                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -48,84 +67,38 @@ vget integrates local-first AI capabilities for media processing. The design pri
 ```
 ~/.config/vget/
 ├── config.yml
-├── bin/                              # Runtime binaries (auto-downloaded)
-│   ├── whisper-darwin-arm64          # whisper.cpp for macOS ARM
-│   ├── whisper-linux-amd64           # whisper.cpp for Linux x64
-│   ├── sherpa-onnx-darwin-arm64      # sherpa-onnx for macOS ARM
-│   ├── piper-darwin-arm64            # Piper TTS
-│   ├── tesseract-darwin-arm64        # Tesseract OCR
-│   └── ...
-└── models/                           # AI models (auto-downloaded)
+├── bin/                              # Extracted runtime binaries
+│   └── whisper-cli                   # Extracted from embedded binary
+└── models/                           # AI models (downloaded on first use)
     ├── whisper-large-v3-turbo.bin    # Whisper model (~1.6GB)
-    ├── parakeet-v3-int8.onnx         # Parakeet model (~640MB)
-    ├── piper-en-us.onnx              # Piper voice model
-    ├── tesseract-eng.traineddata     # Tesseract language data
+    ├── whisper-small.bin             # Whisper model (~488MB)
     └── ...
-```
-
-### Download Infrastructure
-
-All binaries and models are hosted on Cloudflare R2:
-
-```
-https://dl.vget.dev/
-├── bin/
-│   ├── whisper/
-│   │   ├── v1.8.2/
-│   │   │   ├── whisper-darwin-arm64.tar.gz
-│   │   │   ├── whisper-darwin-amd64.tar.gz
-│   │   │   ├── whisper-linux-amd64.tar.gz
-│   │   │   ├── whisper-linux-arm64.tar.gz
-│   │   │   ├── whisper-windows-amd64.zip
-│   │   │   └── checksums.txt
-│   │   └── latest -> v1.8.2
-│   ├── sherpa-onnx/
-│   ├── piper/
-│   └── tesseract/
-└── models/
-    ├── whisper/
-    │   ├── large-v3-turbo.bin
-    │   ├── medium.bin
-    │   └── small.bin
-    ├── parakeet/
-    ├── piper/
-    └── tesseract/
 ```
 
 ---
 
 ## Feature Details
 
-### 1. Speech-to-Text (STT)
+### Speech-to-Text (STT)
 
 **Purpose:** Convert audio/video to text transcripts and subtitles.
 
-#### Dual Engine Architecture
+#### Runtime: whisper.cpp
 
-| Engine | Library | Languages | Best For |
-|--------|---------|-----------|----------|
-| Parakeet V3 | sherpa-onnx | 25 European | Fast, default for non-CJK |
-| Whisper | whisper.cpp | 99 | CJK languages, accuracy |
-
-#### Auto Model Selection
-
-```
-if language in [zh, ja, ko] or detected_language in [zh, ja, ko]:
-    use Whisper model (whisper.cpp runtime)
-else:
-    use Parakeet model (sherpa-onnx runtime)
-```
-
-User can override via `--model` flag. The runtime is determined by the model.
+GPU-enabled whisper.cpp binary is embedded in vget:
+- **macOS ARM64**: Built with Metal support
+- **Windows AMD64**: Built with CUDA support
 
 #### Model Options
 
-| Model | Engine | Size | Languages | Use Case |
-|-------|--------|------|-----------|----------|
-| Parakeet V3 INT8 | sherpa-onnx | ~640MB | 25 EU | Default, fastest |
-| Whisper Small | whisper.cpp | ~466MB | 99 | Quick CJK |
-| Whisper Medium | whisper.cpp | ~1.5GB | 99 | Balanced |
-| Whisper Large V3 Turbo | whisper.cpp | ~1.6GB | 99 | Best accuracy |
+| Model | Size | Languages | Use Case |
+|-------|------|-----------|----------|
+| whisper-tiny | ~78MB | 99 | Quick test |
+| whisper-base | ~148MB | 99 | Fast drafts |
+| whisper-small | ~488MB | 99 | Balanced |
+| whisper-medium | ~1.5GB | 99 | Higher accuracy |
+| whisper-large-v3 | ~3.1GB | 99 | Highest accuracy |
+| **whisper-large-v3-turbo** | ~1.6GB | 99 | **Best (recommended)** |
 
 #### Output Formats
 
@@ -133,99 +106,21 @@ User can override via `--model` flag. The runtime is determined by the model.
 - **Subtitles** (`.srt`, `.vtt`) - Standard subtitle formats
 - **Raw text** (`.txt`) - Plain text without timestamps
 
-### 2. Text-to-Speech (TTS)
+### Text-to-Speech (TTS) - TODO
 
 **Purpose:** Generate natural speech from text.
 
-#### Runtime: Piper
-
-[Piper](https://github.com/rhasspy/piper) is a fast, local neural TTS system.
-
-| Voice Model | Language | Size | Quality |
-|-------------|----------|------|---------|
-| en_US-lessac-medium | English | ~60MB | Good |
-| en_US-libritts-high | English | ~100MB | High |
-| zh_CN-huayan-medium | Chinese | ~60MB | Good |
-
-#### Use Cases
-
-- Generate audiobooks from text/EPUB
-- Accessibility (read articles aloud)
-- Podcast generation from transcripts
-
-### 3. OCR (Optical Character Recognition)
+### OCR - TODO
 
 **Purpose:** Extract text from images and scanned documents.
 
-#### Runtime: Tesseract
-
-[Tesseract](https://github.com/tesseract-ocr/tesseract) with pre-trained language models.
-
-| Language | Data File | Size |
-|----------|-----------|------|
-| English | eng.traineddata | ~4MB |
-| Chinese (Simplified) | chi_sim.traineddata | ~50MB |
-| Chinese (Traditional) | chi_tra.traineddata | ~50MB |
-| Japanese | jpn.traineddata | ~15MB |
-
-#### Use Cases
-
-- Extract text from screenshots
-- Process scanned PDFs
-- Digitize printed documents
-
-### 4. PDF Processing
+### PDF Processing - TODO
 
 **Purpose:** Extract, manipulate, and convert PDF documents.
-
-#### Capabilities
-
-- Text extraction (native and OCR fallback)
-- Page manipulation (split, merge, rotate)
-- Convert to images
-- Metadata extraction
 
 ---
 
 ## Core Interfaces
-
-### Runtime Interface
-
-```go
-// Runtime represents an external AI runtime binary
-type Runtime interface {
-    Name() string
-    Version() string
-    BinaryName() string
-    DownloadURL() string
-    Checksum() string
-
-    // EnsureInstalled downloads the binary if not present
-    EnsureInstalled(ctx context.Context) error
-
-    // Execute runs the binary with given arguments
-    Execute(ctx context.Context, args ...string) ([]byte, error)
-}
-```
-
-### Model Interface
-
-```go
-// Model represents an AI model file
-type Model interface {
-    Name() string
-    Runtime() string  // which runtime uses this model
-    Size() int64
-    DownloadURL() string
-    Checksum() string
-
-    // EnsureDownloaded downloads the model if not present
-    EnsureDownloaded(ctx context.Context) error
-
-    // Path returns the local file path
-    Path() string
-}
-```
 
 ### Transcriber Interface
 
@@ -235,17 +130,15 @@ type Transcriber interface {
 }
 
 type TranscribeOptions struct {
-    Language    string   // ISO 639-1 code or "auto"
-    Engine      string   // "whisper", "parakeet", or "auto"
-    Model       string   // Model name
-    OutputFormat string  // "transcript", "srt", "vtt", "txt"
+    Language string   // ISO 639-1 code or "auto"
+    Model    string   // Model name
 }
 
 type TranscribeResult struct {
-    Text      string
-    Segments  []Segment
-    Language  string
-    Duration  time.Duration
+    Text     string
+    Segments []Segment
+    Language string
+    Duration time.Duration
 }
 
 type Segment struct {
@@ -255,124 +148,63 @@ type Segment struct {
 }
 ```
 
-### Synthesizer Interface (TTS)
+### Model Interface
 
 ```go
-type Synthesizer interface {
-    Synthesize(ctx context.Context, text string, opts SynthesizeOptions) (*SynthesizeResult, error)
-}
+// Model represents an AI model file
+type Model interface {
+    Name() string
+    Size() int64
+    DownloadURL() string
 
-type SynthesizeOptions struct {
-    Voice       string  // Voice model name
-    Speed       float64 // Speech rate (0.5 - 2.0)
-    OutputFormat string // "wav", "mp3"
-}
+    // EnsureDownloaded downloads the model if not present
+    EnsureDownloaded(ctx context.Context) error
 
-type SynthesizeResult struct {
-    AudioPath string
-    Duration  time.Duration
+    // Path returns the local file path
+    Path() string
 }
 ```
-
-### OCR Interface
-
-```go
-type OCREngine interface {
-    ExtractText(ctx context.Context, imagePath string, opts OCROptions) (*OCRResult, error)
-}
-
-type OCROptions struct {
-    Languages []string // ISO 639-3 codes
-    DPI       int      // Image DPI hint
-}
-
-type OCRResult struct {
-    Text       string
-    Confidence float64
-    Blocks     []TextBlock
-}
-```
-
----
-
-## Processing Pipeline
-
-```
-┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
-│  Input  │ → │ Prepare │ → │ Process │ → │ Convert │ → │ Output  │
-└─────────┘   └─────────┘   └─────────┘   └─────────┘   └─────────┘
-     │             │             │             │             │
-     ▼             ▼             ▼             ▼             ▼
-  audio.mp3   extract WAV   transcribe    translate    .transcript.md
-  video.mp4   chunk audio   OCR image     summarize    .srt
-  image.png   convert fmt   synthesize    format       .wav
-  doc.pdf     split pages   extract       merge        .txt
-```
-
-### Step Types
-
-| Step | Description | Input | Output |
-|------|-------------|-------|--------|
-| `extract_audio` | Extract audio from video | video file | WAV/MP3 |
-| `chunk_audio` | Split large audio | audio file | chunk files |
-| `transcribe` | Speech to text | audio file | segments |
-| `merge_chunks` | Combine transcripts | segments | full transcript |
-| `translate` | Translate text | text | translated text |
-| `generate_srt` | Create subtitles | segments | SRT file |
-| `summarize` | Summarize content | text | summary |
-| `synthesize` | Text to speech | text | audio file |
-| `ocr` | Extract text from image | image | text |
 
 ---
 
 ## Error Handling
 
-| Error | Behavior |
-|-------|----------|
-| Binary not found | Auto-download from R2, retry |
-| Model not found | Auto-download from R2, retry |
-| Download failed | Retry 3x with backoff, then error |
-| Checksum mismatch | Delete and re-download |
-| Unsupported platform | Clear error message with supported platforms |
-| Insufficient disk space | Check before download, warn user |
+| Scenario | Error Message |
+|----------|---------------|
+| macOS AMD64 | "AI features are not available on Intel Macs. Please use a Mac with Apple Silicon (M1/M2/M3/M4)" |
+| Linux | "AI features are not available on Linux" |
+| Windows without NVIDIA GPU | "AI features require NVIDIA GPU with CUDA support. No NVIDIA GPU detected" |
+| Model not found | Auto-download, show progress |
+| Download failed | Retry with backoff, then error |
 
 ---
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 1: Core Infrastructure
-- [ ] Runtime manager (download, verify, execute)
-- [ ] Model manager (download, verify, path)
-- [ ] Cloudflare R2 hosting setup
+### Phase 1: Core Infrastructure ✅
+- [x] Embedded whisper.cpp binary (Metal/CUDA)
+- [x] Model manager with download
+- [x] Platform detection and error messages
 
-### Phase 2: Speech-to-Text
-- [ ] whisper.cpp integration
-- [ ] sherpa-onnx integration
-- [ ] Transcript output formats
-- [ ] SRT/VTT generation
+### Phase 2: Speech-to-Text ✅
+- [x] whisper.cpp integration
+- [x] `vget ai transcribe` command
+- [x] `vget ai convert` command (SRT/VTT/TXT)
+- [x] `vget ai models` command
 
-### Phase 3: Text-to-Speech
+### Phase 3: Text-to-Speech - TODO
 - [ ] Piper integration
-- [ ] Voice model management
-- [ ] Audio output formats
+- [ ] `vget ai speak` command
 
-### Phase 4: OCR
+### Phase 4: OCR - TODO
 - [ ] Tesseract integration
-- [ ] Language data management
-- [ ] PDF OCR fallback
-
-### Phase 5: Advanced Features
-- [ ] Translation (LLM-based)
-- [ ] Summarization (LLM-based)
-- [ ] Batch processing
+- [ ] `vget ai ocr` command
 
 ---
 
 ## Success Criteria
 
-1. `vget ai transcribe` works on first run (auto-downloads runtime + model)
-2. All features work offline after initial download
-3. Cross-platform support (macOS, Linux, Windows)
-4. Reasonable download sizes (runtime < 20MB, models vary)
-5. Clear progress indication during downloads
-6. Graceful error handling with actionable messages
+1. `vget ai transcribe` works on first run (auto-downloads model)
+2. Fast transcription with GPU acceleration
+3. Clear error messages for unsupported platforms
+4. Offline capable after initial model download
