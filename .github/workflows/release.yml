@@ -10,13 +10,69 @@ permissions:
   packages: write
 
 jobs:
+  # Build GPU-enabled whisper.cpp binaries
+  # AI features only available on platforms with GPU:
+  # - macOS ARM64: Metal GPU
+  # - Windows AMD64: CUDA GPU (NVIDIA required)
+  # Other platforms: AI features disabled (CPU too slow for good UX)
+  build-whisper-darwin-arm64:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build whisper.cpp with Metal
+        run: |
+          git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
+          cd whisper.cpp
+          # Enable Metal GPU acceleration for Apple Silicon
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DWHISPER_METAL=ON
+          cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+          mkdir -p ../internal/core/ai/transcriber/bin
+          cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-darwin-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: whisper-darwin-arm64
+          path: internal/core/ai/transcriber/bin/whisper-darwin-arm64
+
+  build-whisper-windows-amd64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.19
+        with:
+          cuda: '12.6.3'
+          method: 'network'
+      - name: Build whisper.cpp with CUDA
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
+          cd whisper.cpp
+          # Enable CUDA for NVIDIA GPU acceleration
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON
+          cmake --build build --config Release -j
+          mkdir -p ../internal/core/ai/transcriber/bin
+          cp build/bin/Release/whisper-cli.exe ../internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: whisper-windows-amd64
+          path: internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
+
   release:
+    needs:
+      - build-whisper-darwin-arm64
+      - build-whisper-windows-amd64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Download whisper binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: internal/core/ai/transcriber/bin/
+          merge-multiple: true
 
       - name: Set up Go
         uses: actions/setup-go@v5

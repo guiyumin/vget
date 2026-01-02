@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -13,6 +14,11 @@ import (
 var whisperBinary []byte
 
 func extractWhisperBinary() (string, error) {
+	// Check for NVIDIA GPU first
+	if !hasNvidiaGPU() {
+		return "", fmt.Errorf("AI features require NVIDIA GPU with CUDA support. No NVIDIA GPU detected")
+	}
+
 	if len(whisperBinary) == 0 {
 		return "", fmt.Errorf("whisper binary not embedded - build with GitHub Actions")
 	}
@@ -43,4 +49,11 @@ func extractWhisperBinary() (string, error) {
 	}
 
 	return binaryPath, nil
+}
+
+// hasNvidiaGPU checks if an NVIDIA GPU is available by running nvidia-smi.
+func hasNvidiaGPU() bool {
+	cmd := exec.Command("nvidia-smi")
+	err := cmd.Run()
+	return err == nil
 }
