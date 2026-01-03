@@ -38,6 +38,23 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Why Only NVIDIA GPU Detection?
+
+**Integrated GPUs (Intel, AMD) are not supported** for local transcription:
+
+| GPU Type | Speed | Support | Worth It? |
+|----------|-------|---------|-----------|
+| NVIDIA RTX | 10-30x faster than CPU | CUDA (whisper.cpp, sherpa-onnx) | ✅ Yes |
+| Apple Silicon | 5-15x faster | Metal (whisper.cpp) | ✅ Yes (CLI) |
+| Intel iGPU | 1-2x faster | Limited OpenCL | ❌ No |
+| AMD iGPU | 1-2x faster | Limited ROCm | ❌ No |
+
+**Integrated GPUs are too slow** because:
+- Share system memory (no dedicated VRAM)
+- Whisper.cpp lacks optimized Intel/AMD GPU backends
+- Only marginal speedup over CPU (not worth complexity)
+- Still 10-20x slower than NVIDIA discrete GPU
+
 ### Why No CPU-Only Local Transcription?
 
 Local CPU transcription is **impractically slow**:
