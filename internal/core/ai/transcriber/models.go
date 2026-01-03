@@ -16,6 +16,9 @@ import (
 	"github.com/guiyumin/vget/internal/core/downloader"
 )
 
+// User-Agent for vget downloads (used for CDN protection)
+const vgetUserAgent = "vget/1.0 (+https://github.com/guiyumin/vget)"
+
 // Styles for download output
 var (
 	dlLabelStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
@@ -298,7 +301,15 @@ func isNoTTYError(err error) bool {
 
 // downloadModelWithSimpleProgress downloads with simple console progress
 func (m *ModelManager) downloadModelWithSimpleProgress(model *ASRModel, url string) error {
-	resp, err := http.Get(url)
+	// Create request with custom User-Agent for CDN protection
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", vgetUserAgent)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download model: %w", err)
 	}
@@ -371,8 +382,15 @@ func (m *ModelManager) downloadModel(model *ASRModel) error {
 		return fmt.Errorf("failed to create models directory: %w", err)
 	}
 
-	// Download
-	resp, err := http.Get(model.OfficialURL)
+	// Download with custom User-Agent for CDN protection
+	req, err := http.NewRequest("GET", model.OfficialURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", vgetUserAgent)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download model: %w", err)
 	}
@@ -450,8 +468,15 @@ func (m *ModelManager) downloadArchive(model *ASRModel, url string) error {
 
 	fmt.Printf("    %s %s\n\n", dlLabelStyle.Render("URL:"), dlURLStyle.Render(url))
 
-	// Download
-	resp, err := http.Get(url)
+	// Download with custom User-Agent for CDN protection
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", vgetUserAgent)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download model: %w", err)
 	}
