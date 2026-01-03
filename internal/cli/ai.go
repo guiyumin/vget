@@ -414,7 +414,7 @@ func runModelsDownload(cmd *cobra.Command, args []string) {
 	switch strings.ToLower(aiFrom) {
 	case "vmirror":
 		// vmirror.org mirror (faster in China)
-		downloadURL = fmt.Sprintf("https://vmirror.org/models/whisper/%s", model.DirName)
+		downloadURL = fmt.Sprintf("https://cdn2.vmirror.org/models/whisper/%s", model.DirName)
 		source = "vmirror.org"
 	case "huggingface", "":
 		// Default: Hugging Face (already set)
