@@ -497,7 +497,7 @@ func (m *ModelManager) extractZip(r io.Reader, size int64, targetDir string) err
 				if percent != lastPercent {
 					bar := renderProgressBar(percent, 30)
 					stats := dlProgressStyle.Render(fmt.Sprintf(" %3d%% %s / %s", percent, formatBytes(current), formatBytes(size)))
-					fmt.Printf("\r    %s%s", bar, stats)
+					fmt.Printf("\r        %s%s", bar, stats)
 					lastPercent = percent
 				}
 			}
@@ -510,6 +510,7 @@ func (m *ModelManager) extractZip(r io.Reader, size int64, targetDir string) err
 		}
 	}
 	fmt.Println()
+	fmt.Println()
 
 	// Open zip for reading
 	zipReader, err := zip.OpenReader(tmpFile.Name())
@@ -521,7 +522,7 @@ func (m *ModelManager) extractZip(r io.Reader, size int64, targetDir string) err
 	// Target directory
 	target := filepath.Join(m.modelsDir, targetDir)
 
-	fmt.Println("    " + dlExtractStyle.Render("📂 Extracting to "+targetDir+"..."))
+	fmt.Println("        " + dlExtractStyle.Render("📂 Extracting to "+targetDir+"..."))
 
 	for _, file := range zipReader.File {
 		// Replace the root directory name with our target name
@@ -578,7 +579,8 @@ func (m *ModelManager) extractTarBz2(r io.Reader, targetDir string) error {
 	target := filepath.Join(m.modelsDir, targetDir)
 	var rootDir string
 
-	fmt.Println("    " + dlExtractStyle.Render("📂 Extracting to "+targetDir+"..."))
+	fmt.Println()
+	fmt.Println("        " + dlExtractStyle.Render("📂 Extracting to "+targetDir+"..."))
 
 	for {
 		header, err := tarReader.Next()
