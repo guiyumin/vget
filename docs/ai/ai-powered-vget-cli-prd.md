@@ -5,6 +5,7 @@
 This document covers CLI-specific implementation for vget AI features.
 
 **Key Design Decisions:**
+
 - `CGO_ENABLED=0` - Pure Go binary, no C dependencies
 - GPU-enabled binaries embedded: whisper.cpp + sherpa-onnx
 - Two ASR engines: whisper.cpp (99 languages) and sherpa-onnx (Parakeet, 25 EU languages)
@@ -16,13 +17,13 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 
 ## Platform Support
 
-| Platform | AI Features | whisper.cpp | sherpa-onnx |
-|----------|-------------|-------------|-------------|
-| **macOS ARM64** | ✅ | Metal | CPU (ANE via onnxruntime) |
-| **Windows AMD64** | ✅ | CUDA | CUDA |
-| macOS AMD64 | ❌ | - | - |
-| Linux AMD64 | ❌ | - | - |
-| Linux ARM64 | ❌ | - | - |
+| Platform          | AI Features | whisper.cpp | sherpa-onnx               |
+| ----------------- | ----------- | ----------- | ------------------------- |
+| **macOS ARM64**   | ✅          | Metal       | CPU (ANE via onnxruntime) |
+| **Windows AMD64** | ✅          | CUDA        | CUDA                      |
+| macOS AMD64       | ❌          | -           | -                         |
+| Linux AMD64       | ❌          | -           | -                         |
+| Linux ARM64       | ❌          | -           | -                         |
 
 ---
 
@@ -69,12 +70,14 @@ vget ai transcribe podcast.mp3 -l de --model parakeet-v3   # 25 EU languages
 ```
 
 **Output Formats:**
+
 - `.md` - Markdown with timestamps (default)
 - `.srt` - SubRip subtitle format
 - `.vtt` - WebVTT subtitle format
 - `.txt` - Plain text (no timestamps)
 
 **Model Selection:**
+
 - `whisper-*` models: 99 languages, uses whisper.cpp
 - `parakeet-*` models: 25 European languages, uses sherpa-onnx (faster for EU)
 
@@ -218,12 +221,12 @@ func extractWhisperBinary() (string, error) {
 
 ### Unsupported Platform Messages
 
-| Platform | Error Message |
-|----------|---------------|
-| macOS AMD64 | "AI features are not available on Intel Macs. Please use a Mac with Apple Silicon (M1/M2/M3/M4)" |
-| Linux AMD64 | "AI features are not available on Linux" |
-| Linux ARM64 | "AI features are not available on Linux" |
-| Windows (no GPU) | "AI features require NVIDIA GPU with CUDA support. No NVIDIA GPU detected" |
+| Platform         | Error Message                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| macOS AMD64      | "AI features are not available on Intel Macs. Please use a Mac with Apple Silicon (M1/M2/M3/M4)" |
+| Linux AMD64      | "AI features are not available on Linux"                                                         |
+| Linux ARM64      | "AI features are not available on Linux"                                                         |
+| Windows (no GPU) | "AI features require NVIDIA GPU with CUDA support. No NVIDIA GPU detected"                       |
 
 ---
 
@@ -233,44 +236,43 @@ func extractWhisperBinary() (string, error) {
 
 #### Parakeet Models (sherpa-onnx, 25 EU languages)
 
-| Model | Size | Languages | Description |
-|-------|------|-----------|-------------|
-| **parakeet-v3** | 630MB | 25 EU | Fast, multilingual EU |
-| parakeet-v2 | 630MB | 1 (en) | English only |
+| Model           | Size  | Languages | Description           |
+| --------------- | ----- | --------- | --------------------- |
+| **parakeet-v3** | 630MB | 25 EU     | Fast, multilingual EU |
 
 Supported languages: bg, hr, cs, da, nl, en, et, fi, fr, de, el, hu, it, lv, lt, mt, pl, pt, ro, sk, sl, es, sv, ru, uk
 
 #### Whisper Models (whisper.cpp, 99 languages)
 
-| Model | Size | Description |
-|-------|------|-------------|
-| whisper-tiny | 78MB | Fastest, basic quality |
-| whisper-base | 148MB | Good for quick drafts |
-| whisper-small | 488MB | Balanced for most uses |
-| whisper-medium | 1.5GB | Higher accuracy |
-| whisper-large-v3 | 3.1GB | Highest accuracy, slowest |
+| Model                      | Size  | Description                       |
+| -------------------------- | ----- | --------------------------------- |
+| whisper-tiny               | 78MB  | Fastest, basic quality            |
+| whisper-base               | 148MB | Good for quick drafts             |
+| whisper-small              | 488MB | Balanced for most uses            |
+| whisper-medium             | 1.5GB | Higher accuracy                   |
+| whisper-large-v3           | 3.1GB | Highest accuracy, slowest         |
 | **whisper-large-v3-turbo** | 1.6GB | Best quality + fast **(default)** |
 
 ### Download Sources
 
-| Source | URL | Use Case |
-|--------|-----|----------|
-| huggingface | huggingface.co/ggerganov/whisper.cpp | Whisper models (default) |
-| github | github.com/k2-fsa/sherpa-onnx/releases | Parakeet models |
-| vmirror | vmirror.org | Faster in China |
+| Source      | URL                                    | Use Case                 |
+| ----------- | -------------------------------------- | ------------------------ |
+| huggingface | huggingface.co/ggerganov/whisper.cpp   | Whisper models (default) |
+| github      | github.com/k2-fsa/sherpa-onnx/releases | Parakeet models          |
+| vmirror     | vmirror.org                            | Faster in China          |
 
 ---
 
 ## Binary Size Estimates
 
-| Component | macOS ARM64 | Windows x64 |
-|-----------|-------------|-------------|
-| vget core | ~20MB | ~20MB |
-| go-ffmpreg (WASM) | ~8MB | ~8MB |
-| Pure Go decoders | ~1MB | ~1MB |
-| whisper.cpp (embedded) | ~3MB | ~8MB |
-| sherpa-onnx (embedded) | ~23MB | ~17MB |
-| **Total binary** | **~55MB** | **~54MB** |
+| Component              | macOS ARM64 | Windows x64 |
+| ---------------------- | ----------- | ----------- |
+| vget core              | ~20MB       | ~20MB       |
+| go-ffmpreg (WASM)      | ~8MB        | ~8MB        |
+| Pure Go decoders       | ~1MB        | ~1MB        |
+| whisper.cpp (embedded) | ~3MB        | ~8MB        |
+| sherpa-onnx (embedded) | ~23MB       | ~17MB       |
+| **Total binary**       | **~55MB**   | **~54MB**   |
 
 ---
 

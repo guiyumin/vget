@@ -2,12 +2,14 @@ package transcriber
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/bzip2"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/guiyumin/vget/internal/core/config"
 	"github.com/guiyumin/vget/internal/core/downloader"
@@ -20,33 +22,25 @@ type ASRModel struct {
 	DirName     string // Directory name (Parakeet) or filename (Whisper ggml)
 	Size        string // Human-readable size
 	Description string
-	URL         string // Download URL
+	OfficialURL string // Official download URL (GitHub/Hugging Face)
+	VmirrorURL  string // vmirror.org CDN URL (empty if not available)
 	Languages   int    // Number of supported languages
 	IsFile      bool   // True for single-file models (ggml), false for directories
 }
 
 // ASRModels lists available models.
 var ASRModels = []ASRModel{
-	// Parakeet models via sherpa-onnx (ONNX format, 25 EU languages)
+	// Parakeet model via sherpa-onnx (ONNX format, 25 EU languages)
 	{
 		Name:        "parakeet-v3",
 		Engine:      "sherpa",
-		DirName:     "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+		DirName:     "sherpa-onnx-parakeet-v3",
 		Size:        "630MB",
 		Description: "25 European languages, fast",
-		URL:         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+		OfficialURL: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/sherpa-onnx-parakeet-v3.zip",
 		Languages:   25,
-		IsFile:      false, // Directory-based model
-	},
-	{
-		Name:        "parakeet-v2",
-		Engine:      "sherpa",
-		DirName:     "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8",
-		Size:        "630MB",
-		Description: "English only, fast",
-		URL:         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2",
-		Languages:   1,
-		IsFile:      false, // Directory-based model
+		IsFile:      false,
 	},
 	// Whisper models via whisper.cpp (ggml format)
 	{
@@ -55,8 +49,9 @@ var ASRModels = []ASRModel{
 		DirName:     "whisper-tiny.bin",
 		Size:        "78MB",
 		Description: "Fastest, basic quality",
-		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
-		Languages:   99,
+		OfficialURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/whisper-tiny.bin",
+		Languages:   100,
 		IsFile:      true,
 	},
 	{
@@ -65,8 +60,9 @@ var ASRModels = []ASRModel{
 		DirName:     "whisper-base.bin",
 		Size:        "148MB",
 		Description: "Good for quick drafts",
-		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-		Languages:   99,
+		OfficialURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/whisper-base.bin",
+		Languages:   100,
 		IsFile:      true,
 	},
 	{
@@ -75,8 +71,9 @@ var ASRModels = []ASRModel{
 		DirName:     "whisper-small.bin",
 		Size:        "488MB",
 		Description: "Balanced for most uses",
-		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
-		Languages:   99,
+		OfficialURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/whisper-small.bin",
+		Languages:   100,
 		IsFile:      true,
 	},
 	{
@@ -85,8 +82,9 @@ var ASRModels = []ASRModel{
 		DirName:     "whisper-medium.bin",
 		Size:        "1.5GB",
 		Description: "Higher accuracy",
-		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
-		Languages:   99,
+		OfficialURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/whisper-medium.bin",
+		Languages:   100,
 		IsFile:      true,
 	},
 	{
@@ -95,8 +93,9 @@ var ASRModels = []ASRModel{
 		DirName:     "whisper-large-v3.bin",
 		Size:        "3.1GB",
 		Description: "Highest accuracy, slowest",
-		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin",
-		Languages:   99,
+		OfficialURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/whisper-large-v3.bin",
+		Languages:   100,
 		IsFile:      true,
 	},
 	{
@@ -105,8 +104,9 @@ var ASRModels = []ASRModel{
 		DirName:     "whisper-large-v3-turbo.bin",
 		Size:        "1.6GB",
 		Description: "Best quality + fast (recommended)",
-		URL:         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
-		Languages:   99,
+		OfficialURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
+		VmirrorURL:  "https://cdn2.vmirror.org/models/whisper-large-v3-turbo.bin",
+		Languages:   100,
 		IsFile:      true,
 	},
 }
@@ -213,7 +213,7 @@ func (m *ModelManager) DownloadFromURL(modelName, url string) (string, error) {
 
 	// Create a copy with custom URL
 	customModel := *model
-	customModel.URL = url
+	customModel.OfficialURL = url
 
 	if err := m.downloadModel(&customModel); err != nil {
 		return "", err
@@ -234,22 +234,21 @@ func (m *ModelManager) DownloadModelWithProgress(modelName, url, lang string) (s
 		return "", fmt.Errorf("failed to create models directory: %w", err)
 	}
 
-	// Only single-file models (ggml) support progress bar
+	// Download URL
+	downloadURL := url
+	if downloadURL == "" {
+		downloadURL = model.OfficialURL
+	}
+
+	// Handle archive downloads (parakeet)
 	if !model.IsFile {
-		// Fall back to regular download for archives
-		if err := m.downloadModel(model); err != nil {
+		if err := m.downloadArchive(model, downloadURL); err != nil {
 			return "", err
 		}
 		return m.ModelPath(modelName), nil
 	}
 
-	// Download URL
-	downloadURL := url
-	if downloadURL == "" {
-		downloadURL = model.URL
-	}
-
-	// Target path
+	// Target path for single-file models
 	target := filepath.Join(m.modelsDir, model.DirName)
 
 	// Try TUI progress bar first, fall back to simple progress if TTY not available
@@ -353,7 +352,7 @@ func (m *ModelManager) downloadModel(model *ASRModel) error {
 	}
 
 	// Download
-	resp, err := http.Get(model.URL)
+	resp, err := http.Get(model.OfficialURL)
 	if err != nil {
 		return fmt.Errorf("failed to download model: %w", err)
 	}
@@ -421,6 +420,191 @@ func (m *ModelManager) downloadModel(model *ASRModel) error {
 	return nil
 }
 
+// downloadArchive downloads and extracts an archive (tar.bz2 or zip) from the given URL.
+// Handles renaming for GitHub downloads where the extracted dir name differs from DirName.
+func (m *ModelManager) downloadArchive(model *ASRModel, url string) error {
+	// Ensure models directory exists
+	if err := os.MkdirAll(m.modelsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create models directory: %w", err)
+	}
+
+	fmt.Printf("URL: %s\n\n", url)
+
+	// Download
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download model: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download model: HTTP %d", resp.StatusCode)
+	}
+
+	// Determine archive type from URL
+	if strings.HasSuffix(url, ".zip") {
+		return m.extractZip(resp.Body, resp.ContentLength, model.DirName)
+	}
+
+	// Default: tar.bz2 (GitHub)
+	return m.extractTarBz2(resp.Body, model.DirName)
+}
+
+// extractZip extracts a zip archive, placing contents in the target directory.
+func (m *ModelManager) extractZip(r io.Reader, size int64, targetDir string) error {
+	// Download to temp file first (zip needs random access)
+	tmpFile, err := os.CreateTemp("", "vget-model-*.zip")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	// Copy with progress
+	var current int64
+	buf := make([]byte, 32*1024)
+	lastPercent := -1
+
+	for {
+		n, err := r.Read(buf)
+		if n > 0 {
+			if _, writeErr := tmpFile.Write(buf[:n]); writeErr != nil {
+				return fmt.Errorf("failed to write temp file: %w", writeErr)
+			}
+			current += int64(n)
+			if size > 0 {
+				percent := int(float64(current) / float64(size) * 100)
+				if percent/5 > lastPercent/5 {
+					fmt.Printf("\r  Downloading: %d%% (%s / %s)", percent, formatBytes(current), formatBytes(size))
+					lastPercent = percent
+				}
+			}
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("download failed: %w", err)
+		}
+	}
+	fmt.Println()
+
+	// Open zip for reading
+	zipReader, err := zip.OpenReader(tmpFile.Name())
+	if err != nil {
+		return fmt.Errorf("failed to open zip: %w", err)
+	}
+	defer zipReader.Close()
+
+	// Target directory
+	target := filepath.Join(m.modelsDir, targetDir)
+
+	fmt.Printf("  Extracting to %s...\n", targetDir)
+
+	for _, file := range zipReader.File {
+		// Replace the root directory name with our target name
+		parts := strings.SplitN(file.Name, "/", 2)
+		var destPath string
+		if len(parts) > 1 {
+			destPath = filepath.Join(target, parts[1])
+		} else {
+			destPath = target
+		}
+
+		if file.FileInfo().IsDir() {
+			if err := os.MkdirAll(destPath, 0755); err != nil {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+			continue
+		}
+
+		// Ensure parent directory exists
+		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+			return fmt.Errorf("failed to create parent directory: %w", err)
+		}
+
+		// Extract file
+		srcFile, err := file.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open file in zip: %w", err)
+		}
+
+		dstFile, err := os.Create(destPath)
+		if err != nil {
+			srcFile.Close()
+			return fmt.Errorf("failed to create file: %w", err)
+		}
+
+		if _, err := io.Copy(dstFile, srcFile); err != nil {
+			srcFile.Close()
+			dstFile.Close()
+			return fmt.Errorf("failed to extract file: %w", err)
+		}
+
+		srcFile.Close()
+		dstFile.Close()
+	}
+
+	return nil
+}
+
+// extractTarBz2 extracts a tar.bz2 archive, renaming the root directory to targetDir.
+func (m *ModelManager) extractTarBz2(r io.Reader, targetDir string) error {
+	bzReader := bzip2.NewReader(r)
+	tarReader := tar.NewReader(bzReader)
+
+	target := filepath.Join(m.modelsDir, targetDir)
+	var rootDir string
+
+	fmt.Printf("  Extracting to %s...\n", targetDir)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar: %w", err)
+		}
+
+		// Detect root directory from first entry
+		if rootDir == "" {
+			parts := strings.SplitN(header.Name, "/", 2)
+			rootDir = parts[0]
+		}
+
+		// Replace root directory name with our target name
+		relPath := strings.TrimPrefix(header.Name, rootDir)
+		relPath = strings.TrimPrefix(relPath, "/")
+		destPath := filepath.Join(target, relPath)
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(destPath, 0755); err != nil {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+		case tar.TypeReg:
+			// Ensure parent directory exists
+			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+				return fmt.Errorf("failed to create parent directory: %w", err)
+			}
+
+			file, err := os.Create(destPath)
+			if err != nil {
+				return fmt.Errorf("failed to create file: %w", err)
+			}
+
+			if _, err := io.Copy(file, tarReader); err != nil {
+				file.Close()
+				return fmt.Errorf("failed to write file: %w", err)
+			}
+			file.Close()
+		}
+	}
+
+	return nil
+}
+
 // ListDownloadedModels returns a list of downloaded model names.
 func (m *ModelManager) ListDownloadedModels() []string {
 	var models []string
@@ -461,6 +645,32 @@ type ASRModelInfo struct {
 	Description string `json:"description"`
 	Languages   int    `json:"languages"`
 	Downloaded  bool   `json:"downloaded"`
+}
+
+// IsAvailableOnVmirror checks if a model is available on vmirror CDN.
+func IsAvailableOnVmirror(modelName string) bool {
+	model := GetModel(modelName)
+	return model != nil && model.VmirrorURL != ""
+}
+
+// GetVmirrorURL returns the vmirror download URL for a model, or empty string if not available.
+func GetVmirrorURL(modelName string) string {
+	model := GetModel(modelName)
+	if model == nil {
+		return ""
+	}
+	return model.VmirrorURL
+}
+
+// ListVmirrorModels returns names of models available on vmirror.
+func ListVmirrorModels() []string {
+	var names []string
+	for _, m := range ASRModels {
+		if m.VmirrorURL != "" {
+			names = append(names, m.Name)
+		}
+	}
+	return names
 }
 
 // Parakeet supported languages (25 European languages)

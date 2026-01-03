@@ -91,7 +91,6 @@ var aiModelsDownloadCmd = &cobra.Command{
 
 Available models:
   parakeet-v3            (630MB) - 25 European languages, fast
-  parakeet-v2            (630MB) - English only, fast
   whisper-tiny            (78MB) - Fastest, basic quality
   whisper-base           (148MB) - Good for quick drafts
   whisper-small          (488MB) - Balanced for most uses
@@ -100,8 +99,8 @@ Available models:
   whisper-large-v3-turbo (1.6GB) - Best quality + fast (recommended)
 
 Download sources:
-  huggingface (default) - Official Hugging Face
-  vmirror               - vmirror.org (faster in China)
+  huggingface/github (default) - Official sources
+  vmirror                      - vmirror.org (faster in China)
 
 Examples:
   vget ai models download whisper-large-v3-turbo
@@ -408,19 +407,32 @@ func runModelsDownload(cmd *cobra.Command, args []string) {
 	}
 
 	// Determine download URL based on --from flag
-	downloadURL := model.URL // Default: Hugging Face
+	downloadURL := model.OfficialURL // Default: GitHub/Hugging Face
 	source := "Hugging Face"
+	if model.Engine == "sherpa" {
+		source = "GitHub"
+	}
 
 	switch strings.ToLower(aiFrom) {
 	case "vmirror":
 		// vmirror.org mirror (faster in China)
-		downloadURL = fmt.Sprintf("https://cdn2.vmirror.org/models/whisper/%s", model.DirName)
+		if model.VmirrorURL == "" {
+			fmt.Fprintf(os.Stderr, "Error: model '%s' is not available on vmirror\n\n", modelName)
+			fmt.Fprintln(os.Stderr, "Models available on vmirror:")
+			for _, name := range transcriber.ListVmirrorModels() {
+				fmt.Printf("  %s\n", name)
+			}
+			fmt.Fprintln(os.Stderr, "\nUse default source instead:")
+			fmt.Fprintf(os.Stderr, "  vget ai download %s\n", modelName)
+			os.Exit(1)
+		}
+		downloadURL = model.VmirrorURL
 		source = "vmirror.org"
-	case "huggingface", "":
-		// Default: Hugging Face (already set)
+	case "huggingface", "github", "":
+		// Default: GitHub for parakeet, Hugging Face for whisper (already set)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown source '%s'\n", aiFrom)
-		fmt.Fprintln(os.Stderr, "Available sources: huggingface (default), vmirror")
+		fmt.Fprintln(os.Stderr, "Available sources: huggingface/github (default), vmirror")
 		os.Exit(1)
 	}
 
