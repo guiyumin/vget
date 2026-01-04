@@ -4,11 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/guiyumin/vget/internal/core/i18n"
 )
 
 // AuthEndpoint is the backend endpoint for authentication.
@@ -154,8 +157,10 @@ func RequestSignedURL(email, file string) (*SignedURLResponse, error) {
 }
 
 // PromptEmail prompts the user for their email address.
-func PromptEmail() (string, error) {
-	fmt.Print("  Enter your email to download models: ")
+func PromptEmail(lang string) (string, error) {
+	t := i18n.T(lang)
+	fmt.Printf("  %s\n", t.AICLI.FakeEmailWarning)
+	fmt.Printf("  %s ", t.AICLI.EnterEmail)
 
 	reader := bufio.NewReader(os.Stdin)
 	email, err := reader.ReadString('\n')
@@ -165,12 +170,12 @@ func PromptEmail() (string, error) {
 
 	email = strings.TrimSpace(email)
 	if email == "" {
-		return "", fmt.Errorf("email is required")
+		return "", errors.New(t.AICLI.EmailRequired)
 	}
 
-	// Basic email validation
-	if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
-		return "", fmt.Errorf("invalid email format")
+	// Validate email syntax
+	if !IsValidEmail(email) {
+		return "", errors.New(t.AICLI.InvalidEmail)
 	}
 
 	return email, nil
@@ -178,7 +183,7 @@ func PromptEmail() (string, error) {
 
 // GetSignedURL gets a signed CDN URL for downloading a file.
 // Prompts for email if not registered.
-func GetSignedURL(file string) (string, error) {
+func GetSignedURL(file, lang string) (string, error) {
 	// Check cached auth
 	auth := LoadAuth()
 	var email string
@@ -188,7 +193,7 @@ func GetSignedURL(file string) (string, error) {
 	} else {
 		// Prompt for email
 		var err error
-		email, err = PromptEmail()
+		email, err = PromptEmail(lang)
 		if err != nil {
 			return "", err
 		}

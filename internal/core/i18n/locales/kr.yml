@@ -234,3 +234,8 @@ ai_cli:
   no_models_downloaded: "다운로드된 모델이 없습니다."
   download_a_model: "모델 다운로드:"
   see_available_models: "사용 가능한 모델 보기:"
+  enter_email: "모델을 다운로드하려면 이메일을 입력하세요:"
+  fake_email_warning: "⚠️  실제 이메일을 사용해 주세요. 가짜 이메일은 차단됩니다."
+  invalid_email: "이메일 형식이 올바르지 않습니다."
+  auth_failed: "인증 실패:"
+  email_required: "이메일을 입력하세요."

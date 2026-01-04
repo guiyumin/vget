@@ -429,13 +429,20 @@ func runModelsDownload(cmd *cobra.Command, args []string) {
 		}
 		source = "vmirror.org"
 
+		// Get language for prompts
+		lang := "en"
+		if cfg, _ := config.Load(); cfg != nil {
+			lang = cfg.Language
+		}
+
 		// Get signed URL from auth server
 		fmt.Println()
 		filename := transcriber.GetVmirrorFilename(modelName)
-		signedURL, err := auth.GetSignedURL(filename)
+		signedURL, err := auth.GetSignedURL(filename, lang)
 		if err != nil {
+			t := i18n.T(lang)
 			errStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
-			fmt.Fprintf(os.Stderr, "%s %v\n", errStyle.Render("Authentication failed:"), err)
+			fmt.Fprintf(os.Stderr, "%s %v\n", errStyle.Render(t.AICLI.AuthFailed), err)
 			os.Exit(1)
 		}
 		downloadURL = signedURL

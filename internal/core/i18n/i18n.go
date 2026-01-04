@@ -275,6 +275,11 @@ type AICLITranslations struct {
 	NoModelsDownloaded string `yaml:"no_models_downloaded"`
 	DownloadAModel     string `yaml:"download_a_model"`
 	SeeAvailableModels string `yaml:"see_available_models"`
+	EnterEmail         string `yaml:"enter_email"`
+	FakeEmailWarning   string `yaml:"fake_email_warning"`
+	InvalidEmail       string `yaml:"invalid_email"`
+	AuthFailed         string `yaml:"auth_failed"`
+	EmailRequired      string `yaml:"email_required"`
 }
 
 var (

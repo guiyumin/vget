@@ -246,3 +246,8 @@ ai_cli:
   no_models_downloaded: "No models downloaded."
   download_a_model: "Download a model:"
   see_available_models: "See available models:"
+  enter_email: "Enter your email to download models:"
+  fake_email_warning: "⚠️  Please use a real email. Fake emails will be banned."
+  invalid_email: "Invalid email format."
+  auth_failed: "Authentication failed:"
+  email_required: "Email is required."

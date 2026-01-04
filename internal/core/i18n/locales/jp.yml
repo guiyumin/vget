@@ -234,3 +234,8 @@ ai_cli:
   no_models_downloaded: "モデルがダウンロードされていません。"
   download_a_model: "モデルをダウンロード："
   see_available_models: "利用可能なモデルを表示："
+  enter_email: "モデルをダウンロードするにはメールアドレスを入力してください："
+  fake_email_warning: "⚠️  本物のメールアドレスをご使用ください。偽のメールは禁止されます。"
+  invalid_email: "メールアドレスの形式が無効です。"
+  auth_failed: "認証に失敗しました："
+  email_required: "メールアドレスを入力してください。"

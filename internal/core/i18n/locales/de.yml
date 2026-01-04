@@ -234,3 +234,8 @@ ai_cli:
   no_models_downloaded: "Keine Modelle heruntergeladen."
   download_a_model: "Ein Modell herunterladen:"
   see_available_models: "Verfügbare Modelle anzeigen:"
+  enter_email: "Geben Sie Ihre E-Mail ein, um Modelle herunterzuladen:"
+  fake_email_warning: "⚠️  Bitte verwenden Sie eine echte E-Mail. Gefälschte E-Mails werden gesperrt."
+  invalid_email: "Ungültiges E-Mail-Format."
+  auth_failed: "Authentifizierung fehlgeschlagen:"
+  email_required: "E-Mail ist erforderlich."

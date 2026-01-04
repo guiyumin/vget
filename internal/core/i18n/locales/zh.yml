@@ -246,3 +246,8 @@ ai_cli:
   no_models_downloaded: "未下载任何模型。"
   download_a_model: "下载模型："
   see_available_models: "查看可用模型："
+  enter_email: "请输入您的邮箱以下载模型："
+  fake_email_warning: "⚠️  请使用真实邮箱，虚假邮箱将被封禁。"
+  invalid_email: "邮箱格式无效。"
+  auth_failed: "认证失败："
+  email_required: "请输入邮箱。"
