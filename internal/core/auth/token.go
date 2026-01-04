@@ -26,7 +26,7 @@ func getAuthEndpoint() string {
 	if endpoint := os.Getenv("VGET_AUTH_ENDPOINT"); endpoint != "" {
 		return endpoint
 	}
-	return "https://auth.vmirror.org/v1/token"
+	return "https://vget.io/api/v1/token"
 }
 
 // User-Agent for vget requests
