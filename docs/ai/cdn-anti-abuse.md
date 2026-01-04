@@ -134,8 +134,20 @@ func GetDeviceFingerprint() string {
 ```
 
 **Rate limits:**
-- Max 2 devices per email
-- Signed URL valid for 12 hours
+| Limit | Value |
+|-------|-------|
+| Devices per email | 2 |
+| Downloads per 6 hours | 6 (per email or fingerprint) |
+| Signed URL expiry | 12 hours |
+
+**Rate limit error response:**
+```json
+{
+  "error": "rate_limit_exceeded",
+  "error_code": "RATE_LIMIT"
+}
+```
+HTTP status: 429
 
 **Database schema:**
 ```sql
@@ -203,6 +215,7 @@ No Edge Rules needed - Token Auth is built into Bunny CDN.
 | Casual curl/wget abuse | Yes | Need to register email first |
 | Mass device spoofing | Partially | 2 device limit per email |
 | Bandwidth monitoring | Yes | Each download tied to email |
+| Download flooding | Yes | 6 downloads per 6 hours limit |
 
 ### What this doesn't stop:
 
@@ -352,6 +365,14 @@ FROM vget_downloads
 WHERE created_at > NOW() - INTERVAL '7 days'
 GROUP BY file
 ORDER BY downloads DESC;
+
+-- Users hitting rate limits (6+ downloads in 6 hours)
+SELECT email, fingerprint, COUNT(*) as downloads
+FROM vget_downloads
+WHERE created_at > NOW() - INTERVAL '6 hours'
+GROUP BY email, fingerprint
+HAVING COUNT(*) >= 6
+ORDER BY downloads DESC;
 ```
 
 ## Files Reference
@@ -359,11 +380,12 @@ ORDER BY downloads DESC;
 **vget (Go CLI):**
 ```
 internal/core/auth/
+├── email.go               # Email validation (RFC regex)
 ├── fingerprint.go         # GetDeviceFingerprint()
 ├── fingerprint_darwin.go  # macOS: IOPlatformUUID + hardware serial
 ├── fingerprint_linux.go   # Linux: /etc/machine-id + DMI serial
 ├── fingerprint_windows.go # Windows: MachineGuid + BIOS serial
-└── token.go               # Token management (load/save/request)
+└── token.go               # Signed URL request, error handling
 ```
 
 **vget-io (Next.js backend):**
