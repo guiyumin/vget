@@ -10,9 +10,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/guiyumin/vget/internal/core/i18n"
 )
+
+// ErrAuthServerDown indicates the auth server is unreachable
+var ErrAuthServerDown = errors.New("auth server unreachable")
 
 // AuthEndpoint is the backend endpoint for authentication.
 var AuthEndpoint = getAuthEndpoint()
@@ -133,10 +137,11 @@ func RequestSignedURL(email, file string) (*SignedURLResponse, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", vgetUserAgent)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to request signed URL: %w", err)
+		// Connection error (timeout, refused, DNS failure, etc.)
+		return nil, ErrAuthServerDown
 	}
 	defer resp.Body.Close()
 
@@ -212,6 +217,10 @@ func GetSignedURL(file, lang string) (string, error) {
 	// Request signed URL
 	resp, err := RequestSignedURL(email, file)
 	if err != nil {
+		if errors.Is(err, ErrAuthServerDown) {
+			t := i18n.T(lang)
+			return "", errors.New(t.AICLI.AuthServerDown)
+		}
 		return "", err
 	}
 

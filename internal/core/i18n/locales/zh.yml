@@ -251,3 +251,4 @@ ai_cli:
   invalid_email: "邮箱格式无效。"
   auth_failed: "认证失败："
   email_required: "请输入邮箱。"
+  auth_server_down: "无法连接认证服务器，请科学上网后重试。"

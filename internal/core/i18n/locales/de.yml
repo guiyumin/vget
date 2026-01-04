@@ -239,3 +239,4 @@ ai_cli:
   invalid_email: "Ungültiges E-Mail-Format."
   auth_failed: "Authentifizierung fehlgeschlagen:"
   email_required: "E-Mail ist erforderlich."
+  auth_server_down: "Verbindung zum Authentifizierungsserver nicht möglich. Überprüfen Sie Ihr Netzwerk."

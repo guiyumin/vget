@@ -239,3 +239,4 @@ ai_cli:
   invalid_email: "メールアドレスの形式が無効です。"
   auth_failed: "認証に失敗しました："
   email_required: "メールアドレスを入力してください。"
+  auth_server_down: "認証サーバーに接続できません。ネットワークを確認してください。"

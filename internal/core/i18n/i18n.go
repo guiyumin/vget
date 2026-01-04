@@ -280,6 +280,7 @@ type AICLITranslations struct {
 	InvalidEmail       string `yaml:"invalid_email"`
 	AuthFailed         string `yaml:"auth_failed"`
 	EmailRequired      string `yaml:"email_required"`
+	AuthServerDown     string `yaml:"auth_server_down"`
 }
 
 var (

@@ -251,3 +251,4 @@ ai_cli:
   invalid_email: "Invalid email format."
   auth_failed: "Authentication failed:"
   email_required: "Email is required."
+  auth_server_down: "Cannot connect to auth server. Please check your network."

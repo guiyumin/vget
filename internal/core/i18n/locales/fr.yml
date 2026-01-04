@@ -239,3 +239,4 @@ ai_cli:
   invalid_email: "Format d'email invalide."
   auth_failed: "Échec de l'authentification :"
   email_required: "L'email est requis."
+  auth_server_down: "Impossible de se connecter au serveur d'authentification. Vérifiez votre réseau."
