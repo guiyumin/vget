@@ -209,6 +209,16 @@ ui:
   ai_detail_transcription_complete: "Transcripción completa"
   ai_detail_no_chunks_to_merge: "Sin fragmentos para combinar"
   ai_detail_summary_generated: "Resumen generado"
+  # Voz a texto local
+  local_stt_title: "Voz a Texto Local"
+  local_stt_available: "Disponible"
+  local_stt_unavailable: "No disponible"
+  local_stt_no_gpu: "Sin GPU"
+  local_stt_gpu_required: "Se requiere GPU NVIDIA para voz a texto local"
+  local_stt_model: "Modelo"
+  local_stt_model_updated: "Modelo actualizado"
+  local_stt_update_failed: "Error al actualizar configuración"
+  local_stt_info: "Se ejecuta localmente sin enviar datos a servidores externos."
 
 # Mensajes del servidor
 server:

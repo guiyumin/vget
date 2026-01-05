@@ -209,6 +209,16 @@ ui:
   ai_detail_transcription_complete: "전사 완료"
   ai_detail_no_chunks_to_merge: "병합 불필요"
   ai_detail_summary_generated: "요약 완료"
+  # 로컬 음성 인식
+  local_stt_title: "로컬 음성 인식"
+  local_stt_available: "사용 가능"
+  local_stt_unavailable: "사용 불가"
+  local_stt_no_gpu: "GPU 없음"
+  local_stt_gpu_required: "로컬 음성 인식에는 NVIDIA GPU가 필요합니다"
+  local_stt_model: "모델"
+  local_stt_model_updated: "모델이 업데이트되었습니다"
+  local_stt_update_failed: "설정 업데이트 실패"
+  local_stt_info: "외부 서버에 데이터를 전송하지 않고 로컬에서 실행됩니다."
 
 # 서버 메시지
 server:

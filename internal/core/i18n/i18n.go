@@ -252,9 +252,19 @@ type UITranslations struct {
 	AIDetailNoChunksToMerge       string `yaml:"ai_detail_no_chunks_to_merge" json:"ai_detail_no_chunks_to_merge"`
 	AIDetailSummaryGenerated      string `yaml:"ai_detail_summary_generated" json:"ai_detail_summary_generated"`
 	// AI output options
-	AIOutputFormat   string `yaml:"ai_output_format" json:"ai_output_format"`
-	AIAudioLanguage  string `yaml:"ai_audio_language" json:"ai_audio_language"`
+	AIOutputFormat    string `yaml:"ai_output_format" json:"ai_output_format"`
+	AIAudioLanguage   string `yaml:"ai_audio_language" json:"ai_audio_language"`
 	AISummaryLanguage string `yaml:"ai_summary_language" json:"ai_summary_language"`
+	// Local Speech to Text
+	LocalSTTTitle        string `yaml:"local_stt_title" json:"local_stt_title"`
+	LocalSTTAvailable    string `yaml:"local_stt_available" json:"local_stt_available"`
+	LocalSTTUnavailable  string `yaml:"local_stt_unavailable" json:"local_stt_unavailable"`
+	LocalSTTNoGPU        string `yaml:"local_stt_no_gpu" json:"local_stt_no_gpu"`
+	LocalSTTGPURequired  string `yaml:"local_stt_gpu_required" json:"local_stt_gpu_required"`
+	LocalSTTModel        string `yaml:"local_stt_model" json:"local_stt_model"`
+	LocalSTTModelUpdated string `yaml:"local_stt_model_updated" json:"local_stt_model_updated"`
+	LocalSTTUpdateFailed string `yaml:"local_stt_update_failed" json:"local_stt_update_failed"`
+	LocalSTTInfo         string `yaml:"local_stt_info" json:"local_stt_info"`
 }
 
 // ServerTranslations holds translations for server messages

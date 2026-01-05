@@ -117,16 +117,16 @@ export interface UITranslations {
   ai_step_transcribe: string;
   ai_step_merge: string;
   ai_step_summarize: string;
-  // Local ASR
-  local_asr_title: string;
-  local_asr_service: string;
-  local_asr_available: string;
-  local_asr_unavailable: string;
-  local_asr_start_service: string;
-  local_asr_gpu: string;
-  local_asr_cpu_only: string;
-  local_asr_model: string;
-  local_asr_info: string;
+  // Local Speech to Text
+  local_stt_title: string;
+  local_stt_available: string;
+  local_stt_unavailable: string;
+  local_stt_no_gpu: string;
+  local_stt_gpu_required: string;
+  local_stt_model: string;
+  local_stt_model_updated: string;
+  local_stt_update_failed: string;
+  local_stt_info: string;
 }
 
 export interface ServerTranslations {
@@ -253,16 +253,16 @@ export const defaultTranslations: UITranslations = {
   ai_step_transcribe: "Transcribe",
   ai_step_merge: "Merge Chunks",
   ai_step_summarize: "Generate Summary",
-  // Local ASR
-  local_asr_title: "Local Transcription",
-  local_asr_service: "ASR Service",
-  local_asr_available: "Available",
-  local_asr_unavailable: "Not Available",
-  local_asr_start_service: "Start the ASR service with: docker compose up -d asr",
-  local_asr_gpu: "GPU",
-  local_asr_cpu_only: "CPU Only",
-  local_asr_model: "Transcription Model",
-  local_asr_info: "Local transcription runs on your machine without sending data to external APIs.",
+  // Local Speech to Text
+  local_stt_title: "Local Speech to Text",
+  local_stt_available: "Available",
+  local_stt_unavailable: "Unavailable",
+  local_stt_no_gpu: "No GPU",
+  local_stt_gpu_required: "GPU is required for local speech to text",
+  local_stt_model: "Model",
+  local_stt_model_updated: "Model updated",
+  local_stt_update_failed: "Failed to update settings",
+  local_stt_info: "Runs locally on your device without sending data to external servers.",
 };
 
 export const defaultServerTranslations: ServerTranslations = {

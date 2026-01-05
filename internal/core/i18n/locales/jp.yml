@@ -209,6 +209,16 @@ ui:
   ai_detail_transcription_complete: "文字起こし完了"
   ai_detail_no_chunks_to_merge: "結合不要"
   ai_detail_summary_generated: "要約完了"
+  # ローカル音声認識
+  local_stt_title: "ローカル音声認識"
+  local_stt_available: "利用可能"
+  local_stt_unavailable: "利用不可"
+  local_stt_no_gpu: "GPU なし"
+  local_stt_gpu_required: "ローカル音声認識には NVIDIA GPU が必要です"
+  local_stt_model: "モデル"
+  local_stt_model_updated: "モデルを更新しました"
+  local_stt_update_failed: "設定の更新に失敗しました"
+  local_stt_info: "外部サーバーにデータを送信せずにローカルで実行されます。"
 
 # サーバーメッセージ
 server:

@@ -221,6 +221,16 @@ ui:
   ai_detail_transcription_complete: "Transcription complete"
   ai_detail_no_chunks_to_merge: "No chunks to merge"
   ai_detail_summary_generated: "Summary generated"
+  # Local Speech to Text
+  local_stt_title: "Local Speech to Text"
+  local_stt_available: "Available"
+  local_stt_unavailable: "Unavailable"
+  local_stt_no_gpu: "No GPU"
+  local_stt_gpu_required: "NVIDIA GPU is required for local speech to text"
+  local_stt_model: "Model"
+  local_stt_model_updated: "Model updated"
+  local_stt_update_failed: "Failed to update settings"
+  local_stt_info: "Runs locally without sending data to external servers."
 
 # Server messages
 server:

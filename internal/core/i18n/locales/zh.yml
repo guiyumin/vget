@@ -221,6 +221,16 @@ ui:
   ai_detail_transcription_complete: "转录完成"
   ai_detail_no_chunks_to_merge: "无需合并"
   ai_detail_summary_generated: "摘要已生成"
+  # 本地语音转文字
+  local_stt_title: "本地语音转文字"
+  local_stt_available: "可用"
+  local_stt_unavailable: "不可用"
+  local_stt_no_gpu: "无 GPU"
+  local_stt_gpu_required: "本地语音转文字需要 NVIDIA GPU"
+  local_stt_model: "模型"
+  local_stt_model_updated: "模型已更新"
+  local_stt_update_failed: "设置更新失败"
+  local_stt_info: "在本地运行，数据不会发送到外部服务器。"
 
 # 服务器消息
 server:

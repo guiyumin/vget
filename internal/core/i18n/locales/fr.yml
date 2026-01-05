@@ -209,6 +209,16 @@ ui:
   ai_detail_transcription_complete: "Transcription terminée"
   ai_detail_no_chunks_to_merge: "Pas de segments à fusionner"
   ai_detail_summary_generated: "Résumé généré"
+  # Reconnaissance vocale locale
+  local_stt_title: "Reconnaissance Vocale Locale"
+  local_stt_available: "Disponible"
+  local_stt_unavailable: "Indisponible"
+  local_stt_no_gpu: "Pas de GPU"
+  local_stt_gpu_required: "Un GPU NVIDIA est requis pour la reconnaissance vocale locale"
+  local_stt_model: "Modèle"
+  local_stt_model_updated: "Modèle mis à jour"
+  local_stt_update_failed: "Échec de la mise à jour des paramètres"
+  local_stt_info: "Fonctionne localement sans envoyer de données à des serveurs externes."
 
 # Messages du serveur
 server:

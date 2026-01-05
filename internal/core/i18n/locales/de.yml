@@ -209,6 +209,16 @@ ui:
   ai_detail_transcription_complete: "Transkription abgeschlossen"
   ai_detail_no_chunks_to_merge: "Keine Chunks zu verbinden"
   ai_detail_summary_generated: "Zusammenfassung erstellt"
+  # Lokale Spracherkennung
+  local_stt_title: "Lokale Spracherkennung"
+  local_stt_available: "Verfügbar"
+  local_stt_unavailable: "Nicht verfügbar"
+  local_stt_no_gpu: "Keine GPU"
+  local_stt_gpu_required: "NVIDIA GPU ist für lokale Spracherkennung erforderlich"
+  local_stt_model: "Modell"
+  local_stt_model_updated: "Modell aktualisiert"
+  local_stt_update_failed: "Fehler beim Aktualisieren der Einstellungen"
+  local_stt_info: "Läuft lokal, ohne Daten an externe Server zu senden."
 
 # Server-Nachrichten
 server:
