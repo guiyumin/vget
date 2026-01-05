@@ -44,31 +44,17 @@ rm vget.zip
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
 
-### イメージバリエーション
-
-| タグ           | モデル                            | アーキテクチャ | CPU/GPU サポート |
-|----------------|-----------------------------------|----------------|------------------|
-| `:latest`      | なし（初回使用時にダウンロード）  | amd64/arm64    | CPU のみ         |
-| `:small`       | Parakeet V3 + Whisper Small       | amd64/arm64    | CPU のみ         |
-| `:medium`      | Parakeet V3 + Whisper Medium      | amd64/arm64    | CPU のみ         |
-| `:large`       | Parakeet V3 + Whisper Large Turbo | amd64/arm64    | CPU のみ         |
-| `:cuda`        | なし（初回使用時にダウンロード）  | amd64          | CPU または GPU   |
-| `:cuda-small`  | Parakeet V3 + Whisper Small       | amd64          | CPU または GPU   |
-| `:cuda-medium` | Parakeet V3 + Whisper Medium      | amd64          | CPU または GPU   |
-| `:cuda-large`  | Parakeet V3 + Whisper Large Turbo | amd64          | CPU または GPU   |
-
-**モデル推奨：**
-- **NAS（8GB 未満の RAM）：** `:small`
-- **8-16GB RAM：** `:medium`
-- **32GB 以上の RAM または NVIDIA GPU：** `:large` または `:cuda-large`
-
 **NVIDIA GPU ユーザー向け：**
 
 ```bash
-docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:cuda-large
+docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
 
 See [Docker GPU Passthrough Guide](docs/ai/docker-gpu-passthrough.md) for detailed setup instructions (Windows/Linux).
+
+**ランタイム動作：**
+- **GPU 検出** → ローカル文字起こし（HuggingFace または vmirror からモデルをオンデマンドでダウンロード）
+- **GPU なし** → クラウド API モード（OpenAI Whisper API、Groq など）
 
 ## 対応ソース
 

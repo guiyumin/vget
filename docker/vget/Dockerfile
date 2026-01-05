@@ -1,4 +1,12 @@
-# ARG must be declared before first FROM to be available in FROM lines
+# vget Docker Image
+# Single image for all users - runtime GPU detection determines behavior:
+#   - With NVIDIA GPU (--gpus all): Local transcription, download models on demand
+#   - Without GPU: Cloud API mode (OpenAI Whisper, Groq, etc.)
+#
+# Build args:
+#   ENABLE_CUDA=true  - amd64 builds (includes CUDA runtime for GPU support)
+#   ENABLE_CUDA=false - arm64 builds (no NVIDIA GPUs available)
+
 ARG ENABLE_CUDA=false
 
 # Build stage for UI
@@ -41,13 +49,10 @@ FROM runtime-${ENABLE_CUDA} AS runtime
 
 # Re-declare args after FROM
 ARG ENABLE_CUDA=false
-ARG MODEL_VARIANT=none
 
-# Model variant to bundle (none, small, medium, large)
-# - none: No models, user downloads on first use (~200MB image)
-# - small: Parakeet V3 + Whisper Small for NAS <8GB RAM (~1.0GB image)
-# - medium: Parakeet V3 + Whisper Medium for 8-16GB RAM (~1.5GB image)
-# - large: Parakeet V3 + Whisper Large Turbo for GPU or 32GB+ RAM (~2.3GB image)
+# No models bundled - downloaded on demand at runtime
+# GPU users: download from HuggingFace or vmirror (China)
+# No GPU: use cloud API (OpenAI Whisper, Groq, etc.)
 
 # Install runtime dependencies
 # - ca-certificates: for HTTPS requests
@@ -92,30 +97,9 @@ COPY --from=go-builder /usr/local/lib/libwhisper*.so* /usr/local/lib/
 COPY --from=go-builder /usr/local/lib/libggml*.so* /usr/local/lib/
 RUN ldconfig
 
-# Download models based on variant
-RUN if [ "$MODEL_VARIANT" = "small" ] || [ "$MODEL_VARIANT" = "medium" ] || [ "$MODEL_VARIANT" = "large" ]; then \
-        echo "Downloading Parakeet V3 INT8 model (~640MB)..." && \
-        curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2 | tar -xjf - -C /home/vget/models/ && \
-        chown -R vget:vget /home/vget/models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8; \
-    fi
-
-# Download Whisper ggml models for whisper.cpp
-# Variants: small, medium, turbo
-RUN if [ "$MODEL_VARIANT" = "small" ]; then \
-        echo "Downloading Whisper Small ggml model (~466MB)..." && \
-        curl -L -o /home/vget/models/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin && \
-        chown vget:vget /home/vget/models/ggml-small.bin; \
-    elif [ "$MODEL_VARIANT" = "medium" ]; then \
-        echo "Downloading Whisper Medium ggml model (~1.5GB)..." && \
-        curl -L -o /home/vget/models/ggml-medium.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin && \
-        chown vget:vget /home/vget/models/ggml-medium.bin; \
-    elif [ "$MODEL_VARIANT" = "turbo" ]; then \
-        echo "Downloading Whisper Turbo ggml model (~1.6GB)..." && \
-        curl -L -o /home/vget/models/ggml-large-v3-turbo.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin && \
-        chown vget:vget /home/vget/models/ggml-large-v3-turbo.bin; \
-    else \
-        echo "No Whisper models bundled (MODEL_VARIANT=$MODEL_VARIANT)"; \
-    fi
+# Models are downloaded on demand at runtime via:
+#   vget ai download whisper-large-v3-turbo
+#   vget ai download whisper-large-v3-turbo --from=vmirror  (for China)
 
 # Copy binary from builder
 COPY --from=go-builder /vget-server /usr/local/bin/vget-server

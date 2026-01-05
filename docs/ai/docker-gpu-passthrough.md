@@ -54,7 +54,7 @@ Restart your computer after installation.
 # compose.yml
 services:
   vget:
-    image: ghcr.io/guiyumin/vget:cuda
+    image: ghcr.io/guiyumin/vget:latest
     ports:
       - "8080:8080"
     volumes:
@@ -79,7 +79,7 @@ docker compose up
 docker run --gpus all -p 8080:8080 \
   -v ./config:/home/vget/.config/vget \
   -v ./downloads:/home/vget/downloads \
-  ghcr.io/guiyumin/vget:cuda
+  ghcr.io/guiyumin/vget:latest
 ```
 
 ---
@@ -178,13 +178,13 @@ Expected output:
 
 ## Troubleshooting
 
-### `nvidia-smi` command not found
+### `nvidia-smi` command not found inside container
 
-**Cause:** Using `:latest` image instead of `:cuda` image.
+**Cause:** GPU not properly passed through to container.
 
-**Solution:**
+**Solution:** Ensure you're using `--gpus all` flag:
 ```bash
-docker run --gpus all ghcr.io/guiyumin/vget:cuda  # Use :cuda tag
+docker run --gpus all ghcr.io/guiyumin/vget:latest
 ```
 
 ### No GPU detected in container

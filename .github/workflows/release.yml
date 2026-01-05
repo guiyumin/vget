@@ -192,22 +192,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Build Docker images with different ASR models bundled
-  # Uses sherpa-onnx with Parakeet V3 (EU languages) + Whisper (Chinese)
-  # Image variants (CPU - multi-arch amd64/arm64):
-  #   :latest  - no models, downloads on first use (~200MB)
-  #   :small   - Parakeet V3 + Whisper Small for NAS <8GB RAM (~1.0GB)
-  #   :medium  - Parakeet V3 + Whisper Medium for 8-16GB RAM (~1.5GB)
-  #   :large   - Parakeet V3 + Whisper Large Turbo for 32GB+ RAM (~2.3GB)
+  # Build single Docker image with whisper.cpp and sherpa-onnx
+  # No models bundled - downloads on demand or uses cloud API
   #
-  # CUDA variants (amd64 only, NVIDIA GPU required):
-  #   :cuda        - CUDA enabled, no models bundled
-  #   :cuda-small  - CUDA + Parakeet V3 + Whisper Small
-  #   :cuda-medium - CUDA + Parakeet V3 + Whisper Medium
-  #   :cuda-large  - CUDA + Parakeet V3 + Whisper Large Turbo (recommended for GPU)
+  # Runtime behavior:
+  #   - GPU detected (nvidia-smi) → Local mode, download models from HuggingFace/vmirror
+  #   - No GPU → API mode (OpenAI Whisper API, Groq, etc.)
+  #
+  # Image tags:
+  #   :latest - multi-arch (amd64/arm64), auto-detects GPU at runtime
 
-  # AMD64 builds
-  docker-amd64-latest:
+  docker-amd64:
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -226,85 +221,12 @@ jobs:
           context: .
           file: ./docker/vget/Dockerfile
           platforms: linux/amd64
-          build-args: MODEL_VARIANT=none
+          build-args: ENABLE_CUDA=true
           outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-latest
-          cache-to: type=gha,scope=amd64-latest,mode=max
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,scope=amd64,mode=max
 
-  docker-amd64-small:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: MODEL_VARIANT=small
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-small
-          cache-to: type=gha,scope=amd64-small,mode=max
-
-  docker-amd64-medium:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: MODEL_VARIANT=medium
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-medium
-          cache-to: type=gha,scope=amd64-medium,mode=max
-
-  docker-amd64-large:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: MODEL_VARIANT=large
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-large
-          cache-to: type=gha,scope=amd64-large,mode=max
-
-  # ARM64 builds
-  docker-arm64-latest:
+  docker-arm64:
     runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -323,204 +245,16 @@ jobs:
           context: .
           file: ./docker/vget/Dockerfile
           platforms: linux/arm64
-          build-args: MODEL_VARIANT=none
           outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=arm64-latest
-          cache-to: type=gha,scope=arm64-latest,mode=max
+          cache-from: type=gha,scope=arm64
+          cache-to: type=gha,scope=arm64,mode=max
 
-  docker-arm64-small:
-    runs-on: ubuntu-24.04-arm
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/arm64
-          build-args: MODEL_VARIANT=small
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=arm64-small
-          cache-to: type=gha,scope=arm64-small,mode=max
-
-  docker-arm64-medium:
-    runs-on: ubuntu-24.04-arm
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/arm64
-          build-args: MODEL_VARIANT=medium
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=arm64-medium
-          cache-to: type=gha,scope=arm64-medium,mode=max
-
-  docker-arm64-large:
-    runs-on: ubuntu-24.04-arm
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/arm64
-          build-args: MODEL_VARIANT=large
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=arm64-large
-          cache-to: type=gha,scope=arm64-large,mode=max
-
-  # CUDA builds (AMD64 only - NVIDIA GPU required)
-  docker-amd64-cuda-latest:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: |
-            ENABLE_CUDA=true
-            MODEL_VARIANT=none
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-cuda-latest
-          cache-to: type=gha,scope=amd64-cuda-latest,mode=max
-
-  docker-amd64-cuda-small:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: |
-            ENABLE_CUDA=true
-            MODEL_VARIANT=small
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-cuda-small
-          cache-to: type=gha,scope=amd64-cuda-small,mode=max
-
-  docker-amd64-cuda-medium:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: |
-            ENABLE_CUDA=true
-            MODEL_VARIANT=medium
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-cuda-medium
-          cache-to: type=gha,scope=amd64-cuda-medium,mode=max
-
-  docker-amd64-cuda-large:
-    runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/vget/Dockerfile
-          platforms: linux/amd64
-          build-args: |
-            ENABLE_CUDA=true
-            MODEL_VARIANT=large
-          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64-cuda-large
-          cache-to: type=gha,scope=amd64-cuda-large,mode=max
-
-  # Create multi-arch manifests for all variants
+  # Create multi-arch manifest
   docker-manifest:
     runs-on: ubuntu-latest
     needs:
-      - docker-amd64-latest
-      - docker-amd64-small
-      - docker-amd64-medium
-      - docker-amd64-large
-      - docker-arm64-latest
-      - docker-arm64-small
-      - docker-arm64-medium
-      - docker-arm64-large
-      - docker-amd64-cuda-latest
-      - docker-amd64-cuda-small
-      - docker-amd64-cuda-medium
-      - docker-amd64-cuda-large
+      - docker-amd64
+      - docker-arm64
     steps:
       - uses: docker/login-action@v3
         with:
@@ -532,56 +266,20 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Create manifests
+      - name: Create manifest
         run: |
           IMAGE="ghcr.io/${{ github.repository }}"
           VERSION="${{ steps.version.outputs.VERSION }}"
 
-          # :latest (no model)
+          # :latest (multi-arch, no models bundled, runtime GPU detection)
           docker buildx imagetools create -t "$IMAGE:latest" -t "$IMAGE:$VERSION" \
-            "$IMAGE@${{ needs.docker-amd64-latest.outputs.digest }}" \
-            "$IMAGE@${{ needs.docker-arm64-latest.outputs.digest }}"
+            "$IMAGE@${{ needs.docker-amd64.outputs.digest }}" \
+            "$IMAGE@${{ needs.docker-arm64.outputs.digest }}"
 
-          # :small (Parakeet V3 + Whisper Small for NAS <8GB RAM)
-          docker buildx imagetools create -t "$IMAGE:small" -t "$IMAGE:$VERSION-small" \
-            "$IMAGE@${{ needs.docker-amd64-small.outputs.digest }}" \
-            "$IMAGE@${{ needs.docker-arm64-small.outputs.digest }}"
-
-          # :medium (Parakeet V3 + Whisper Medium for 8-16GB RAM)
-          docker buildx imagetools create -t "$IMAGE:medium" -t "$IMAGE:$VERSION-medium" \
-            "$IMAGE@${{ needs.docker-amd64-medium.outputs.digest }}" \
-            "$IMAGE@${{ needs.docker-arm64-medium.outputs.digest }}"
-
-          # :large (Parakeet V3 + Whisper Large Turbo for 32GB+ RAM)
-          docker buildx imagetools create -t "$IMAGE:large" -t "$IMAGE:$VERSION-large" \
-            "$IMAGE@${{ needs.docker-amd64-large.outputs.digest }}" \
-            "$IMAGE@${{ needs.docker-arm64-large.outputs.digest }}"
-
-          # CUDA variants (amd64 only)
-          # :cuda (CUDA enabled, no models)
-          docker buildx imagetools create -t "$IMAGE:cuda" -t "$IMAGE:$VERSION-cuda" \
-            "$IMAGE@${{ needs.docker-amd64-cuda-latest.outputs.digest }}"
-
-          # :cuda-small
-          docker buildx imagetools create -t "$IMAGE:cuda-small" -t "$IMAGE:$VERSION-cuda-small" \
-            "$IMAGE@${{ needs.docker-amd64-cuda-small.outputs.digest }}"
-
-          # :cuda-medium
-          docker buildx imagetools create -t "$IMAGE:cuda-medium" -t "$IMAGE:$VERSION-cuda-medium" \
-            "$IMAGE@${{ needs.docker-amd64-cuda-medium.outputs.digest }}"
-
-          # :cuda-large (recommended for NVIDIA GPU users)
-          docker buildx imagetools create -t "$IMAGE:cuda-large" -t "$IMAGE:$VERSION-cuda-large" \
-            "$IMAGE@${{ needs.docker-amd64-cuda-large.outputs.digest }}"
-
-          echo "✅ Published CPU images (multi-arch amd64/arm64):"
-          echo "  - $IMAGE:latest / $IMAGE:$VERSION"
-          echo "  - $IMAGE:small / $IMAGE:$VERSION-small"
-          echo "  - $IMAGE:medium / $IMAGE:$VERSION-medium"
-          echo "  - $IMAGE:large / $IMAGE:$VERSION-large"
+          echo "✅ Published Docker image (multi-arch amd64/arm64):"
+          echo "  - $IMAGE:latest"
+          echo "  - $IMAGE:$VERSION"
           echo ""
-          echo "✅ Published CUDA images (amd64 only):"
-          echo "  - $IMAGE:cuda / $IMAGE:$VERSION-cuda"
-          echo "  - $IMAGE:cuda-small / $IMAGE:$VERSION-cuda-small"
-          echo "  - $IMAGE:cuda-medium / $IMAGE:$VERSION-cuda-medium"
-          echo "  - $IMAGE:cuda-large / $IMAGE:$VERSION-cuda-large"
+          echo "Runtime behavior:"
+          echo "  - With NVIDIA GPU (--gpus all): Local transcription, download models on demand"
+          echo "  - Without GPU: Use cloud API (OpenAI Whisper, Groq, etc.)"

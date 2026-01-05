@@ -23,18 +23,26 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    vget Docker Image                            │
-│                                                                 │
-│  On startup:                                                    │
-│  ├── Detect NVIDIA GPU (nvidia-smi)                             │
-│  │   ├── GPU found → Enable local transcription                 │
-│  │   │               • whisper.cpp (CUDA) - 99 languages        │
-│  │   │               • sherpa-onnx Parakeet (CUDA) - fast EU    │
-│  │   │                                                          │
-│  │   └── No GPU → API mode only                                 │
-│  │                (OpenAI Whisper API, Groq, etc.)              │
-│  │                                                              │
-│  └── Show capability status in Web UI                           │
+│                    vget Docker Image                             │
+│                    ghcr.io/guiyumin/vget:latest                  │
+│                                                                  │
+│  Bundled:                                                        │
+│  ├── whisper.cpp binary (CUDA-enabled for amd64)                 │
+│  ├── sherpa-onnx binary (Parakeet models)                        │
+│  └── ffmpeg                                                      │
+│                                                                  │
+│  On startup:                                                     │
+│  ├── Detect NVIDIA GPU (nvidia-smi)                              │
+│  │   ├── GPU found → Local transcription mode                    │
+│  │   │               • Download models on demand                 │
+│  │   │               • From HuggingFace or vmirror (China)       │
+│  │   │                                                           │
+│  │   └── No GPU → Cloud API mode                                 │
+│  │                • OpenAI Whisper API                           │
+│  │                • Groq (free tier)                             │
+│  │                • Configure in Web UI Settings                 │
+│  │                                                               │
+│  └── Show capability status in Web UI                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,7 +53,7 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 | GPU Type | Speed | Support | Worth It? |
 |----------|-------|---------|-----------|
 | NVIDIA RTX | 10-30x faster than CPU | CUDA (whisper.cpp, sherpa-onnx) | ✅ Yes |
-| Apple Silicon | 5-15x faster | Metal (whisper.cpp) | ✅ Yes (CLI) |
+| Apple Silicon | 5-15x faster | Metal (whisper.cpp) | ✅ Yes (CLI only) |
 | Intel iGPU | 1-2x faster | Limited OpenCL | ❌ No |
 | AMD iGPU | 1-2x faster | Limited ROCm | ❌ No |
 
@@ -67,20 +75,13 @@ API-based transcription is **fast and cost-effective**:
 - OpenAI Whisper API: ~$0.36/hour of audio
 - Groq: Free tier available
 
-### Image Variants
-
-| Tag | Description | Size | Best For |
-|-----|-------------|------|----------|
-| `:latest` | API mode + GPU auto-detect | ~300MB | Most users (NAS) |
-| `:cuda` | Whisper + Parakeet + CUDA | ~2.8GB | NVIDIA GPU users |
-
 ---
 
 ## Docker Usage
 
-### Standard Usage (API Mode)
+### Single Image for All Users
 
-For most users without NVIDIA GPU (typical NAS):
+One image works for everyone - runtime GPU detection determines behavior:
 
 ```yaml
 # compose.yml
@@ -94,19 +95,15 @@ services:
       - ./downloads:/home/vget/downloads
 ```
 
-Configure AI API in Web UI Settings:
-- OpenAI Whisper API (recommended)
-- Groq (free tier)
-- Other compatible APIs
+### With NVIDIA GPU
 
-### GPU Usage (NVIDIA CUDA)
-
-For users with NVIDIA GPU:
+Add GPU access for local transcription:
 
 ```yaml
+# compose.yml
 services:
   vget:
-    image: ghcr.io/guiyumin/vget:cuda
+    image: ghcr.io/guiyumin/vget:latest
     ports:
       - "8080:8080"
     volumes:
@@ -117,11 +114,27 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: all
               capabilities: [gpu]
 ```
 
-GPU is auto-detected. If available, local models are used. If not, falls back to API mode.
+Or with docker run:
+
+```bash
+docker run --gpus all -p 8080:8080 \
+  -v ./config:/home/vget/.config/vget \
+  -v ./downloads:/home/vget/downloads \
+  ghcr.io/guiyumin/vget:latest
+```
+
+See [Docker GPU Passthrough Guide](./docker-gpu-passthrough.md) for detailed setup (Windows/Linux).
+
+### Runtime Behavior
+
+| Condition | Mode | Model Source |
+|-----------|------|--------------|
+| `--gpus all` + NVIDIA GPU | Local | Download on demand from HuggingFace/vmirror |
+| No GPU flag or no NVIDIA | Cloud API | OpenAI Whisper API, Groq, etc. |
 
 ### Environment Variables
 
@@ -266,10 +279,10 @@ ai_generate_vtt: "Also generate VTT subtitles",
 │   Upload    │ → │   Chunk     │ → │ Transcribe  │ → │  Translate  │ → │  Summarize  │
 │  (Web UI)   │   │  (ffmpeg)   │   │  (Whisper)  │   │   (LLM)     │   │   (LLM)     │
 └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
-                         │                 │                 │                 │
-                         ▼                 ▼                 ▼                 ▼
-                  .chunks/ dir      .transcript.md    .{lang}.transcript.md  .summary.md
-                                                      .{lang}.srt
+                        │                 │                 │                 │
+                        ▼                 ▼                 ▼                 ▼
+                 .chunks/ dir      .transcript.md    .{lang}.transcript.md  .summary.md
+                                                     .{lang}.srt
 ```
 
 ### Chunking Strategy
@@ -329,7 +342,7 @@ Let me give you an example of how this works in practice...
 
 ## Dockerfile
 
-### Standard Image (API Mode)
+Single Dockerfile for all platforms (multi-arch amd64/arm64):
 
 ```dockerfile
 # Dockerfile
@@ -338,10 +351,10 @@ FROM golang:1.23-bookworm AS builder
 WORKDIR /app
 COPY . .
 
-# Build without CGO (no local ASR libraries needed for API mode)
+# Build without CGO
 RUN CGO_ENABLED=0 go build -o vget ./cmd/vget
 
-# Final image - minimal
+# Final image
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
@@ -350,34 +363,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/vget /usr/local/bin/vget
-
-# Create non-root user
-RUN useradd -m -u 1000 vget
-USER vget
-WORKDIR /home/vget
-
-EXPOSE 8080
-CMD ["vget", "server"]
-```
-
-### CUDA Image (Local Transcription)
-
-```dockerfile
-# Dockerfile.cuda
-FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04 AS base
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy pre-built vget with CUDA support
-COPY --from=builder /app/vget /usr/local/bin/vget
-
-# Bundle both engines
-RUN vget ai download whisper-large-v3-turbo && \
-    vget ai download parakeet-v3
 
 # Create non-root user
 RUN useradd -m -u 1000 vget
@@ -420,8 +405,8 @@ func DetectGPU() bool {
 ## Implementation Phases
 
 ### Phase 1: Core Docker Setup
-- [ ] Standard image (API mode, CGO_ENABLED=0)
-- [ ] CUDA image with bundled models
+- [ ] Single multi-arch image (amd64/arm64)
+- [ ] Runtime GPU detection
 - [ ] GitHub Actions for image builds
 
 ### Phase 2: Web UI
@@ -431,21 +416,21 @@ func DetectGPU() bool {
 - [ ] Real-time progress stepper
 - [ ] Result viewer
 
-### Phase 3: Runtime Detection
-- [ ] GPU detection on startup
-- [ ] Automatic mode selection (local vs API)
-- [ ] Clear messaging in UI about current mode
+### Phase 3: Model Management
+- [ ] Model download on demand
+- [ ] Support HuggingFace and vmirror sources
+- [ ] Model list in Web UI
 
 ---
 
 ## Success Criteria
 
 1. `docker compose up` starts working web UI
-2. UI clearly shows AI mode (GPU local / API)
+2. UI clearly shows AI mode (GPU local / Cloud API)
 3. API configuration is intuitive in Settings
 4. File selection and processing works
 5. Progress is visible in real-time
 6. Transcripts are accurate with timestamps
 7. GPU auto-detection works correctly
 8. Errors are clear and actionable
-9. Standard image is small (~300MB)
+9. Single image works for all users (~300MB base)
