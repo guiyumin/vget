@@ -41,20 +41,20 @@ Download `vget-windows-amd64.zip` from [Releases](https://github.com/guiyumin/vg
 ## Docker
 
 ```bash
+# Without --gpus: No GPU access, uses cloud API for transcription
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
-```
 
-**With NVIDIA GPU:**
-
-```bash
+# With --gpus all: Container can use host's NVIDIA GPU for local transcription
 docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
 
-See [Docker GPU Passthrough Guide](docs/ai/docker-gpu-passthrough.md) for detailed setup instructions (Windows/Linux).
-
 **Runtime behavior:**
-- **GPU detected** → Local transcription (download models on demand from HuggingFace or vmirror)
-- **No GPU** → Cloud API mode (OpenAI Whisper API, Groq, etc.)
+| Mode | When | Transcription |
+|------|------|---------------|
+| Cloud API | No `--gpus` flag or no NVIDIA GPU | OpenAI Whisper API, Groq, etc. |
+| Local GPU | `--gpus all` + NVIDIA GPU | Download models on demand |
+
+See [Docker GPU Passthrough Guide](docs/ai/docker-gpu-passthrough.md) for setup instructions (Windows/Linux).
 
 ## Supported Sources
 

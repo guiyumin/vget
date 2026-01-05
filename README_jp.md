@@ -41,20 +41,20 @@ rm vget.zip
 ## Docker
 
 ```bash
+# --gpus なし：GPU アクセスなし、文字起こしにクラウド API を使用
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
-```
 
-**NVIDIA GPU ユーザー向け：**
-
-```bash
+# --gpus all：コンテナがホストの NVIDIA GPU を使用してローカル文字起こしが可能
 docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
 
-See [Docker GPU Passthrough Guide](docs/ai/docker-gpu-passthrough.md) for detailed setup instructions (Windows/Linux).
-
 **ランタイム動作：**
-- **GPU 検出** → ローカル文字起こし（HuggingFace または vmirror からモデルをオンデマンドでダウンロード）
-- **GPU なし** → クラウド API モード（OpenAI Whisper API、Groq など）
+| モード | 条件 | 文字起こし |
+|--------|------|------------|
+| クラウド API | `--gpus` なしまたは NVIDIA GPU なし | OpenAI Whisper API、Groq など |
+| ローカル GPU | `--gpus all` + NVIDIA GPU | オンデマンドでモデルをダウンロード |
+
+[Docker GPU パススルーガイド](docs/ai/docker-gpu-passthrough.md)でセットアップ手順を確認（Windows/Linux）。
 
 ## 対応ソース
 

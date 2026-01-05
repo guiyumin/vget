@@ -41,20 +41,20 @@ rm vget.zip
 ## Docker
 
 ```bash
+# 不带 --gpus：无 GPU 访问，使用云 API 进行转录
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
-```
 
-**NVIDIA GPU 用户：**
-
-```bash
+# 带 --gpus all：容器可使用宿主机的 NVIDIA GPU 进行本地转录
 docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
 
-See [Docker GPU Passthrough Guide](docs/ai/docker-gpu-passthrough.md) for detailed setup instructions (Windows/Linux).
-
 **运行时行为：**
-- **检测到 GPU** → 本地转录（按需从 HuggingFace 或 vmirror 下载模型）
-- **无 GPU** → 云 API 模式（OpenAI Whisper API、Groq 等）
+| 模式 | 条件 | 转录方式 |
+|------|------|----------|
+| 云 API | 无 `--gpus` 或无 NVIDIA GPU | OpenAI Whisper API、Groq 等 |
+| 本地 GPU | `--gpus all` + NVIDIA GPU | 按需下载模型 |
+
+详见 [Docker GPU 直通指南](docs/ai/docker-gpu-passthrough.md)（Windows/Linux）。
 
 ## 支持的来源
 
