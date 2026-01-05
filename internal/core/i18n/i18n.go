@@ -252,12 +252,9 @@ type UITranslations struct {
 	AIDetailNoChunksToMerge       string `yaml:"ai_detail_no_chunks_to_merge" json:"ai_detail_no_chunks_to_merge"`
 	AIDetailSummaryGenerated      string `yaml:"ai_detail_summary_generated" json:"ai_detail_summary_generated"`
 	// AI output options
-	AIOutputFormat               string `yaml:"ai_output_format" json:"ai_output_format"`
-	AITranslateTo                string `yaml:"ai_translate_to" json:"ai_translate_to"`
-	AINoTranslation              string `yaml:"ai_no_translation" json:"ai_no_translation"`
-	AITranslationRequiresAccount string `yaml:"ai_translation_requires_account" json:"ai_translation_requires_account"`
-	AILanguage                   string `yaml:"ai_language" json:"ai_language"`
-	AISelectLanguage             string `yaml:"ai_select_language" json:"ai_select_language"`
+	AIOutputFormat   string `yaml:"ai_output_format" json:"ai_output_format"`
+	AIAudioLanguage  string `yaml:"ai_audio_language" json:"ai_audio_language"`
+	AISummaryLanguage string `yaml:"ai_summary_language" json:"ai_summary_language"`
 }
 
 // ServerTranslations holds translations for server messages

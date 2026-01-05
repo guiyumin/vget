@@ -156,9 +156,9 @@ export function useProcessing() {
       summarizationModel: string,
       includeSummary: boolean,
       pin?: string,
-      language?: string,
+      audioLanguage?: string,
       outputFormat?: string,
-      translateTo?: string
+      summaryLanguage?: string
     ) => {
       try {
         const res = await startAIProcessing({
@@ -168,9 +168,9 @@ export function useProcessing() {
           summarization_model: summarizationModel,
           pin,
           include_summary: includeSummary,
-          language: language,
+          audio_language: audioLanguage,
           output_format: outputFormat,
-          translate_to: translateTo,
+          summary_language: summaryLanguage,
         });
 
         if (res.code === 200 && res.data?.job_id) {

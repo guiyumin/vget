@@ -49,9 +49,9 @@ export function SpeechToTextPage() {
   const [transcriptionSelection, setTranscriptionSelection] = useState("");
   const [summarizationSelection, setSummarizationSelection] = useState("");
   const [includeSummary, setIncludeSummary] = useState(true);
-  const [language, setLanguage] = useState("zh"); // Language for transcription
-  const [outputFormat, setOutputFormat] = useState("md"); // Output format: md, srt, vtt, txt
-  const [translateTo, setTranslateTo] = useState(""); // Target language for translation (empty = no translation)
+  const [audioLanguage, setAudioLanguage] = useState("zh"); // Language of the audio
+  const [summaryLanguage, setSummaryLanguage] = useState("zh"); // Language for the summary output
+  const [outputFormat, setOutputFormat] = useState("md"); // Output format: md, srt, vtt
 
   // Local ASR capabilities
   const [localASRCapabilities, setLocalASRCapabilities] =
@@ -328,9 +328,9 @@ export function SpeechToTextPage() {
       summarization.model,
       includeSummary,
       pinToUse,
-      language,
+      audioLanguage,
       outputFormat,
-      translateTo || undefined
+      summaryLanguage
     );
 
     if (!result.success) {
@@ -474,14 +474,14 @@ export function SpeechToTextPage() {
             </select>
           </div>
 
-          {/* Language Selection */}
+          {/* Audio Language */}
           <div className="flex items-center justify-between gap-4">
             <label className="text-sm text-zinc-600 dark:text-zinc-400 w-20">
-              {t.ai_language}:
+              {t.ai_audio_language}:
             </label>
             <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              value={audioLanguage}
+              onChange={(e) => setAudioLanguage(e.target.value)}
               className={clsx(selectClass, "flex-1")}
               disabled={isProcessing}
             >
@@ -528,6 +528,31 @@ export function SpeechToTextPage() {
             />
           </div>
 
+          {/* Summary Language */}
+          <div className="flex items-center justify-between gap-4">
+            <label className="text-sm text-zinc-600 dark:text-zinc-400 w-20">
+              {t.ai_summary_language}:
+            </label>
+            <select
+              value={summaryLanguage}
+              onChange={(e) => setSummaryLanguage(e.target.value)}
+              className={clsx(
+                selectClass,
+                "flex-1",
+                !includeSummary && "opacity-50"
+              )}
+              disabled={isProcessing || !includeSummary}
+            >
+              <option value="zh">Chinese (中文)</option>
+              <option value="en">English</option>
+              <option value="ja">Japanese (日本語)</option>
+              <option value="ko">Korean (한국어)</option>
+              <option value="es">Spanish (Español)</option>
+              <option value="fr">French (Français)</option>
+              <option value="de">German (Deutsch)</option>
+            </select>
+          </div>
+
           {/* Output Format */}
           <div className="flex items-center justify-between gap-4">
             <label className="text-sm text-zinc-600 dark:text-zinc-400 w-20">
@@ -545,36 +570,6 @@ export function SpeechToTextPage() {
             </select>
           </div>
 
-          {/* Translate To */}
-          <div className="flex items-center justify-between gap-4">
-            <label className="text-sm text-zinc-600 dark:text-zinc-400 w-20">
-              {t.ai_translate_to || "Translate To"}:
-            </label>
-            <select
-              value={translateTo}
-              onChange={(e) => setTranslateTo(e.target.value)}
-              className={clsx(selectClass, "flex-1")}
-              disabled={isProcessing || !hasAIAccount}
-              title={!hasAIAccount ? "Requires AI account for translation" : ""}
-            >
-              <option value="">
-                {t.ai_no_translation || "No Translation"}
-              </option>
-              <option value="en">English</option>
-              <option value="zh">Chinese (中文)</option>
-              <option value="ja">Japanese (日本語)</option>
-              <option value="ko">Korean (한국어)</option>
-              <option value="es">Spanish (Español)</option>
-              <option value="fr">French (Français)</option>
-              <option value="de">German (Deutsch)</option>
-            </select>
-          </div>
-          {!hasAIAccount && translateTo === "" && (
-            <p className="text-xs text-zinc-400">
-              {t.ai_translation_requires_account ||
-                "Translation requires an AI account"}
-            </p>
-          )}
         </div>
 
         {/* Start/Cancel Button */}

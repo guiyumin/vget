@@ -107,12 +107,9 @@ export interface UITranslations {
   ai_outputs: string;
   ai_no_outputs_yet: string;
   ai_select_file_for_outputs: string;
-  ai_language: string;
-  ai_select_language: string;
+  ai_audio_language: string;
+  ai_summary_language: string;
   ai_output_format: string;
-  ai_translate_to: string;
-  ai_no_translation: string;
-  ai_translation_requires_account: string;
   // AI step names (used by frontend to translate step.key)
   ai_step_extract_audio: string;
   ai_step_compress_audio: string;
@@ -246,12 +243,9 @@ export const defaultTranslations: UITranslations = {
   ai_outputs: "Outputs",
   ai_no_outputs_yet: "No outputs yet. Start processing to generate transcript and summary.",
   ai_select_file_for_outputs: "Select a file to see available outputs.",
-  ai_language: "Language",
-  ai_select_language: "Select Language",
+  ai_audio_language: "Audio Language",
+  ai_summary_language: "Summary Language",
   ai_output_format: "Output Format",
-  ai_translate_to: "Translate To",
-  ai_no_translation: "No Translation",
-  ai_translation_requires_account: "Translation requires an AI account",
   // AI step names (used by frontend to translate step.key)
   ai_step_extract_audio: "Extract Audio",
   ai_step_compress_audio: "Compress Audio",
