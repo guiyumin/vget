@@ -500,12 +500,29 @@ func Init() error {
 	return Save(DefaultConfig())
 }
 
-// LoadOrDefault loads config if it exists, otherwise returns defaults
+// LoadOrDefault loads config if it exists, otherwise returns defaults.
+// It also applies defaults for any empty fields in the loaded config.
 func LoadOrDefault() *Config {
 	cfg, err := Load()
 	if err != nil {
-		cfg = DefaultConfig()
+		return DefaultConfig()
 	}
+
+	// Apply defaults for empty fields (as documented in "vget config unset")
+	defaults := DefaultConfig()
+	if cfg.Language == "" {
+		cfg.Language = defaults.Language
+	}
+	if cfg.OutputDir == "" {
+		cfg.OutputDir = defaults.OutputDir
+	}
+	if cfg.Format == "" {
+		cfg.Format = defaults.Format
+	}
+	if cfg.Quality == "" {
+		cfg.Quality = defaults.Quality
+	}
+
 	return cfg
 }
 
