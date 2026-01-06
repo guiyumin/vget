@@ -16,6 +16,7 @@ jobs:
   # - Windows AMD64: CUDA GPU (NVIDIA required)
   # Other platforms: AI features disabled (CPU too slow for good UX)
   build-whisper-darwin-arm64:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
@@ -34,6 +35,7 @@ jobs:
           path: internal/core/ai/transcriber/bin/whisper-darwin-arm64
 
   build-whisper-windows-amd64:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -61,6 +63,7 @@ jobs:
   # macOS ARM64: CPU (onnxruntime has CoreML via ANE)
   # Windows AMD64: CUDA GPU acceleration
   build-sherpa-darwin-arm64:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
@@ -84,6 +87,7 @@ jobs:
           path: internal/core/ai/transcriber/bin/sherpa-darwin-arm64
 
   build-sherpa-windows-amd64:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -203,6 +207,7 @@ jobs:
   #   :latest - multi-arch (amd64/arm64), auto-detects GPU at runtime
 
   docker-amd64:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -227,6 +232,7 @@ jobs:
           cache-to: type=gha,scope=amd64,mode=max
 
   docker-arm64:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.build.outputs.digest }}
