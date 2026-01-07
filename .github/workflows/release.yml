@@ -18,11 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Build whisper.cpp with Metal
+      - name: Build whisper.cpp with Metal (static)
         run: |
           git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
           cd whisper.cpp
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DWHISPER_METAL=ON
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DWHISPER_METAL=ON -DBUILD_SHARED_LIBS=OFF
           cmake --build build --config Release -j$(sysctl -n hw.ncpu)
           mkdir -p ../internal/core/ai/transcriber/bin
           cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-darwin-arm64
@@ -84,11 +84,11 @@ jobs:
           sub-packages: '["nvcc", "cudart-dev"]'
           non-cuda-sub-packages: '["libcublas-dev"]'
 
-      - name: Build whisper.cpp with CUDA
+      - name: Build whisper.cpp with CUDA (static)
         run: |
           git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
           cd whisper.cpp
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DBUILD_SHARED_LIBS=OFF
           cmake --build build --config Release -j$(nproc)
           mkdir -p ../internal/core/ai/transcriber/bin
           cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-linux-amd64
