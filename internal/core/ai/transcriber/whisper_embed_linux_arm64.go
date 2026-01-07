@@ -4,8 +4,8 @@ package transcriber
 
 import "fmt"
 
-// Local transcription is not available on Linux CLI.
-// Use cloud transcription (OpenAI) via Docker/API instead.
+// AI features require GPU acceleration (CUDA or Metal).
+// Linux ARM64 has no GPU support.
 func extractWhisperBinary() (string, error) {
-	return "", fmt.Errorf("local transcription is not available on Linux. Use cloud transcription (OpenAI) instead")
+	return "", fmt.Errorf("AI features are not available on Linux ARM64 (no GPU acceleration)")
 }

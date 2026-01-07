@@ -10,60 +10,23 @@ permissions:
   packages: write
 
 jobs:
-  # Build GPU-enabled whisper.cpp binaries
-  # AI features only available on platforms with GPU:
-  # - macOS ARM64: Metal GPU
-  # - Windows AMD64: CUDA GPU (NVIDIA required)
-  # Other platforms: AI features disabled (CPU too slow for good UX)
-  build-whisper-darwin-arm64:
+  # Build whisper.cpp + sherpa-onnx for CLI embedding
+  # Skip for pre-release tags (e.g., v1.0.0-beta)
+  build-darwin-arm64:
     if: ${{ !contains(github.ref_name, '-') }}
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
+
       - name: Build whisper.cpp with Metal
         run: |
           git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
           cd whisper.cpp
-          # Enable Metal GPU acceleration for Apple Silicon
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DWHISPER_METAL=ON
           cmake --build build --config Release -j$(sysctl -n hw.ncpu)
           mkdir -p ../internal/core/ai/transcriber/bin
           cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-darwin-arm64
-      - uses: actions/upload-artifact@v4
-        with:
-          name: whisper-darwin-arm64
-          path: internal/core/ai/transcriber/bin/whisper-darwin-arm64
 
-  build-whisper-windows-amd64:
-    if: ${{ !contains(github.ref_name, '-') }}
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.30
-      - name: Build whisper.cpp with CUDA
-        shell: bash
-        run: |
-          git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
-          cd whisper.cpp
-          # Enable CUDA for NVIDIA GPU acceleration
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON
-          cmake --build build --config Release -j
-          mkdir -p ../internal/core/ai/transcriber/bin
-          cp build/bin/Release/whisper-cli.exe ../internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-      - uses: actions/upload-artifact@v4
-        with:
-          name: whisper-windows-amd64
-          path: internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-
-  # Build sherpa-onnx for Parakeet models
-  # macOS ARM64: CPU (onnxruntime has CoreML via ANE)
-  # Windows AMD64: CUDA GPU acceleration
-  build-sherpa-darwin-arm64:
-    if: ${{ !contains(github.ref_name, '-') }}
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v5
       - name: Build sherpa-onnx
         run: |
           git clone --depth 1 --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
@@ -76,54 +39,69 @@ jobs:
             -DSHERPA_ONNX_ENABLE_PORTAUDIO=OFF \
             -DSHERPA_ONNX_ENABLE_WEBSOCKET=OFF
           cmake --build build --config Release -j$(sysctl -n hw.ncpu)
-          mkdir -p ../internal/core/ai/transcriber/bin
           cp build/bin/sherpa-onnx-offline ../internal/core/ai/transcriber/bin/sherpa-darwin-arm64
+
       - uses: actions/upload-artifact@v4
         with:
-          name: sherpa-darwin-arm64
-          path: internal/core/ai/transcriber/bin/sherpa-darwin-arm64
+          name: bin-darwin-arm64
+          path: internal/core/ai/transcriber/bin/
 
-  build-sherpa-windows-amd64:
+  build-windows-amd64:
     if: ${{ !contains(github.ref_name, '-') }}
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Install CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.30
-      - name: Build sherpa-onnx with CUDA
-        shell: bash
+
+      - name: Download whisper.cpp (pre-built CUDA)
         run: |
-          git clone --depth 1 --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
-          cd sherpa-onnx
-          # Download onnxruntime GPU for CUDA 12.x
-          curl -SL -O https://github.com/microsoft/onnxruntime/releases/download/v1.22.0/onnxruntime-win-x64-gpu-1.22.0.zip
-          unzip onnxruntime-win-x64-gpu-1.22.0.zip
-          export SHERPA_ONNXRUNTIME_LIB_DIR=$PWD/onnxruntime-win-x64-gpu-1.22.0/lib
-          export SHERPA_ONNXRUNTIME_INCLUDE_DIR=$PWD/onnxruntime-win-x64-gpu-1.22.0/include
-          cmake -B build -DCMAKE_BUILD_TYPE=Release \
-            -DSHERPA_ONNX_ENABLE_GPU=ON \
-            -DSHERPA_ONNX_ENABLE_TTS=OFF \
-            -DSHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION=OFF \
-            -DSHERPA_ONNX_ENABLE_BINARY=ON \
-            -DBUILD_SHARED_LIBS=ON \
-            -DSHERPA_ONNX_ENABLE_PORTAUDIO=OFF \
-            -DSHERPA_ONNX_ENABLE_WEBSOCKET=OFF
-          cmake --build build --config Release -j
-          mkdir -p ../internal/core/ai/transcriber/bin
-          cp build/bin/Release/sherpa-onnx-offline.exe ../internal/core/ai/transcriber/bin/sherpa-windows-amd64.exe
-          # Copy onnxruntime DLLs for CUDA
-          cp onnxruntime-win-x64-gpu-1.22.0/lib/*.dll ../internal/core/ai/transcriber/bin/
+          mkdir -p internal/core/ai/transcriber/bin
+          curl -SL https://github.com/ggerganov/whisper.cpp/releases/download/v1.8.2/whisper-cublas-12.4.0-bin-x64.zip -o whisper.zip
+          unzip whisper.zip
+          cp Release/whisper-cli.exe internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
+
+      - name: Download sherpa-onnx (pre-built CUDA)
+        run: |
+          curl -SL https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.20/sherpa-onnx-v1.12.20-win-x64-cuda.tar.bz2 | tar -xjf -
+          cp sherpa-onnx-v1.12.20-win-x64-cuda/bin/sherpa-onnx-offline.exe internal/core/ai/transcriber/bin/sherpa-windows-amd64.exe
+          cp sherpa-onnx-v1.12.20-win-x64-cuda/lib/*.dll internal/core/ai/transcriber/bin/
+
       - uses: actions/upload-artifact@v4
         with:
-          name: sherpa-windows-amd64
+          name: bin-windows-amd64
+          path: internal/core/ai/transcriber/bin/
+
+  build-linux-amd64:
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install CUDA Toolkit
+        uses: Jimver/cuda-toolkit@v0.2.30
+
+      - name: Build whisper.cpp with CUDA
+        run: |
+          git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
+          cd whisper.cpp
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON
+          cmake --build build --config Release -j$(nproc)
+          mkdir -p ../internal/core/ai/transcriber/bin
+          cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-linux-amd64
+
+      - name: Download sherpa-onnx (pre-built CUDA)
+        run: |
+          curl -SL https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.20/sherpa-onnx-v1.12.20-linux-x64-gpu.tar.bz2 | tar -xjf -
+          cp sherpa-onnx-v1.12.20-linux-x64-gpu/bin/sherpa-onnx-offline internal/core/ai/transcriber/bin/sherpa-linux-amd64
+          chmod +x internal/core/ai/transcriber/bin/sherpa-linux-amd64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-linux-amd64
           path: internal/core/ai/transcriber/bin/
 
   release:
-    needs:
-      - build-whisper-darwin-arm64
-      - build-whisper-windows-amd64
-      - build-sherpa-darwin-arm64
-      - build-sherpa-windows-amd64
+    if: always()
+    needs: [build-darwin-arm64, build-windows-amd64, build-linux-amd64]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -131,7 +109,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download AI binaries (whisper + sherpa-onnx)
+      - name: Download binaries
+        if: ${{ !contains(github.ref_name, '-') }}
         uses: actions/download-artifact@v4
         with:
           path: internal/core/ai/transcriber/bin/
@@ -190,30 +169,26 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Build single Docker image with whisper.cpp and sherpa-onnx
-  # No models bundled - downloads on demand or uses cloud API
-  #
-  # Runtime behavior:
-  #   - GPU detected (nvidia-smi) → Local mode, download models from HuggingFace/vmirror
-  #   - No GPU → API mode (OpenAI Whisper API, Groq, etc.)
-  #
-  # Image tags:
-  #   :latest - multi-arch (amd64/arm64), auto-detects GPU at runtime
-
   docker-amd64:
     if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
+
+      - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -231,14 +206,20 @@ jobs:
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
+
+      - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -249,37 +230,32 @@ jobs:
           cache-from: type=gha,scope=arm64
           cache-to: type=gha,scope=arm64,mode=max
 
-  # Create multi-arch manifest
   docker-manifest:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
-    needs:
-      - docker-amd64
-      - docker-arm64
+    needs: [docker-amd64, docker-arm64]
     steps:
-      - uses: docker/login-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
 
-      - name: Create manifest
+      - name: Create and push manifest
         run: |
-          IMAGE="ghcr.io/${{ github.repository }}"
-          VERSION="${{ steps.version.outputs.VERSION }}"
-
-          # :latest (multi-arch, no models bundled, runtime GPU detection)
-          docker buildx imagetools create -t "$IMAGE:latest" -t "$IMAGE:$VERSION" \
-            "$IMAGE@${{ needs.docker-amd64.outputs.digest }}" \
-            "$IMAGE@${{ needs.docker-arm64.outputs.digest }}"
-
-          echo "✅ Published Docker image (multi-arch amd64/arm64):"
-          echo "  - $IMAGE:latest"
-          echo "  - $IMAGE:$VERSION"
-          echo ""
-          echo "Runtime behavior:"
-          echo "  - With NVIDIA GPU (--gpus all): Local transcription, download models on demand"
-          echo "  - Without GPU: Use cloud API (OpenAI Whisper, Groq, etc.)"
+          for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'); do
+            docker buildx imagetools create -t "$tag" \
+              "ghcr.io/${{ github.repository }}@${{ needs.docker-amd64.outputs.digest }}" \
+              "ghcr.io/${{ github.repository }}@${{ needs.docker-arm64.outputs.digest }}"
+          done

@@ -1,11 +1,16 @@
 # AI binaries are built by GitHub Actions and embedded during release.
 # These placeholder files allow local development.
-# AI features only available on: macOS ARM64 (Metal/CoreML), Windows AMD64 (CUDA)
+# AI features require GPU: Metal (macOS ARM64), CUDA (Windows/Linux AMD64)
 
 # whisper.cpp binaries
 whisper-darwin-arm64
 whisper-windows-amd64.exe
+whisper-linux-amd64
 
 # sherpa-onnx binaries
 sherpa-darwin-arm64
 sherpa-windows-amd64.exe
+sherpa-linux-amd64
+
+# Windows DLLs
+*.dll

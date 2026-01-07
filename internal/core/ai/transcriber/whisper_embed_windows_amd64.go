@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -49,11 +48,4 @@ func extractWhisperBinary() (string, error) {
 	}
 
 	return binaryPath, nil
-}
-
-// hasNvidiaGPU checks if an NVIDIA GPU is available by running nvidia-smi.
-func hasNvidiaGPU() bool {
-	cmd := exec.Command("nvidia-smi")
-	err := cmd.Run()
-	return err == nil
 }
