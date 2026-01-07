@@ -151,12 +151,12 @@ func NewModelManager(modelsDir string) *ModelManager {
 }
 
 // DefaultModelsDir returns the default models directory.
-// In Docker, models are stored in /home/vget/models to avoid bind mount conflicts.
+// In Docker, models are stored in /home/vget/downloads/models (persisted via bind mount).
 // On host systems, models are stored in ~/.config/vget/models.
 func DefaultModelsDir() (string, error) {
-	// Docker: use separate directory from config to avoid bind mount overwriting models
+	// Docker: use downloads/models directory which is already bind-mounted
 	if config.IsRunningInDocker() {
-		return "/home/vget/models", nil
+		return "/home/vget/downloads/models", nil
 	}
 
 	home, err := os.UserHomeDir()
