@@ -1,6 +1,6 @@
 # vget Docker Image
 # Build args:
-#   ENABLE_CUDA=true  - amd64 builds with CUDA GPU support
+#   ENABLE_CUDA=true  - amd64 builds with CUDA GPU support (uses pre-built base image)
 #   ENABLE_CUDA=false - arm64 builds (CPU only)
 #
 # Runtime: App detects GPU and enables AI features only if GPU is available
@@ -16,8 +16,10 @@ COPY ui/ ./
 RUN npm run build
 
 # Go builder stage
+# CUDA: use pre-built base image with whisper.cpp + sherpa-onnx
+# Non-CUDA: build from scratch
 FROM golang:1.25-bookworm AS go-builder-base
-FROM nvidia/cuda:12.6.3-devel-ubuntu24.04 AS go-builder-cuda
+FROM ghcr.io/guiyumin/vget-base:latest AS go-builder-cuda
 
 ARG ENABLE_CUDA=false
 FROM go-builder-cuda AS go-builder-select-true
@@ -25,41 +27,23 @@ FROM go-builder-base AS go-builder-select-false
 FROM go-builder-select-${ENABLE_CUDA} AS go-builder
 
 ARG ENABLE_CUDA=false
+ARG TARGETARCH
 
-# Install Go for CUDA image
-RUN if [ "$ENABLE_CUDA" = "true" ]; then \
+# For non-CUDA builds, install dependencies and build from source
+RUN if [ "$ENABLE_CUDA" = "false" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
-            wget ca-certificates && \
-        wget -q https://go.dev/dl/go1.25.4.linux-amd64.tar.gz && \
-        tar -C /usr/local -xzf go1.25.4.linux-amd64.tar.gz && \
-        rm go1.25.4.linux-amd64.tar.gz && \
+            build-essential cmake curl git && \
         rm -rf /var/lib/apt/lists/*; \
     fi
 
-ENV PATH="/usr/local/go/bin:${PATH}"
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# sherpa-onnx
+# sherpa-onnx (non-CUDA only, CUDA base image already has it)
 ARG SHERPA_VERSION=1.12.20
 
-RUN curl -L "https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v${SHERPA_VERSION}.tar.gz" | tar -xzf - && \
-    cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/c-api.h /usr/local/include/ && \
-    cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/cxx-api.h /usr/local/include/ && \
-    rm -rf sherpa-onnx-${SHERPA_VERSION}
-
-ARG TARGETARCH
-RUN if [ "$ENABLE_CUDA" = "true" ]; then \
-        curl -L "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu.tar.bz2" | tar -xjf - && \
-        cp sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu/lib/*.so* /usr/local/lib/ && \
-        rm -rf sherpa-onnx-v${SHERPA_VERSION}-cuda-12.x-cudnn-9.x-linux-x64-gpu; \
-    else \
+RUN if [ "$ENABLE_CUDA" = "false" ]; then \
+        curl -L "https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v${SHERPA_VERSION}.tar.gz" | tar -xzf - && \
+        cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/c-api.h /usr/local/include/ && \
+        cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/cxx-api.h /usr/local/include/ && \
+        rm -rf sherpa-onnx-${SHERPA_VERSION} && \
         if [ "$TARGETARCH" = "arm64" ]; then \
             SHERPA_ARCH="aarch64"; \
             SHERPA_SUFFIX="-cpu"; \
@@ -69,38 +53,30 @@ RUN if [ "$ENABLE_CUDA" = "true" ]; then \
         fi && \
         curl -L "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}.tar.bz2" | tar -xjf - && \
         cp sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}/lib/*.so* /usr/local/lib/ && \
-        rm -rf sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}; \
-    fi && \
-    ldconfig
+        rm -rf sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX} && \
+        ldconfig; \
+    fi
 
-# whisper.cpp
-ARG WHISPER_COMMIT=6114e692136b
+# whisper.cpp (non-CUDA only, CUDA base image already has it)
+ARG WHISPER_VERSION=1.8.2
 
-RUN git clone https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp && \
-    cd /tmp/whisper.cpp && git checkout ${WHISPER_COMMIT} && \
-    if [ "$ENABLE_CUDA" = "true" ]; then \
-        cmake -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_SHARED_LIBS=ON \
-            -DGGML_NATIVE=OFF \
-            -DGGML_CUDA=ON \
-            -DWHISPER_BUILD_EXAMPLES=OFF \
-            -DWHISPER_BUILD_TESTS=OFF; \
-    else \
+RUN if [ "$ENABLE_CUDA" = "false" ]; then \
+        git clone --depth 1 --branch v${WHISPER_VERSION} https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp && \
+        cd /tmp/whisper.cpp && \
         cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=ON \
             -DGGML_NATIVE=OFF \
             -DWHISPER_BUILD_EXAMPLES=OFF \
-            -DWHISPER_BUILD_TESTS=OFF; \
-    fi && \
-    cmake --build build --config Release -j$(nproc) && \
-    cp build/src/libwhisper.so* /usr/local/lib/ && \
-    cp build/ggml/src/libggml*.so* /usr/local/lib/ && \
-    cp include/whisper.h /usr/local/include/ && \
-    cp ggml/include/ggml*.h /usr/local/include/ && \
-    rm -rf /tmp/whisper.cpp && \
-    ldconfig
+            -DWHISPER_BUILD_TESTS=OFF && \
+        cmake --build build --config Release -j$(nproc) && \
+        cp build/src/libwhisper.so* /usr/local/lib/ && \
+        cp build/ggml/src/libggml*.so* /usr/local/lib/ && \
+        cp include/whisper.h /usr/local/include/ && \
+        cp ggml/include/ggml*.h /usr/local/include/ && \
+        rm -rf /tmp/whisper.cpp && \
+        ldconfig; \
+    fi
 
 WORKDIR /app
 
