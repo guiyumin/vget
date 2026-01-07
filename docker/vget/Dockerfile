@@ -160,11 +160,11 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     yt-dlp \
     youtube-dl
 
-# Create non-root user
-RUN groupadd -g 1000 vget && \
-    useradd -u 1000 -g vget -m -d /home/vget vget && \
+# Create non-root user (handle case where UID/GID 1000 already exists)
+RUN (getent group 1000 >/dev/null || groupadd -g 1000 vget) && \
+    (id -u 1000 >/dev/null 2>&1 || useradd -u 1000 -g 1000 -m -d /home/vget vget) && \
     mkdir -p /home/vget/downloads /home/vget/.config/vget /home/vget/models && \
-    chown -R vget:vget /home/vget
+    chown -R 1000:1000 /home/vget
 
 # Copy sherpa-onnx shared libraries from builder
 COPY --from=go-builder /usr/local/lib/libsherpa-onnx-*.so* /usr/local/lib/
