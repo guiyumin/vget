@@ -55,6 +55,7 @@ RUN git clone --depth 1 --branch v${WHISPER_VERSION} https://github.com/ggergano
     cp ggml/include/ggml*.h /usr/local/include/ && \
     rm -rf /tmp/whisper.cpp && \
     ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/libcuda.so && \
+    ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/lib/libcuda.so.1 && \
     ldconfig
 
 # Set environment for Go builds
