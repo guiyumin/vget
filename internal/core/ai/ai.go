@@ -22,6 +22,7 @@ type Pipeline struct {
 	summarizer  summarizer.Summarizer
 	chunker     *Chunker
 	provider    string // tracks configured provider for better error messages
+	tuiActive   bool   // suppress stdout when TUI is handling display
 }
 
 // Options configures the pipeline processing.
@@ -185,6 +186,7 @@ func NewLocalPipeline(localASRCfg config.LocalASRConfig, summarizationAccount *c
 
 // SetProgressReporter sets the progress reporter if the transcriber supports it.
 func (p *Pipeline) SetProgressReporter(reporter *transcriber.ProgressReporter) {
+	p.tuiActive = true // Suppress stdout prints when TUI is active
 	if pr, ok := p.transcriber.(transcriber.ProgressReportable); ok {
 		pr.SetProgressReporter(reporter)
 	}
@@ -232,7 +234,9 @@ func (p *Pipeline) ProcessWithProgress(ctx context.Context, filePath string, opt
 			return nil, fmt.Errorf("transcription not configured\nRun: vget ai config")
 		}
 
-		fmt.Printf("Transcribing %s...\n", filepath.Base(filePath))
+		if !p.tuiActive {
+			fmt.Printf("Transcribing %s...\n", filepath.Base(filePath))
+		}
 
 		// Report compression start
 		progressFn(ProgressStepCompress, 0, "Compressing audio...")
@@ -265,7 +269,9 @@ func (p *Pipeline) ProcessWithProgress(ctx context.Context, filePath string, opt
 			return nil, fmt.Errorf("failed to write transcript: %w", err)
 		}
 		result.TranscriptPath = transcriptPath
-		fmt.Printf("  Written: %s\n", transcriptPath)
+		if !p.tuiActive {
+			fmt.Printf("  Written: %s\n", transcriptPath)
+		}
 	}
 
 	if opts.Summarize {
@@ -308,7 +314,9 @@ func (p *Pipeline) ProcessWithProgress(ctx context.Context, filePath string, opt
 		fmt.Printf("  Written: %s\n", summaryPath)
 	}
 
-	fmt.Println("\nComplete!")
+	if !p.tuiActive {
+		fmt.Println("\nComplete!")
+	}
 	return result, nil
 }
 
@@ -379,7 +387,9 @@ func (p *Pipeline) transcribeWithProgress(ctx context.Context, filePath string, 
 
 		if isVideoFile(filePath) {
 			progressFn(ProgressStepCompress, 0, "Extracting audio from video...")
-			fmt.Println("  Extracting audio from video...")
+			if !p.tuiActive {
+				fmt.Println("  Extracting audio from video...")
+			}
 
 			ext := filepath.Ext(filePath)
 			base := strings.TrimSuffix(filepath.Base(filePath), ext)
@@ -389,7 +399,9 @@ func (p *Pipeline) transcribeWithProgress(ctx context.Context, filePath string, 
 				return nil, "", fmt.Errorf("failed to extract audio: %w", err)
 			}
 
-			fmt.Printf("  Extracted audio: %s\n", extractedAudioPath)
+			if !p.tuiActive {
+				fmt.Printf("  Extracted audio: %s\n", extractedAudioPath)
+			}
 			progressFn(ProgressStepCompress, 100, "Audio extracted")
 			transcribeFile = extractedAudioPath
 		}

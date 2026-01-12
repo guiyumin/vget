@@ -26,13 +26,14 @@ var (
 
 // transcribeState holds the shared transcription state for TUI
 type transcribeState struct {
-	mu        sync.RWMutex
-	progress  float64 // 0-100
-	stage     string  // "extracting", "transcribing", "filtering"
-	done      bool
-	err       error
-	startTime time.Time
-	endTime   time.Time
+	mu             sync.RWMutex
+	progress       float64  // 0-100
+	stage          string   // "extracting", "transcribing", "filtering"
+	completedSteps []string // tracks completed stages for checkmarks
+	done           bool
+	err            error
+	startTime      time.Time
+	endTime        time.Time
 }
 
 func newTranscribeState() *transcribeState {
@@ -51,12 +52,21 @@ func (s *transcribeState) setProgress(p float64) {
 func (s *transcribeState) setStage(stage string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Mark previous stage as completed
+	if s.stage != "" && s.stage != stage {
+		s.completedSteps = append(s.completedSteps, s.stage)
+	}
 	s.stage = stage
 }
 
 func (s *transcribeState) setDone() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Mark current stage as completed
+	if s.stage != "" {
+		s.completedSteps = append(s.completedSteps, s.stage)
+	}
+	s.progress = 100 // Ensure progress shows 100% on completion
 	s.endTime = time.Now()
 	s.done = true
 }
@@ -68,10 +78,10 @@ func (s *transcribeState) setError(err error) {
 	s.done = true
 }
 
-func (s *transcribeState) get() (float64, string, bool, error) {
+func (s *transcribeState) get() (float64, string, []string, bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.progress, s.stage, s.done, s.err
+	return s.progress, s.stage, s.completedSteps, s.done, s.err
 }
 
 func (s *transcribeState) elapsed() time.Duration {
@@ -85,6 +95,9 @@ func (s *transcribeState) elapsed() time.Duration {
 
 // tickMsg triggers UI updates
 type tickMsg time.Time
+
+// doneMsg signals completion after final render
+type doneMsg struct{}
 
 // transcribeModel is the Bubble Tea model for transcription progress
 type transcribeModel struct {
@@ -138,6 +151,9 @@ func (m transcribeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
+	case doneMsg:
+		return m, tea.Quit
+
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -149,14 +165,23 @@ func (m transcribeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tickMsg:
-		prog, _, done, err := m.state.get()
-		if err != nil || done {
+		prog, _, _, done, err := m.state.get()
+		if err != nil {
 			return m, tea.Quit
 		}
 
 		var cmds []tea.Cmd
-		cmds = append(cmds, tickCmd())
 
+		if done {
+			// Set progress to 100% and quit after a brief delay for final render
+			cmds = append(cmds, m.progress.SetPercent(1.0))
+			cmds = append(cmds, tea.Tick(200*time.Millisecond, func(t time.Time) tea.Msg {
+				return doneMsg{}
+			}))
+			return m, tea.Batch(cmds...)
+		}
+
+		cmds = append(cmds, tickCmd())
 		cmd := m.progress.SetPercent(prog / 100)
 		cmds = append(cmds, cmd)
 
@@ -167,7 +192,7 @@ func (m transcribeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m transcribeModel) View() string {
-	prog, stage, done, err := m.state.get()
+	prog, stage, completedSteps, done, err := m.state.get()
 	elapsed := m.state.elapsed()
 
 	if err != nil {
@@ -178,20 +203,28 @@ func (m transcribeModel) View() string {
 	}
 
 	if done {
-		return fmt.Sprintf("\n  %s %s\n  %s %s\n  %s %s\n\n",
-			successStyle.Render("✓"),
-			titleStyle.Render("Transcription complete"),
-			labelStyle.Render("Elapsed:"),
-			valueStyle.Render(formatDurationTUI(elapsed)),
-			labelStyle.Render("Model:"),
-			valueStyle.Render(m.model),
-		)
+		var s string
+		s += "\n"
+		// Show all completed steps
+		for _, step := range completedSteps {
+			s += fmt.Sprintf("  %s %s\n", successStyle.Render("✓"), labelStyle.Render(getStageText(step)))
+		}
+		// Final success message
+		s += fmt.Sprintf("  %s %s\n", successStyle.Render("✓"), titleStyle.Render("Transcription complete"))
+		s += fmt.Sprintf("  %s %s\n", labelStyle.Render("  Elapsed:"), valueStyle.Render(formatDurationTUI(elapsed)))
+		s += fmt.Sprintf("  %s %s\n\n", labelStyle.Render("  Model:"), valueStyle.Render(m.model))
+		return s
 	}
 
 	var s string
 	s += "\n"
 
-	// Header with spinner
+	// Show completed steps with checkmarks
+	for _, step := range completedSteps {
+		s += fmt.Sprintf("  %s %s\n", successStyle.Render("✓"), labelStyle.Render(getStageText(step)))
+	}
+
+	// Current step with spinner
 	stageIcon := m.spinner.View()
 	stageText := getStageText(stage)
 	s += fmt.Sprintf("  %s %s\n", stageIcon, titleStyle.Render(stageText))
@@ -200,17 +233,28 @@ func (m transcribeModel) View() string {
 	s += fmt.Sprintf("  %s %s\n", labelStyle.Render("File:"), fileStyle.Render(m.filename))
 	s += fmt.Sprintf("  %s %s\n\n", labelStyle.Render("Model:"), valueStyle.Render(m.model))
 
-	// Progress bar
-	s += fmt.Sprintf("  %s\n\n", m.progress.View())
+	// Progress bar - only show during transcription (not during prepare/convert)
+	if stage == "transcribing" || stage == "filtering" {
+		s += fmt.Sprintf("  %s\n\n", m.progress.View())
+	} else {
+		s += "\n"
+	}
 
-	// Stats
-	s += fmt.Sprintf("  %s %.0f%%  %s  %s %s\n",
-		labelStyle.Render("Progress:"),
-		prog,
-		labelStyle.Render("│"),
-		labelStyle.Render("Elapsed:"),
-		valueStyle.Render(formatDurationTUI(elapsed)),
-	)
+	// Stats - only show percentage when we have actual progress
+	if prog > 0 {
+		s += fmt.Sprintf("  %s %.0f%%  %s  %s %s\n",
+			labelStyle.Render("Progress:"),
+			prog,
+			labelStyle.Render("│"),
+			labelStyle.Render("Elapsed:"),
+			valueStyle.Render(formatDurationTUI(elapsed)),
+		)
+	} else {
+		s += fmt.Sprintf("  %s %s\n",
+			labelStyle.Render("Elapsed:"),
+			valueStyle.Render(formatDurationTUI(elapsed)),
+		)
+	}
 
 	s += "\n"
 	s += helpStyle.Render("  Press q to cancel")
@@ -226,7 +270,7 @@ func getStageText(stage string) string {
 	case "converting":
 		return "Converting audio..."
 	case "transcribing":
-		return "Transcribing speech..."
+		return "Transcribing audio..."
 	case "filtering":
 		return "Filtering results..."
 	default:

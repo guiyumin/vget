@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"codeberg.org/gruf/go-ffmpreg/ffmpreg"
@@ -139,10 +140,10 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 		"-of", outputBase,
 		"-pp", // print progress
 
-		// Anti-hallucination flags
-		"-nc",          // --no-context: don't use previous text as context (prevents repetition loops)
-		"-et", "2.4",   // --entropy-thold: skip segments with entropy > threshold (gibberish detection)
-		"-lpt", "-0.5", // --logprob-thold: skip segments with avg logprob < threshold (low confidence)
+		// Anti-hallucination flags (verified for whisper.cpp v1.8.2)
+		"-mc", "0",     // --max-context 0: don't use previous text as context (prevents repetition loops)
+		"-et", "2.4",   // --entropy-thold: skip high-entropy segments (gibberish)
+		"-lpt", "-0.5", // --logprob-thold: skip low-confidence segments
 	}
 
 	if w.language != "" && w.language != "auto" {
@@ -156,10 +157,20 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 	}
 	args = append(args, "-t", fmt.Sprintf("%d", numThreads))
 
+	// Verify WAV file was created and has content
+	wavInfo, err := os.Stat(wavPath)
+	if err != nil {
+		return nil, fmt.Errorf("WAV file not found after conversion: %w", err)
+	}
+	if wavInfo.Size() == 0 {
+		return nil, fmt.Errorf("WAV file is empty after conversion")
+	}
+
 	// Only print if no TUI reporter
 	if w.reporter == nil {
 		fmt.Printf("  Running whisper.cpp...\n")
 		fmt.Printf("  Model: %s\n", filepath.Base(w.modelPath))
+		fmt.Printf("  Input: %s (%.2f MB)\n", filepath.Base(wavPath), float64(wavInfo.Size())/(1024*1024))
 		fmt.Printf("  Threads: %d\n", numThreads)
 	} else {
 		w.reporter.SetStage("transcribing")
@@ -168,7 +179,11 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 	// Run whisper.cpp
 	cmd := exec.CommandContext(ctx, w.binaryPath, args...)
 
-	// Capture stderr for progress
+	// Capture both stdout and stderr
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
+	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stderr pipe: %w", err)
@@ -178,11 +193,28 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 		return nil, fmt.Errorf("failed to start whisper: %w", err)
 	}
 
-	// Read and report progress
+	// Read stdout and stderr concurrently
+	var stdoutOutput, stderrOutput strings.Builder
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Read stdout
 	go func() {
+		defer wg.Done()
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			line := scanner.Text()
+			stdoutOutput.WriteString(line + "\n")
+		}
+	}()
+
+	// Read stderr and report progress
+	go func() {
+		defer wg.Done()
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			line := scanner.Text()
+			stderrOutput.WriteString(line + "\n")
 			if strings.Contains(line, "progress =") {
 				// Parse progress percentage: "whisper_print_progress_callback: progress =  10%"
 				// Handle variable spacing
@@ -202,15 +234,42 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 		}
 	}()
 
+	// Wait for output readers to finish before checking exit status
+	wg.Wait()
+
 	if err := cmd.Wait(); err != nil {
-		return nil, fmt.Errorf("whisper failed: %w", err)
+		var errParts []string
+		errParts = append(errParts, fmt.Sprintf("whisper failed: %v", err))
+		if stderrOutput.Len() > 0 {
+			errParts = append(errParts, fmt.Sprintf("Stderr: %s", stderrOutput.String()))
+		}
+		if stdoutOutput.Len() > 0 {
+			errParts = append(errParts, fmt.Sprintf("Stdout: %s", stdoutOutput.String()))
+		}
+		return nil, fmt.Errorf("%s", strings.Join(errParts, "\n"))
 	}
 
 	// Read output file (SRT format)
 	outputPath := outputBase + ".srt"
 	content, err := os.ReadFile(outputPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read output: %w", err)
+		// List files in temp directory for debugging
+		files, _ := os.ReadDir(tmpDir)
+		var fileNames []string
+		for _, f := range files {
+			fileNames = append(fileNames, f.Name())
+		}
+		var errParts []string
+		errParts = append(errParts, fmt.Sprintf("failed to read output: %v", err))
+		errParts = append(errParts, fmt.Sprintf("Expected output: %s", outputPath))
+		errParts = append(errParts, fmt.Sprintf("Files in temp dir: %v", fileNames))
+		if stderrOutput.Len() > 0 {
+			errParts = append(errParts, fmt.Sprintf("Stderr: %s", stderrOutput.String()))
+		}
+		if stdoutOutput.Len() > 0 {
+			errParts = append(errParts, fmt.Sprintf("Stdout: %s", stdoutOutput.String()))
+		}
+		return nil, fmt.Errorf("%s", strings.Join(errParts, "\n"))
 	}
 
 	text := strings.TrimSpace(string(content))
