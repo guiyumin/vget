@@ -31,6 +31,7 @@ type WhisperRunner struct {
 	binaryPath string
 	modelPath  string
 	language   string
+	reporter   *ProgressReporter // optional progress reporter for TUI
 }
 
 // NewWhisperRunner creates a new whisper runner.
@@ -88,6 +89,16 @@ func (w *WhisperRunner) Name() string {
 	return "whisper.cpp"
 }
 
+// SetProgressReporter sets the progress reporter for TUI updates.
+func (w *WhisperRunner) SetProgressReporter(reporter *ProgressReporter) {
+	w.reporter = reporter
+}
+
+// GetModelName returns the model filename for display.
+func (w *WhisperRunner) GetModelName() string {
+	return filepath.Base(w.modelPath)
+}
+
 // Transcribe converts an audio file to text using whisper.cpp CLI.
 func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Result, error) {
 	// Check for context cancellation
@@ -95,6 +106,11 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
+	}
+
+	// Report converting stage
+	if w.reporter != nil {
+		w.reporter.SetStage("converting")
 	}
 
 	// Convert audio to WAV if needed
@@ -140,9 +156,14 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 	}
 	args = append(args, "-t", fmt.Sprintf("%d", numThreads))
 
-	fmt.Printf("  Running whisper.cpp...\n")
-	fmt.Printf("  Model: %s\n", filepath.Base(w.modelPath))
-	fmt.Printf("  Threads: %d\n", numThreads)
+	// Only print if no TUI reporter
+	if w.reporter == nil {
+		fmt.Printf("  Running whisper.cpp...\n")
+		fmt.Printf("  Model: %s\n", filepath.Base(w.modelPath))
+		fmt.Printf("  Threads: %d\n", numThreads)
+	} else {
+		w.reporter.SetStage("transcribing")
+	}
 
 	// Run whisper.cpp
 	cmd := exec.CommandContext(ctx, w.binaryPath, args...)
@@ -157,13 +178,26 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 		return nil, fmt.Errorf("failed to start whisper: %w", err)
 	}
 
-	// Read and print progress
+	// Read and report progress
 	go func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			line := scanner.Text()
-			if strings.Contains(line, "progress") || strings.Contains(line, "%") {
-				fmt.Printf("  %s\n", line)
+			if strings.Contains(line, "progress =") {
+				// Parse progress percentage: "whisper_print_progress_callback: progress =  10%"
+				// Handle variable spacing
+				if idx := strings.Index(line, "progress ="); idx >= 0 {
+					rest := strings.TrimSpace(line[idx+len("progress ="):])
+					rest = strings.TrimSuffix(rest, "%")
+					var percent float64
+					if _, err := fmt.Sscanf(rest, "%f", &percent); err == nil {
+						if w.reporter != nil {
+							w.reporter.SetProgress(percent)
+						} else {
+							fmt.Printf("  Progress: %.0f%%\n", percent)
+						}
+					}
+				}
 			}
 		}
 	}()
@@ -183,6 +217,11 @@ func (w *WhisperRunner) Transcribe(ctx context.Context, filePath string) (*Resul
 
 	// Parse segments from output (whisper.cpp txt format has timestamps)
 	segments := parseWhisperOutput(text)
+
+	// Report filtering stage
+	if w.reporter != nil {
+		w.reporter.SetStage("filtering")
+	}
 
 	// Filter out hallucinated segments (repeated text)
 	segments = filterHallucinatedSegments(segments)

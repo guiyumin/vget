@@ -285,16 +285,38 @@ func runTranscribe(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// Run transcription
+	// Set up TUI progress reporter
+	reporter := transcriber.NewTUIProgressReporter()
+	pipeline.SetProgressReporter(reporter.ProgressReporter)
+
+	// Run transcription in background
 	ctx := context.Background()
 	opts := ai.Options{
 		Transcribe: true,
 		Summarize:  false,
 	}
 
-	result, err := pipeline.Process(ctx, filePath, opts)
-	if err != nil {
+	var result *ai.Result
+	var processErr error
+	done := make(chan struct{})
+
+	go func() {
+		result, processErr = pipeline.Process(ctx, filePath, opts)
+		reporter.SetDone()
+		close(done)
+	}()
+
+	// Run TUI (blocks until transcription completes)
+	if err := transcriber.RunTranscribeTUI(filepath.Base(filePath), modelName, reporter); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Wait for process to complete
+	<-done
+
+	if processErr != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", processErr)
 		os.Exit(1)
 	}
 

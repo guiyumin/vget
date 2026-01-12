@@ -183,6 +183,21 @@ func NewLocalPipeline(localASRCfg config.LocalASRConfig, summarizationAccount *c
 	return p, nil
 }
 
+// SetProgressReporter sets the progress reporter if the transcriber supports it.
+func (p *Pipeline) SetProgressReporter(reporter *transcriber.ProgressReporter) {
+	if pr, ok := p.transcriber.(transcriber.ProgressReportable); ok {
+		pr.SetProgressReporter(reporter)
+	}
+}
+
+// GetModelName returns the model name if the transcriber supports it.
+func (p *Pipeline) GetModelName() string {
+	if pr, ok := p.transcriber.(transcriber.ProgressReportable); ok {
+		return pr.GetModelName()
+	}
+	return ""
+}
+
 // Process runs the AI pipeline on the given file.
 func (p *Pipeline) Process(ctx context.Context, filePath string, opts Options) (*Result, error) {
 	return p.ProcessWithProgress(ctx, filePath, opts, nil)

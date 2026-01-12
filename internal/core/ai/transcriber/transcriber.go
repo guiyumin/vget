@@ -59,6 +59,58 @@ type Transcriber interface {
 	MaxFileSize() int64
 }
 
+// ProgressReportable is implemented by transcribers that support progress reporting.
+type ProgressReportable interface {
+	SetProgressReporter(reporter *ProgressReporter)
+	GetModelName() string
+}
+
+// ProgressReporter reports transcription progress for TUI display.
+// This is a stub in transcriber.go - the actual implementation is in progress.go
+// which has build tags.
+type ProgressReporter struct {
+	progressFn func(percent float64)
+	stageFn    func(stage string)
+	doneFn     func()
+	errorFn    func(err error)
+}
+
+// NewSimpleProgressReporter creates a simple progress reporter with callbacks.
+func NewSimpleProgressReporter(progressFn func(float64), stageFn func(string)) *ProgressReporter {
+	return &ProgressReporter{
+		progressFn: progressFn,
+		stageFn:    stageFn,
+	}
+}
+
+// SetProgress updates the progress (0-100).
+func (p *ProgressReporter) SetProgress(percent float64) {
+	if p.progressFn != nil {
+		p.progressFn(percent)
+	}
+}
+
+// SetStage updates the current stage.
+func (p *ProgressReporter) SetStage(stage string) {
+	if p.stageFn != nil {
+		p.stageFn(stage)
+	}
+}
+
+// SetDone marks transcription as complete.
+func (p *ProgressReporter) SetDone() {
+	if p.doneFn != nil {
+		p.doneFn()
+	}
+}
+
+// SetError marks transcription as failed.
+func (p *ProgressReporter) SetError(err error) {
+	if p.errorFn != nil {
+		p.errorFn(err)
+	}
+}
+
 // New creates a new Transcriber based on configuration.
 // The apiKey parameter is the decrypted API key (decryption happens at runtime with user PIN).
 // For local transcription, apiKey is not required.
