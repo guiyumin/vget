@@ -77,7 +77,14 @@ vget ai transcribe podcast.mp3 -l en --model whisper-large-v3-turbo
 
 ### Text-to-Speech (TODO)
 
-> Planned feature - not yet implemented
+> CLI: Cloud TTS APIs only (OpenAI, Azure) - keeps binary small
+> Docker: Local TTS via IndexTTS with voice cloning - see [Docker PRD](./ai-powered-vget-docker-prd.md)
+
+```bash
+# Cloud TTS (CLI)
+vget ai tts "Hello world" -o output.wav --voice alloy  # OpenAI
+vget ai tts "你好世界" -o output.wav --provider azure   # Azure
+```
 
 ### OCR (TODO)
 

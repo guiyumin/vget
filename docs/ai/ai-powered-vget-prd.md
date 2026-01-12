@@ -124,6 +124,16 @@ vget ai transcribe audio.mp3 -l zh -o out.vtt    # → out.vtt
 
 **Purpose:** Generate natural speech from text.
 
+**Planned implementation:**
+- **CLI**: Cloud TTS APIs only (OpenAI, Azure) - keeps binary small
+- **Docker**: [IndexTTS](https://github.com/index-tts/index-tts) for local TTS with voice cloning
+
+**IndexTTS features:**
+- Zero-shot voice cloning from single audio sample
+- Chinese + English with cross-lingual support
+- Emotional expressiveness control
+- Apache 2.0 license
+
 ### OCR - TODO
 
 **Purpose:** Extract text from images and scanned documents.

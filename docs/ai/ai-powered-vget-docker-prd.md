@@ -28,6 +28,7 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 │                                                                  │
 │  Bundled:                                                        │
 │  ├── whisper.cpp binary (CUDA-enabled for amd64)                 │
+│  ├── IndexTTS (Python, for local TTS with voice cloning)         │
 │  └── ffmpeg                                                      │
 │                                                                  │
 │  On startup:                                                     │
@@ -225,6 +226,34 @@ POST   /api/ai/models/:id/install # Download and install model
 DELETE /api/ai/models/:id         # Remove installed model
 ```
 
+### Text-to-Speech API (Docker only)
+
+```
+POST   /api/ai/tts                # Generate speech from text
+```
+
+```typescript
+// POST /api/ai/tts
+interface TTSRequest {
+  text: string;              // Text to synthesize
+  voice_ref?: string;        // Path to reference audio for voice cloning
+  language?: string;         // "zh" or "en" (default: auto-detect)
+  emotion?: string;          // Optional emotion control
+  output_format?: string;    // "wav" (default) or "mp3"
+}
+
+interface TTSResponse {
+  audio_path: string;        // Path to generated audio file
+  duration: number;          // Duration in seconds
+}
+```
+
+**IndexTTS capabilities:**
+- Zero-shot voice cloning from single audio sample
+- Chinese + English with cross-lingual support
+- Emotional expressiveness control
+- Duration control for precise timing
+
 ---
 
 ## Web UI Components
@@ -418,6 +447,13 @@ func DetectGPU() bool {
 - [ ] Model download on demand
 - [ ] Support HuggingFace and vmirror sources
 - [ ] Model list in Web UI
+
+### Phase 4: Text-to-Speech (IndexTTS)
+- [ ] Add IndexTTS Python dependencies to Docker image
+- [ ] Implement `/api/ai/tts` endpoint
+- [ ] Voice cloning from reference audio
+- [ ] Web UI for TTS generation
+- [ ] Integration with transcription workflow (transcript → speech)
 
 ---
 
