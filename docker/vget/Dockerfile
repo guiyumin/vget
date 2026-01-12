@@ -16,7 +16,7 @@ COPY ui/ ./
 RUN npm run build
 
 # Go builder stage
-# CUDA: use pre-built base image with whisper.cpp + sherpa-onnx
+# CUDA: use pre-built base image with whisper.cpp
 # Non-CUDA: build from scratch
 FROM golang:1.25-bookworm AS go-builder-base
 FROM ghcr.io/guiyumin/vget-base:latest AS go-builder-cuda
@@ -34,27 +34,6 @@ RUN if [ "$ENABLE_CUDA" = "false" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
             build-essential cmake curl git && \
         rm -rf /var/lib/apt/lists/*; \
-    fi
-
-# sherpa-onnx (non-CUDA only, CUDA base image already has it)
-ARG SHERPA_VERSION=1.12.20
-
-RUN if [ "$ENABLE_CUDA" = "false" ]; then \
-        curl -L "https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v${SHERPA_VERSION}.tar.gz" | tar -xzf - && \
-        cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/c-api.h /usr/local/include/ && \
-        cp sherpa-onnx-${SHERPA_VERSION}/sherpa-onnx/c-api/cxx-api.h /usr/local/include/ && \
-        rm -rf sherpa-onnx-${SHERPA_VERSION} && \
-        if [ "$TARGETARCH" = "arm64" ]; then \
-            SHERPA_ARCH="aarch64"; \
-            SHERPA_SUFFIX="-cpu"; \
-        else \
-            SHERPA_ARCH="x64"; \
-            SHERPA_SUFFIX=""; \
-        fi && \
-        curl -L "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}.tar.bz2" | tar -xjf - && \
-        cp sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX}/lib/*.so* /usr/local/lib/ && \
-        rm -rf sherpa-onnx-v${SHERPA_VERSION}-linux-${SHERPA_ARCH}-shared${SHERPA_SUFFIX} && \
-        ldconfig; \
     fi
 
 # whisper.cpp (non-CUDA only, CUDA base image already has it)
@@ -86,7 +65,7 @@ RUN go mod download
 COPY . .
 COPY --from=ui-builder /app/ui/dist ./internal/server/dist
 
-# Build with CGO for whisper.cpp/sherpa-onnx bindings
+# Build with CGO for whisper.cpp bindings
 ENV CGO_ENABLED=1
 ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/cuda/lib64:/usr/local/cuda/lib64/stubs
 ENV C_INCLUDE_PATH=/usr/local/include
@@ -135,8 +114,6 @@ RUN (getent group 1000 >/dev/null || groupadd -g 1000 vget) && \
     chown -R 1000:1000 /home/vget
 
 # Copy AI libraries
-COPY --from=go-builder /usr/local/lib/libsherpa-onnx-*.so* /usr/local/lib/
-COPY --from=go-builder /usr/local/lib/libonnxruntime*.so* /usr/local/lib/
 COPY --from=go-builder /usr/local/lib/libwhisper*.so* /usr/local/lib/
 COPY --from=go-builder /usr/local/lib/libggml*.so* /usr/local/lib/
 RUN ldconfig

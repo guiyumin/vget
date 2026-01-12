@@ -119,26 +119,23 @@ type AIAccount struct {
 // AIServiceConfig holds settings for an AI service (transcription or summarization).
 // This is used by the transcriber/summarizer packages.
 type AIServiceConfig struct {
-	// Model to use (e.g., "whisper-1", "gpt-4o", "parakeet-v3")
+	// Model to use (e.g., "whisper-1", "gpt-4o")
 	Model string `yaml:"model,omitempty"`
 
 	// Optional custom base URL (for OpenAI-compatible APIs or local ASR service)
 	BaseURL string `yaml:"base_url,omitempty"`
 }
 
-// LocalASRConfig holds settings for local speech-to-text using sherpa-onnx.
+// LocalASRConfig holds settings for local speech-to-text using whisper.cpp.
 type LocalASRConfig struct {
 	// Enabled determines if local ASR is active (vs cloud API)
 	Enabled bool `yaml:"enabled,omitempty"`
 
-	// Engine is the ASR engine to use: "parakeet" or "whisper"
-	// Default: "parakeet" (faster, better for European languages)
-	// Use "whisper" for Chinese and other non-European languages
+	// Engine is the ASR engine to use (currently only "whisper")
 	Engine string `yaml:"engine,omitempty"`
 
 	// Model is the model to use:
-	// - "parakeet-v3" (default, 25 EU languages)
-	// - "whisper-small", "whisper-medium", "whisper-large-turbo" (99 languages)
+	// - "whisper-small", "whisper-medium", "whisper-large-v3-turbo" (100 languages)
 	Model string `yaml:"model,omitempty"`
 
 	// ModelsDir is a custom directory for storing models

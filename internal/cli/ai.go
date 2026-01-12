@@ -93,7 +93,6 @@ var aiModelsDownloadCmd = &cobra.Command{
 	Long: `Download a transcription model for local speech-to-text.
 
 Available models:
-  parakeet-v3            (630MB) - 25 European languages, fast
   whisper-tiny            (78MB) - Fastest, basic quality
   whisper-base           (148MB) - Good for quick drafts
   whisper-small          (488MB) - Balanced for most uses
@@ -102,12 +101,11 @@ Available models:
   whisper-large-v3-turbo (1.6GB) - Best quality + fast (recommended)
 
 Download sources:
-  huggingface/github (default) - Official sources
-  vmirror                      - vmirror.org (faster in China)
+  huggingface (default) - Official sources
+  vmirror               - vmirror.org (faster in China)
 
 Examples:
   vget ai models download whisper-large-v3-turbo
-  vget ai models download parakeet-v3
   vget ai models download whisper-small --from=vmirror`,
 	Args: cobra.ExactArgs(1),
 	Run:  runModelsDownload,
@@ -136,7 +134,6 @@ This is an alias for 'vget ai models download'.
 
 Examples:
   vget ai download whisper-large-v3-turbo
-  vget ai download parakeet-v3
   vget ai download whisper-small --from=vmirror`,
 	Args: cobra.ExactArgs(1),
 	Run:  runModelsDownload,
@@ -225,15 +222,7 @@ func runTranscribe(cmd *cobra.Command, args []string) {
 
 	// Check if model supports the language
 	if !transcriber.ModelSupportsLanguage(modelName, aiLanguage) {
-		fmt.Fprintf(os.Stderr, "Error: model '%s' does not support language '%s'\n\n", modelName, aiLanguage)
-		if model.Engine == "sherpa" {
-			fmt.Fprintf(os.Stderr, "%s supports 25 European languages:\n", modelName)
-			fmt.Fprintln(os.Stderr, "  bg, hr, cs, da, nl, en, et, fi, fr, de, el, hu, it,")
-			fmt.Fprintln(os.Stderr, "  lv, lt, mt, pl, pt, ro, sk, sl, es, sv, ru, uk")
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintf(os.Stderr, "For %s, use a whisper model instead:\n", aiLanguage)
-			fmt.Fprintf(os.Stderr, "  vget ai transcribe %s -l %s --model whisper-large-v3-turbo\n", filePath, aiLanguage)
-		}
+		fmt.Fprintf(os.Stderr, "Error: model '%s' does not support language '%s'\n", modelName, aiLanguage)
 		os.Exit(1)
 	}
 
@@ -458,11 +447,8 @@ func runModelsDownload(cmd *cobra.Command, args []string) {
 	}
 
 	// Determine download URL based on --from flag
-	downloadURL := model.OfficialURL // Default: GitHub/Hugging Face
+	downloadURL := model.OfficialURL // Default: Hugging Face
 	source := "Hugging Face"
-	if model.Engine == "sherpa" {
-		source = "GitHub"
-	}
 
 	switch strings.ToLower(aiFrom) {
 	case "vmirror":
@@ -497,7 +483,7 @@ func runModelsDownload(cmd *cobra.Command, args []string) {
 		}
 		downloadURL = signedURL
 	case "huggingface", "github", "":
-		// Default: GitHub for parakeet, Hugging Face for whisper (already set)
+		// Default: Hugging Face (already set)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown source '%s'\n", aiFrom)
 		fmt.Fprintln(os.Stderr, "Available sources: huggingface/github (default), vmirror")

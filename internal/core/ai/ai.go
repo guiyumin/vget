@@ -139,7 +139,7 @@ func NewPipelineWithAccount(account *config.AIAccount, transcriptionModel, summa
 	return p, nil
 }
 
-// NewLocalPipeline creates a pipeline that uses local transcription (sherpa-onnx/whisper.cpp).
+// NewLocalPipeline creates a pipeline that uses local transcription (whisper.cpp).
 // For summarization, it requires a cloud account (local transcription + cloud summarization).
 // If summarizationAccount is nil, summarization will not be available.
 func NewLocalPipeline(localASRCfg config.LocalASRConfig, summarizationAccount *config.AIAccount, summarizationModel, pin string) (*Pipeline, error) {

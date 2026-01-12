@@ -30,14 +30,13 @@ AI features require GPU acceleration for practical performance. CPU-only transcr
 
 | Feature | Runtime | Use Case | Status |
 |---------|---------|----------|--------|
-| Speech-to-Text (STT) | whisper.cpp, sherpa-onnx | Transcription, subtitles | **Active** |
+| Speech-to-Text (STT) | whisper.cpp | Transcription, subtitles | **Active** |
 | Text-to-Speech (TTS) | Piper | Audiobook generation, accessibility | TODO |
 | OCR | Tesseract | Image text extraction, scanned PDFs | TODO |
 | PDF Processing | pdfcpu, poppler | Text extraction, manipulation | TODO |
 
-**ASR Engines:**
-- **whisper.cpp** - 99 languages, uses Whisper models
-- **sherpa-onnx** - 25 European languages, uses Parakeet models (faster for EU)
+**ASR Engine:**
+- **whisper.cpp** - 99 languages, uses Whisper models (ggml format)
 
 ---
 
@@ -53,10 +52,6 @@ AI features require GPU acceleration for practical performance. CPU-only transcr
 │  Embedded whisper.cpp binary (GPU-enabled)                      │
 │  ├── macOS ARM64: Metal acceleration (~3MB)                     │
 │  └── Windows AMD64: CUDA acceleration (~8MB)                    │
-├─────────────────────────────────────────────────────────────────┤
-│  Embedded sherpa-onnx binary (Parakeet models)                  │
-│  ├── macOS ARM64: CoreML (~23MB)                                │
-│  └── Windows AMD64: CUDA (~17MB)                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Audio Decoders (Pure Go)                                       │
 │  ├── MP3  → go-mp3                                              │
@@ -207,7 +202,6 @@ type Model interface {
 
 ### Phase 2: Speech-to-Text ✅
 - [x] whisper.cpp integration
-- [x] sherpa-onnx integration (Parakeet models)
 - [x] `vget ai transcribe` command (auto-detect format from -o extension)
 - [x] `vget ai models` command
 

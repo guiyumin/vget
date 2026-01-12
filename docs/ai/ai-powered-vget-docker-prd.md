@@ -13,7 +13,7 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 1. User opens web UI at `http://localhost:8080`
 2. Selects audio/video file from downloads or uploads new file
 3. Configures AI options (transcribe, translate, summarize)
-4. Selects processing options (engine, model, language)
+4. Selects processing options (model, language)
 5. Monitors progress via real-time stepper UI
 6. Downloads or views outputs (transcript, translation, SRT, summary)
 
@@ -28,7 +28,6 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 │                                                                  │
 │  Bundled:                                                        │
 │  ├── whisper.cpp binary (CUDA-enabled for amd64)                 │
-│  ├── sherpa-onnx binary (Parakeet models)                        │
 │  └── ffmpeg                                                      │
 │                                                                  │
 │  On startup:                                                     │
@@ -52,7 +51,7 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 
 | GPU Type | Speed | Support | Worth It? |
 |----------|-------|---------|-----------|
-| NVIDIA RTX | 10-30x faster than CPU | CUDA (whisper.cpp, sherpa-onnx) | ✅ Yes |
+| NVIDIA RTX | 10-30x faster than CPU | CUDA (whisper.cpp) | ✅ Yes |
 | Apple Silicon | 5-15x faster | Metal (whisper.cpp) | ✅ Yes (CLI only) |
 | Intel iGPU | 1-2x faster | Limited OpenCL | ❌ No |
 | AMD iGPU | 1-2x faster | Limited ROCm | ❌ No |
@@ -169,7 +168,7 @@ interface StartJobRequest {
     transcribe: boolean;
     summarize: boolean;
     translate_to?: string[];  // ["en", "zh"]
-    model?: string;  // e.g., "whisper-large-v3-turbo", "parakeet-v3"
+    model?: string;  // e.g., "whisper-large-v3-turbo"
     generate_srt?: boolean;   // also generate SRT after transcription
     generate_vtt?: boolean;   // also generate VTT after transcription
     language?: string;
@@ -237,7 +236,7 @@ interface ProcessingConfig {
   transcribe: boolean;
   summarize: boolean;
   translateTo: string[];      // ["en", "zh", "jp"]
-  model: string;              // "auto", "whisper-large-v3-turbo", "parakeet-v3", etc.
+  model: string;              // "auto", "whisper-large-v3-turbo", etc.
   language: string;
   generateSrt: boolean;       // also generate SRT after transcription
   generateVtt: boolean;       // also generate VTT after transcription
@@ -264,7 +263,6 @@ ai_step_summarize: "Generate Summary",
 // Options
 ai_model_auto: "Auto (recommended)",
 ai_model_whisper: "Whisper Large V3 Turbo (99 languages)",
-ai_model_parakeet: "Parakeet V3 (fast, European)",
 ai_translate_to: "Translate to",
 ai_generate_srt: "Also generate SRT subtitles",
 ai_generate_vtt: "Also generate VTT subtitles",

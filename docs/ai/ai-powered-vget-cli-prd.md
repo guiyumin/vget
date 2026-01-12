@@ -7,8 +7,7 @@ This document covers CLI-specific implementation for vget AI features.
 **Key Design Decisions:**
 
 - `CGO_ENABLED=0` - Pure Go binary, no C dependencies
-- GPU-enabled binaries embedded: whisper.cpp + sherpa-onnx
-- Two ASR engines: whisper.cpp (99 languages) and sherpa-onnx (Parakeet, 25 EU languages)
+- GPU-enabled whisper.cpp binary embedded
 - Models downloaded on first use from Hugging Face / GitHub
 
 See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
@@ -17,13 +16,13 @@ See [ai-powered-vget-prd.md](./ai-powered-vget-prd.md) for shared concepts.
 
 ## Platform Support
 
-| Platform          | AI Features | whisper.cpp | sherpa-onnx               |
-| ----------------- | ----------- | ----------- | ------------------------- |
-| **macOS ARM64**   | ✅          | Metal       | CPU (ANE via onnxruntime) |
-| **Windows AMD64** | ✅          | CUDA        | CUDA                      |
-| macOS AMD64       | ❌          | -           | -                         |
-| Linux AMD64       | ❌          | -           | -                         |
-| Linux ARM64       | ❌          | -           | -                         |
+| Platform          | AI Features | whisper.cpp |
+| ----------------- | ----------- | ----------- |
+| **macOS ARM64**   | ✅          | Metal       |
+| **Windows AMD64** | ✅          | CUDA        |
+| macOS AMD64       | ❌          | -           |
+| Linux AMD64       | ❌          | -           |
+| Linux ARM64       | ❌          | -           |
 
 ---
 
@@ -64,9 +63,9 @@ vget ai transcribe podcast.mp3 -l zh -o output.srt  # → SRT subtitles
 vget ai transcribe podcast.mp3 -l zh -o output.vtt  # → VTT subtitles
 vget ai transcribe podcast.mp3 -l zh -o output.txt  # → Plain text
 
-# Choose model (whisper-* or parakeet-*)
+# Choose model
 vget ai transcribe podcast.mp3 -l zh --model whisper-small
-vget ai transcribe podcast.mp3 -l de --model parakeet-v3   # 25 EU languages
+vget ai transcribe podcast.mp3 -l en --model whisper-large-v3-turbo
 ```
 
 **Output Formats:**
@@ -75,11 +74,6 @@ vget ai transcribe podcast.mp3 -l de --model parakeet-v3   # 25 EU languages
 - `.srt` - SubRip subtitle format
 - `.vtt` - WebVTT subtitle format
 - `.txt` - Plain text (no timestamps)
-
-**Model Selection:**
-
-- `whisper-*` models: 99 languages, uses whisper.cpp
-- `parakeet-*` models: 25 European languages, uses sherpa-onnx (faster for EU)
 
 ### Text-to-Speech (TODO)
 
@@ -104,10 +98,6 @@ vget ai transcribe podcast.mp3 -l de --model parakeet-v3   # 25 EU languages
 │  ├── macOS ARM64: Metal (~5MB)                                  │
 │  └── Windows AMD64: CUDA (~8MB)                                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  Embedded sherpa-onnx (Parakeet models)                         │
-│  ├── macOS ARM64: CPU/ANE (~7MB)                                │
-│  └── Windows AMD64: CUDA (~17MB)                                │
-├─────────────────────────────────────────────────────────────────┤
 │  Audio Decoders (Pure Go)                                       │
 │  ├── MP3  → go-mp3 (hajimehoshi/go-mp3)                        │
 │  ├── WAV  → go-audio/wav                                        │
@@ -131,9 +121,6 @@ internal/core/ai/
 │   ├── whisper.go            # whisper.cpp CGO implementation
 │   ├── whisper_runner.go     # whisper.cpp CLI runner (non-CGO)
 │   ├── whisper_embed_*.go    # Platform-specific whisper binaries
-│   ├── sherpa.go             # sherpa-onnx CGO implementation
-│   ├── sherpa_runner.go      # sherpa-onnx CLI runner (non-CGO)
-│   ├── sherpa_embed_*.go     # Platform-specific sherpa binaries
 │   └── models.go             # Model registry and download
 ├── chunker/
 │   └── chunker.go            # Audio chunking for large files
@@ -174,31 +161,6 @@ jobs:
           cmake -B build -DGGML_CUDA=ON
           cmake --build build
           cp build/bin/Release/whisper-cli.exe ../internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-
-  # sherpa-onnx builds (for Parakeet models)
-  build-sherpa-darwin-arm64:
-    runs-on: macos-14
-    steps:
-      - name: Build sherpa-onnx
-        run: |
-          git clone --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
-          cd sherpa-onnx
-          cmake -B build -DSHERPA_ONNX_ENABLE_TTS=OFF -DSHERPA_ONNX_ENABLE_BINARY=ON
-          cmake --build build
-          cp build/bin/sherpa-onnx-offline ../internal/core/ai/transcriber/bin/sherpa-darwin-arm64
-
-  build-sherpa-windows-amd64:
-    runs-on: windows-latest
-    steps:
-      - name: Install CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.30
-        with:
-          cuda: "12.6.0"
-      - name: Build sherpa-onnx with CUDA
-        run: |
-          cmake -B build -DSHERPA_ONNX_ENABLE_GPU=ON -DSHERPA_ONNX_ENABLE_TTS=OFF
-          cmake --build build
-          cp build/bin/Release/sherpa-onnx-offline.exe ../internal/core/ai/transcriber/bin/sherpa-windows-amd64.exe
 ```
 
 ---
@@ -236,17 +198,7 @@ func extractWhisperBinary() (string, error) {
 
 ## Model Downloads
 
-### Available Models
-
-#### Parakeet Models (sherpa-onnx, 25 EU languages)
-
-| Model           | Size  | Languages | Description           |
-| --------------- | ----- | --------- | --------------------- |
-| **parakeet-v3** | 630MB | 25 EU     | Fast, multilingual EU |
-
-Supported languages: bg, hr, cs, da, nl, en, et, fi, fr, de, el, hu, it, lv, lt, mt, pl, pt, ro, sk, sl, es, sv, ru, uk
-
-#### Whisper Models (whisper.cpp, 99 languages)
+### Whisper Models (whisper.cpp, 99 languages)
 
 | Model                      | Size  | Description                       |
 | -------------------------- | ----- | --------------------------------- |
@@ -262,7 +214,6 @@ Supported languages: bg, hr, cs, da, nl, en, et, fi, fr, de, el, hu, it, lv, lt,
 | Source      | URL                                    | Use Case                 |
 | ----------- | -------------------------------------- | ------------------------ |
 | huggingface | huggingface.co/ggerganov/whisper.cpp   | Whisper models (default) |
-| github      | github.com/k2-fsa/sherpa-onnx/releases | Parakeet models          |
 | vmirror     | vmirror.org                            | Faster in China          |
 
 ---
@@ -275,8 +226,7 @@ Supported languages: bg, hr, cs, da, nl, en, et, fi, fr, de, el, hu, it, lv, lt,
 | go-ffmpreg (WASM)      | ~8MB        | ~8MB        |
 | Pure Go decoders       | ~1MB        | ~1MB        |
 | whisper.cpp (embedded) | ~3MB        | ~8MB        |
-| sherpa-onnx (embedded) | ~23MB       | ~17MB       |
-| **Total binary**       | **~55MB**   | **~54MB**   |
+| **Total binary**       | **~32MB**   | **~37MB**   |
 
 ---
 
@@ -293,14 +243,10 @@ CGO_ENABLED=0 go build -o build/vget ./cmd/vget
 ./build/vget ai transcribe testdata/sample.mp3 -l en -o output.srt
 ./build/vget ai transcribe testdata/sample.mp3 -l en -o output.vtt
 
-# Test transcription with Parakeet (EU languages)
-./build/vget ai transcribe testdata/sample.mp3 -l de --model parakeet-v3
-
 # Test model management
 ./build/vget ai models
 ./build/vget ai models -r
 ./build/vget ai download whisper-small
-./build/vget ai download parakeet-v3
 ```
 
 ---
@@ -308,6 +254,5 @@ CGO_ENABLED=0 go build -o build/vget ./cmd/vget
 ## References
 
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp) - C++ Whisper implementation
-- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) - ONNX-based speech recognition (Parakeet)
 - [go-ffmpreg](https://codeberg.org/gruf/go-ffmpreg) - Embedded ffmpeg WASM
 - [go-mp3](https://github.com/hajimehoshi/go-mp3) - Pure Go MP3 decoder

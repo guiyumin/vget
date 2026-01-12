@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 jobs:
-  # Build whisper.cpp + sherpa-onnx for CLI embedding
+  # Build whisper.cpp for CLI embedding
   # Skip for pre-release tags (e.g., v1.0.0-beta)
   build-darwin-arm64:
     if: ${{ !contains(github.ref_name, '-') }}
@@ -26,20 +26,6 @@ jobs:
           cmake --build build --config Release -j$(sysctl -n hw.ncpu)
           mkdir -p ../internal/core/ai/transcriber/bin
           cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-darwin-arm64
-
-      - name: Build sherpa-onnx
-        run: |
-          git clone --depth 1 --branch v1.12.20 https://github.com/k2-fsa/sherpa-onnx
-          cd sherpa-onnx
-          cmake -B build -DCMAKE_BUILD_TYPE=Release \
-            -DSHERPA_ONNX_ENABLE_TTS=OFF \
-            -DSHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION=OFF \
-            -DSHERPA_ONNX_ENABLE_BINARY=ON \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DSHERPA_ONNX_ENABLE_PORTAUDIO=OFF \
-            -DSHERPA_ONNX_ENABLE_WEBSOCKET=OFF
-          cmake --build build --config Release -j$(sysctl -n hw.ncpu)
-          cp build/bin/sherpa-onnx-offline ../internal/core/ai/transcriber/bin/sherpa-darwin-arm64
 
       - uses: actions/upload-artifact@v4
         with:
@@ -58,12 +44,6 @@ jobs:
           curl -SL https://github.com/ggerganov/whisper.cpp/releases/download/v1.8.2/whisper-cublas-12.4.0-bin-x64.zip -o whisper.zip
           unzip whisper.zip
           cp Release/whisper-cli.exe internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-
-      - name: Download sherpa-onnx (pre-built CUDA)
-        run: |
-          curl -SL https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.20/sherpa-onnx-v1.12.20-win-x64-cuda.tar.bz2 | tar -xjf -
-          cp sherpa-onnx-v1.12.20-win-x64-cuda/bin/sherpa-onnx-offline.exe internal/core/ai/transcriber/bin/sherpa-windows-amd64.exe
-          cp sherpa-onnx-v1.12.20-win-x64-cuda/lib/*.dll internal/core/ai/transcriber/bin/
 
       - uses: actions/upload-artifact@v4
         with:
@@ -92,12 +72,6 @@ jobs:
           cmake --build build --config Release -j$(nproc)
           mkdir -p ../internal/core/ai/transcriber/bin
           cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-linux-amd64
-
-      - name: Download sherpa-onnx (pre-built CUDA)
-        run: |
-          curl -SL https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.20/sherpa-onnx-v1.12.20-linux-x64-gpu.tar.bz2 | tar -xjf -
-          cp sherpa-onnx-v1.12.20-linux-x64-gpu/bin/sherpa-onnx-offline internal/core/ai/transcriber/bin/sherpa-linux-amd64
-          chmod +x internal/core/ai/transcriber/bin/sherpa-linux-amd64
 
       - uses: actions/upload-artifact@v4
         with:

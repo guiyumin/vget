@@ -25,9 +25,6 @@ jobs:
           touch internal/core/ai/transcriber/bin/whisper-darwin-arm64
           touch internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
           touch internal/core/ai/transcriber/bin/whisper-linux-amd64
-          touch internal/core/ai/transcriber/bin/sherpa-darwin-arm64
-          touch internal/core/ai/transcriber/bin/sherpa-windows-amd64.exe
-          touch internal/core/ai/transcriber/bin/sherpa-linux-amd64
 
       - name: Run tests
         run: CGO_ENABLED=0 go test -v ./...
@@ -50,9 +47,6 @@ jobs:
           touch internal/core/ai/transcriber/bin/whisper-darwin-arm64
           touch internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
           touch internal/core/ai/transcriber/bin/whisper-linux-amd64
-          touch internal/core/ai/transcriber/bin/sherpa-darwin-arm64
-          touch internal/core/ai/transcriber/bin/sherpa-windows-amd64.exe
-          touch internal/core/ai/transcriber/bin/sherpa-linux-amd64
 
       - name: Run staticcheck
         uses: dominikh/staticcheck-action@v1

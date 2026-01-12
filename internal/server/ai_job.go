@@ -121,9 +121,9 @@ type AIJobRequest struct {
 	SummaryLanguage    string `json:"summary_language"` // Language for the summary output (e.g., "zh", "en")
 }
 
-// isLocalModel returns true if the model is a local ASR model (whisper.cpp or sherpa-onnx)
+// isLocalModel returns true if the model is a local ASR model (whisper.cpp)
 func isLocalModel(model string) bool {
-	// Local models: whisper-small, whisper-medium, whisper-turbo, parakeet-*
+	// Local models: whisper-small, whisper-medium, whisper-turbo, etc.
 	// Cloud models: whisper-1 (OpenAI API)
 	if model == "" {
 		return false
@@ -131,7 +131,7 @@ func isLocalModel(model string) bool {
 	if model == "whisper-1" {
 		return false // OpenAI's cloud model
 	}
-	if strings.HasPrefix(model, "whisper-") || strings.HasPrefix(model, "parakeet") {
+	if strings.HasPrefix(model, "whisper-") {
 		return true
 	}
 	return false
@@ -419,7 +419,7 @@ func (q *AIJobQueue) processJob(job *AIJob) {
 	var err error
 
 	if job.useLocalASR {
-		// Use local transcription (sherpa-onnx/whisper.cpp)
+		// Use local transcription (whisper.cpp)
 		// For summarization, we can optionally use a cloud account
 		var summarizationAccount *config.AIAccount
 		if job.includeSummary && job.account != "" {

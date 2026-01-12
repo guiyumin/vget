@@ -2,13 +2,11 @@
 #
 # Image variants (choose based on your system):
 #   ghcr.io/guiyumin/vget:latest      - No models, downloads on first use (~200MB)
-#   ghcr.io/guiyumin/vget:full-small  - Parakeet V3 + Whisper Small for NAS <8GB RAM (~1.0GB)
-#   ghcr.io/guiyumin/vget:full-medium - Parakeet V3 + Whisper Medium for 8-16GB RAM (~1.5GB)
-#   ghcr.io/guiyumin/vget:full-large  - Parakeet V3 + Whisper Large Turbo for GPU/32GB+ RAM (~2.3GB)
+#   ghcr.io/guiyumin/vget:full-small  - Whisper Small bundled (~500MB)
+#   ghcr.io/guiyumin/vget:full-medium - Whisper Medium bundled (~1.5GB)
+#   ghcr.io/guiyumin/vget:full-large  - Whisper Large V3 Turbo bundled (~1.8GB)
 #
-# Model selection:
-#   - Parakeet V3: Fast, CPU-optimized, 25 European languages
-#   - Whisper: Slower but supports 99 languages including Chinese
+# Whisper models support 99 languages including Chinese, Japanese, Korean.
 #
 # Configure via .env file or environment variables:
 #   VGET_PORT=8080              # Web UI port

@@ -4,13 +4,10 @@
 
 # whisper.cpp binaries
 whisper-darwin-arm64
+whisper-darwin-amd64
 whisper-windows-amd64.exe
 whisper-linux-amd64
-
-# sherpa-onnx binaries
-sherpa-darwin-arm64
-sherpa-windows-amd64.exe
-sherpa-linux-amd64
+whisper-linux-arm64
 
 # Windows DLLs
 *.dll
