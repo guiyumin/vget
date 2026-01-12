@@ -203,8 +203,6 @@ jobs:
           platforms: linux/amd64
           build-args: ENABLE_CUDA=true
           outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=amd64
-          cache-to: type=gha,scope=amd64,mode=min
 
   docker-arm64:
     if: ${{ !contains(github.ref_name, '-') }}
@@ -233,8 +231,6 @@ jobs:
           file: ./docker/vget/Dockerfile
           platforms: linux/arm64
           outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=arm64
-          cache-to: type=gha,scope=arm64,mode=min
 
   docker-manifest:
     if: ${{ !contains(github.ref_name, '-') }}
