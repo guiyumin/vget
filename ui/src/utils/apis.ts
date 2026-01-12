@@ -593,6 +593,7 @@ export interface LocalASRModel {
 
 export interface LocalASRCapabilities {
   available: boolean;
+  supported?: boolean; // false when built with -tags noai
   service_url: string;
   enabled: boolean;
   current_model?: string;

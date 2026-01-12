@@ -559,6 +559,21 @@ func (s *Server) handleUploadAudio(c *gin.Context) {
 
 // handleGetLocalASRCapabilities returns the capabilities of local whisper.cpp transcription
 func (s *Server) handleGetLocalASRCapabilities(c *gin.Context) {
+	// Check if local AI is supported in this build
+	if !IsLocalAISupported() {
+		c.JSON(http.StatusOK, Response{
+			Code: 200,
+			Data: gin.H{
+				"available": false,
+				"enabled":   false,
+				"supported": false,
+				"models":    []any{},
+			},
+			Message: "Local AI not supported in this build",
+		})
+		return
+	}
+
 	cfg := config.LoadOrDefault()
 
 	// Get models directory
