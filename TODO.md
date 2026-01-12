@@ -2,7 +2,7 @@
 
 ## Tomorrow's Tasks
 
-3. [ ] kuaidi100 - Bring Your Own Key (API is expensive)
+3. [x] kuaidi100 - Bring Your Own Key (API is expensive)
 
 ## Features
 
@@ -12,7 +12,7 @@
   - Default format/quality
 - [x] Self update
 - [x] m3u8 streaming support
-- [ ] Bulk download from txt file
+- [x] Bulk download from txt file
   - Read URLs from txt file
   - Sequential or parallel processing
 - [x] Format/quality selection (`-q` flag)
@@ -24,9 +24,9 @@
 - [ ] Dry run mode
 - [ ] More extractors (YouTube, TikTok, etc.)
 - [ ] Playlist support
-- [ ] Concurrent downloads
+- [x] Concurrent downloads
 - [ ] Rate limiting
-- [ ] Cookie/auth support
+- [x] Cookie/auth support
 - [ ] Metadata embedding
 - [x] `vget server` - HTTP server mode
   - REST API for remote downloads
@@ -44,7 +44,7 @@
 - [x] Xiaoyuzhou (小宇宙) podcasts
   - [x] Episode download
   - [x] Search (`vget search --podcast <query>`)
-  - [ ] Podcast listing (all episodes)
+  - [x] Podcast listing (all episodes)
 - [x] YouTube (Docker only, uses yt-dlp/youtube-dl)
 - [ ] TikTok
 - [x] Apple Podcasts
@@ -70,15 +70,6 @@
   - [ ] Scraping (default, no setup)
   - [ ] API mode (user provides own keys in config.yml)
   - [ ] kuaidi100 - Bring Your Own Key (API is expensive)
-
-## Known Issues
-
-- [ ] Docker server download speed is unstable (can range from 2 MB/s to 70 MB/s for PikPak)
-  - CLI consistently gets ~70 MB/s
-  - Both use same multi-stream download code (12 parallel connections)
-  - `--network host` doesn't help
-  - Likely Docker overhead (networking or volume mount I/O)
-  - Need to investigate: run CLI inside Docker to isolate issue
 
 ## DevOps
 
