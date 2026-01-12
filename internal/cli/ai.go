@@ -107,8 +107,19 @@ Download sources:
 Examples:
   vget ai models download whisper-large-v3-turbo
   vget ai models download whisper-small --from=vmirror`,
-	Args: cobra.ExactArgs(1),
-	Run:  runModelsDownload,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			printAvailableModels("vget ai models download")
+			return fmt.Errorf("")
+		}
+		if len(args) > 1 {
+			return fmt.Errorf("accepts 1 arg, received %d", len(args))
+		}
+		return nil
+	},
+	Run: runModelsDownload,
 }
 
 // aiModelsRmCmd removes a downloaded model
@@ -135,8 +146,19 @@ This is an alias for 'vget ai models download'.
 Examples:
   vget ai download whisper-large-v3-turbo
   vget ai download whisper-small --from=vmirror`,
-	Args: cobra.ExactArgs(1),
-	Run:  runModelsDownload,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			printAvailableModels("vget ai download")
+			return fmt.Errorf("")
+		}
+		if len(args) > 1 {
+			return fmt.Errorf("accepts 1 arg, received %d", len(args))
+		}
+		return nil
+	},
+	Run: runModelsDownload,
 }
 
 // aiSttCmd is speech-to-text command (stt = speech-to-text)
@@ -563,6 +585,58 @@ func convertSegments(segments []transcriber.Segment) []aioutput.Segment {
 		}
 	}
 	return result
+}
+
+// printAvailableModels displays available whisper models with styling
+func printAvailableModels(cmdPrefix string) {
+	// Styles
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))   // cyan
+	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("42"))               // green
+	sizeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("245"))              // gray
+	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("250"))              // light gray
+	recStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)    // orange
+	cmdStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("213"))               // pink
+	dimStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))               // dim
+
+	fmt.Println()
+	fmt.Println(titleStyle.Render("Available Models"))
+	fmt.Println(dimStyle.Render("─────────────────────────────────────────────────────────"))
+	fmt.Println()
+
+	models := []struct {
+		name string
+		size string
+		desc string
+		rec  bool
+	}{
+		{"whisper-tiny", "78MB", "Fastest, basic quality", false},
+		{"whisper-base", "148MB", "Good for quick drafts", false},
+		{"whisper-small", "488MB", "Balanced for most uses", false},
+		{"whisper-medium", "1.5GB", "Higher accuracy", false},
+		{"whisper-large-v3", "3.1GB", "Highest accuracy, slowest", false},
+		{"whisper-large-v3-turbo", "1.6GB", "Best quality + fast", true},
+	}
+
+	for _, m := range models {
+		name := nameStyle.Render(fmt.Sprintf("%-24s", m.name))
+		size := sizeStyle.Render(fmt.Sprintf("%-8s", m.size))
+		desc := descStyle.Render(m.desc)
+		rec := ""
+		if m.rec {
+			rec = " " + recStyle.Render("★ recommended")
+		}
+		fmt.Printf("  %s %s %s%s\n", name, size, desc, rec)
+	}
+
+	fmt.Println()
+	fmt.Println(dimStyle.Render("─────────────────────────────────────────────────────────"))
+	fmt.Println()
+	fmt.Println(dimStyle.Render("Usage:"))
+	fmt.Printf("  %s %s\n", cmdStyle.Render(cmdPrefix), nameStyle.Render("<model>"))
+	fmt.Printf("  %s %s %s\n", cmdStyle.Render(cmdPrefix), nameStyle.Render("<model>"), dimStyle.Render("--from=vmirror"))
+	fmt.Println()
+	fmt.Printf("  %s\n", dimStyle.Render("Use --from=vmirror for faster downloads in China"))
+	fmt.Println()
 }
 
 func init() {
