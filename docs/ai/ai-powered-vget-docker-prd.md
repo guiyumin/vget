@@ -248,11 +248,137 @@ interface TTSResponse {
 }
 ```
 
-**IndexTTS capabilities:**
-- Zero-shot voice cloning from single audio sample
-- Chinese + English with cross-lingual support
-- Emotional expressiveness control
-- Duration control for precise timing
+---
+
+## IndexTTS Integration
+
+[IndexTTS](https://github.com/index-tts/index-tts) is an industrial-grade zero-shot TTS system with 17.8k+ stars, chosen for vget Docker due to its voice cloning capabilities and Chinese language support.
+
+### Model Versions
+
+| Version | Features | Recommended |
+|---------|----------|-------------|
+| **IndexTTS-2** | Emotional control, duration control, best quality | ✅ Yes |
+| IndexTTS-1.5 | Improved English, stable | For lower VRAM |
+| IndexTTS-1.0 | Original release | Legacy |
+
+### System Requirements
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| **VRAM** | 8 GB | 12+ GB |
+| **RAM** | 16 GB | 32 GB |
+| **Storage** | 40 GB free | 60 GB free |
+| **GPU** | RTX 3060 | RTX 4090/5090 |
+| **CUDA** | 12.8+ | Latest |
+
+### Performance Benchmarks
+
+| GPU | 17s Audio Generation |
+|-----|---------------------|
+| RTX 3060 12GB | ~228 seconds |
+| RTX 4090 24GB | ~15-30 seconds (estimated) |
+| CPU only | Not recommended (very slow) |
+
+### Key Features
+
+**Zero-Shot Voice Cloning:**
+- Clone any voice from a single audio sample (3-10 seconds recommended)
+- No fine-tuning required
+- Preserves timbre and speaking style
+
+**Emotional Control:**
+```python
+# Emotion vector: [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+emo_vector = [0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1]
+```
+
+**Duration Control:**
+- First autoregressive TTS with precise duration control
+- Natural generation mode also available
+- Useful for dubbing and synchronization
+
+**Language Support:**
+- Chinese (primary)
+- English
+- Cross-lingual synthesis (read Chinese text in English voice)
+
+### Docker Integration
+
+```dockerfile
+# Additional layers for IndexTTS in vget Docker image
+FROM ghcr.io/guiyumin/vget:latest
+
+# Install Python and uv package manager
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv (required by IndexTTS)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install IndexTTS
+RUN git clone https://github.com/index-tts/index-tts.git /opt/indextts \
+    && cd /opt/indextts \
+    && uv sync
+
+# Models downloaded on first use from HuggingFace
+ENV INDEXTTS_MODEL_DIR=/home/vget/.config/vget/models/indextts
+```
+
+### API Usage Examples
+
+**Basic TTS:**
+```bash
+curl -X POST http://localhost:8080/api/ai/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "你好，欢迎使用vget",
+    "language": "zh"
+  }'
+```
+
+**Voice Cloning:**
+```bash
+curl -X POST http://localhost:8080/api/ai/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "This is my cloned voice speaking",
+    "voice_ref": "/downloads/my_voice_sample.wav",
+    "language": "en"
+  }'
+```
+
+**Emotional Speech:**
+```bash
+curl -X POST http://localhost:8080/api/ai/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "I am so happy to see you!",
+    "emotion": "happy",
+    "voice_ref": "/downloads/speaker.wav"
+  }'
+```
+
+### Use Cases in vget
+
+1. **Podcast Narration:** Convert transcripts back to speech with consistent voice
+2. **Audiobook Generation:** Turn downloaded articles/ebooks into audio
+3. **Voice Dubbing:** Clone original speaker voice for translations
+4. **Accessibility:** Generate audio versions of text content
+
+### Limitations
+
+- **VRAM hungry:** 8GB minimum, 12GB+ recommended
+- **Slow on consumer GPUs:** RTX 3060 takes ~4 minutes for 17s audio
+- **Chinese-first:** English quality improving but Chinese is primary focus
+- **No streaming:** Generates complete audio, not real-time
+
+### References
+
+- [IndexTTS GitHub](https://github.com/index-tts/index-tts)
+- [IndexTTS-2 Review](https://dev.to/czmilo/indextts2-comprehensive-review-in-depth-analysis-of-2025s-most-powerful-emotional-speech-1m9e)
+- [HuggingFace Models](https://huggingface.co/IndexTeam)
 
 ---
 
