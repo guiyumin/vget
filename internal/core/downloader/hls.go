@@ -533,6 +533,7 @@ func convertTsToMp4(tsPath string) (string, error) {
 		Stderr: io.Discard,
 		Stdout: io.Discard,
 		Args: []string{
+			"-err_detect", "ignore_err",
 			"-i", absPath,
 			"-c", "copy",
 			"-y",
