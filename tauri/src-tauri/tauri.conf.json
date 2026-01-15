@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "vget",
+  "productName": "VGet",
   "version": "0.1.0",
-  "identifier": "com.guiyumin.vget",
+  "identifier": "io.vget",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
