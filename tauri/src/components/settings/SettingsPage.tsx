@@ -95,9 +95,9 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <aside className="w-56 border-r bg-muted/30 flex flex-col">
+      <aside className="w-56 border-r bg-muted/30 flex flex-col shrink-0">
         <div className="h-14 px-4 border-b flex items-center">
           <Link
             to="/"
@@ -132,13 +132,13 @@ export function SettingsPage() {
           </ul>
         </nav>
 
-        <div className="p-4 border-t">
+        <div className="mt-auto p-4 border-t">
           <p className="text-xs text-muted-foreground">VGet Desktop</p>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-14 border-b flex items-center justify-between px-6 shrink-0">
           <h1 className="text-lg font-semibold">
             {sections.find((s) => s.id === activeSection)?.label}
@@ -155,9 +155,9 @@ export function SettingsPage() {
           </div>
         </header>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-auto">
           <div className="max-w-2xl p-6">{renderSection()}</div>
-        </ScrollArea>
+        </div>
       </main>
     </div>
   );

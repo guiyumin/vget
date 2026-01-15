@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "VGet",
         "width": 900,
         "height": 700,

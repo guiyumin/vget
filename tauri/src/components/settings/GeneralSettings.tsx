@@ -20,23 +20,8 @@ import {
 import { Folder } from "lucide-react";
 import type { Config } from "./types";
 
-type Theme = "light" | "dark" | "system";
-
-function getSystemTheme(): "light" | "dark" {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
-export function applyTheme(theme: string) {
-  const root = document.documentElement;
-  if (theme === "system") {
-    const systemTheme = getSystemTheme();
-    root.classList.toggle("dark", systemTheme === "dark");
-  } else {
-    root.classList.toggle("dark", theme === "dark");
-  }
-}
+// Use global theme function from main.tsx
+const applyTheme = (window as any).__applyTheme as (theme: string) => void;
 
 interface GeneralSettingsProps {
   config: Config;
@@ -44,19 +29,10 @@ interface GeneralSettingsProps {
 }
 
 export function GeneralSettings({ config, onUpdate }: GeneralSettingsProps) {
-  const theme = (config.theme || "light") as Theme;
+  const theme = config.theme || "light";
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  useEffect(() => {
-    if (theme === "system") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => applyTheme("system");
-      mediaQuery.addEventListener("change", handler);
-      return () => mediaQuery.removeEventListener("change", handler);
-    }
+    applyTheme?.(theme);
   }, [theme]);
 
   const handleSelectFolder = async () => {
