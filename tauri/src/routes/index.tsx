@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import { useState } from "react";
 import { Download, Settings, Folder, Link } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -26,12 +27,15 @@ function Home() {
       <header className="border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Download className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-semibold">vget</h1>
+            <img src={logo} alt="vget" className="h-8 w-8" />
+            <h1 className="text-xl font-semibold">VGet</h1>
           </div>
-          <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <RouterLink
+            to="/settings"
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+          >
             <Settings className="h-5 w-5 text-muted-foreground" />
-          </button>
+          </RouterLink>
         </div>
       </header>
 
