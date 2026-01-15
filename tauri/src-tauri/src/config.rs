@@ -42,11 +42,17 @@ impl Default for Config {
     }
 }
 
-fn config_path() -> PathBuf {
-    dirs::config_dir()
+fn config_dir() -> PathBuf {
+    // Share config with CLI: ~/.config/vget/
+    // Don't use dirs::config_dir() as it returns ~/Library/Application Support/ on macOS
+    dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
+        .join(".config")
         .join("vget")
-        .join("config.yml")
+}
+
+fn config_path() -> PathBuf {
+    config_dir().join("config.yml")
 }
 
 pub fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
