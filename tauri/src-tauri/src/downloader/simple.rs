@@ -1,6 +1,7 @@
 use super::{DownloadProgress, DownloadStatus};
 use futures::StreamExt;
 use reqwest::Client;
+use std::collections::HashMap;
 use std::path::Path;
 use std::time::Instant;
 use tauri::{Emitter, Window};
@@ -29,6 +30,7 @@ impl SimpleDownloader {
         output_path: &str,
         window: &Window,
         cancel_rx: Receiver<bool>,
+        headers: Option<HashMap<String, String>>,
     ) -> Result<(), String> {
         // Ensure parent directory exists
         if let Some(parent) = Path::new(output_path).parent() {
@@ -37,10 +39,16 @@ impl SimpleDownloader {
                 .map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
-        // Start download
-        let response = self
-            .client
-            .get(url)
+        // Start download with optional headers
+        let mut request = self.client.get(url);
+
+        if let Some(hdrs) = headers {
+            for (key, value) in hdrs {
+                request = request.header(&key, &value);
+            }
+        }
+
+        let response = request
             .send()
             .await
             .map_err(|e| format!("Failed to fetch: {}", e))?;

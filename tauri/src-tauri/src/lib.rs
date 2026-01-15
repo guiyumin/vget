@@ -89,6 +89,7 @@ async fn start_download(
     url: String,
     output_path: String,
     _format_id: Option<String>,
+    headers: Option<std::collections::HashMap<String, String>>,
     window: tauri::Window,
     download_manager: State<'_, Arc<DownloadManager>>,
 ) -> Result<String, String> {
@@ -120,7 +121,7 @@ async fn start_download(
         let downloader = SimpleDownloader::new();
 
         match downloader
-            .download(&jid, &url, &output_path, &window, cancel_rx)
+            .download(&jid, &url, &output_path, &window, cancel_rx, headers)
             .await
         {
             Ok(()) => {

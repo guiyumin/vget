@@ -102,12 +102,14 @@ export async function setupDownloadListeners() {
 export async function startDownload(
   url: string,
   title: string,
-  outputPath: string
+  outputPath: string,
+  headers?: Record<string, string>
 ): Promise<string> {
   const jobId = await invoke<string>("start_download", {
     url,
     outputPath,
     formatId: null,
+    headers: headers || null,
   });
 
   useDownloadsStore.getState().addDownload({

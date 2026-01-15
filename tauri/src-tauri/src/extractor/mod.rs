@@ -1,3 +1,4 @@
+mod bilibili;
 mod direct;
 mod twitter;
 mod types;
@@ -20,13 +21,17 @@ pub async fn extract_media(url_str: &str) -> Result<MediaInfo, ExtractError> {
         return twitter::TwitterExtractor::extract(url_str, auth_token).await;
     }
 
+    // Check for Bilibili URLs
+    if bilibili::BilibiliExtractor::matches(&url) {
+        return bilibili::BilibiliExtractor::extract(url_str).await;
+    }
+
     // Check for direct file URLs
     if direct::DirectExtractor::matches(&url) {
         return direct::DirectExtractor::extract(url_str).await;
     }
 
     // TODO: Add more extractors here
-    // - Bilibili
     // - Xiaoyuzhou
     // - etc.
 

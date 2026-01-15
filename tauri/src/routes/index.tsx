@@ -34,6 +34,8 @@ interface MediaInfo {
     ext: string;
     quality: string | null;
     filesize: number | null;
+    audio_url: string | null;
+    headers?: Record<string, string>;
   }[];
 }
 
@@ -166,8 +168,8 @@ function Home() {
         .substring(0, 100);
       const outputPath = `${config.output_dir}/${sanitizedTitle}.${ext}`;
 
-      // Start download
-      await startDownload(format.url, mediaInfo.title, outputPath);
+      // Start download with headers if present
+      await startDownload(format.url, mediaInfo.title, outputPath, format.headers);
       setUrl("");
       toast.success("Download started");
     } catch (err) {

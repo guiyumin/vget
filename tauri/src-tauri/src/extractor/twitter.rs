@@ -2,6 +2,7 @@ use super::types::*;
 use regex::Regex;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, COOKIE, USER_AGENT};
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::sync::LazyLock;
 use url::Url;
 
@@ -253,6 +254,7 @@ impl TwitterExtractor {
                                     height: if height > 0 { Some(height) } else { None },
                                     filesize: None,
                                     audio_url: None,
+                                    headers: HashMap::new(),
                                 });
                             }
                         }
@@ -269,6 +271,7 @@ impl TwitterExtractor {
                             height: media.original_info_height,
                             filesize: None,
                             audio_url: None,
+                            headers: HashMap::new(),
                         });
                     }
                     _ => {}
@@ -294,6 +297,7 @@ impl TwitterExtractor {
                             height: if height > 0 { Some(height) } else { None },
                             filesize: None,
                             audio_url: None,
+                            headers: HashMap::new(),
                         });
                     }
                 }
@@ -407,6 +411,7 @@ impl TwitterExtractor {
                                 height: if height > 0 { Some(height) } else { None },
                                 filesize: None,
                                 audio_url: None,
+                                headers: HashMap::new(),
                             });
                         }
                     }
@@ -423,6 +428,7 @@ impl TwitterExtractor {
                         height: media.original_info.as_ref().map(|i| i.height),
                         filesize: None,
                         audio_url: None,
+                        headers: HashMap::new(),
                     });
                 }
                 _ => {}

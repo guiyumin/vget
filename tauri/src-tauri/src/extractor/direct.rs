@@ -1,4 +1,5 @@
 use super::types::*;
+use std::collections::HashMap;
 use url::Url;
 
 const VIDEO_EXTENSIONS: &[&str] = &["mp4", "mkv", "webm", "avi", "mov", "flv", "m3u8", "ts"];
@@ -73,6 +74,7 @@ impl DirectExtractor {
                 height: None,
                 filesize,
                 audio_url: None,
+                headers: HashMap::new(),
             }],
         })
     }
