@@ -56,6 +56,8 @@ pub struct Config {
     pub format: String,
     #[serde(default = "default_quality")]
     pub quality: String,
+    #[serde(default = "default_theme")]
+    pub theme: String,
     #[serde(default, rename = "webdavServers")]
     pub webdav_servers: HashMap<String, WebDAVServer>,
     #[serde(default)]
@@ -86,6 +88,10 @@ fn default_quality() -> String {
     "best".to_string()
 }
 
+fn default_theme() -> String {
+    "light".to_string()
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -93,6 +99,7 @@ impl Default for Config {
             output_dir: default_output_dir(),
             format: default_format(),
             quality: default_quality(),
+            theme: default_theme(),
             webdav_servers: HashMap::new(),
             twitter: TwitterConfig::default(),
             server: ServerConfig::default(),

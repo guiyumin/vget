@@ -30,6 +30,7 @@ export interface Config {
   output_dir: string;
   format: string;
   quality: string;
+  theme: string;
   webdav_servers: Record<string, WebDAVServer>;
   twitter: TwitterConfig;
   server: ServerConfig;

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,12 +20,45 @@ import {
 import { Folder } from "lucide-react";
 import type { Config } from "./types";
 
+type Theme = "light" | "dark" | "system";
+
+function getSystemTheme(): "light" | "dark" {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+export function applyTheme(theme: string) {
+  const root = document.documentElement;
+  if (theme === "system") {
+    const systemTheme = getSystemTheme();
+    root.classList.toggle("dark", systemTheme === "dark");
+  } else {
+    root.classList.toggle("dark", theme === "dark");
+  }
+}
+
 interface GeneralSettingsProps {
   config: Config;
   onUpdate: (updates: Partial<Config>) => void;
 }
 
 export function GeneralSettings({ config, onUpdate }: GeneralSettingsProps) {
+  const theme = (config.theme || "light") as Theme;
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handler = () => applyTheme("system");
+      mediaQuery.addEventListener("change", handler);
+      return () => mediaQuery.removeEventListener("change", handler);
+    }
+  }, [theme]);
+
   const handleSelectFolder = async () => {
     const selected = await open({
       directory: true,
@@ -123,6 +157,25 @@ export function GeneralSettings({ config, onUpdate }: GeneralSettingsProps) {
               <SelectItem value="es">Español</SelectItem>
               <SelectItem value="fr">Français</SelectItem>
               <SelectItem value="de">Deutsch</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Theme</CardTitle>
+          <CardDescription>Choose your preferred appearance</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Select value={theme} onValueChange={(value) => onUpdate({ theme: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select theme" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+              <SelectItem value="system">System</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>

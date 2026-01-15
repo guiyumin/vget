@@ -11,13 +11,21 @@ use tauri::{Emitter, State};
 // ============ CONFIG COMMANDS ============
 
 #[tauri::command]
-fn get_config() -> Result<Config, String> {
-    load_config().map_err(|e| e.to_string())
+async fn get_config() -> Result<Config, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        load_config().map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-fn save_config(config: Config) -> Result<(), String> {
-    store_config(&config).map_err(|e| e.to_string())
+async fn save_config(config: Config) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        store_config(&config).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 // ============ EXTRACTOR COMMANDS ============
