@@ -31,5 +31,6 @@ dirs = "6"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 url = "2"
+urlencoding = "2"
 regex = "1"
 thiserror = "1"

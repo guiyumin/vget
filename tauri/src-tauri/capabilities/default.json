@@ -8,6 +8,13 @@
     "core:event:allow-listen",
     "core:event:allow-emit",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$HOME/**" }
+      ]
+    },
     "dialog:default",
     "updater:default",
     "process:default"

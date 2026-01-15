@@ -1,7 +1,6 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { openPath } from "@tauri-apps/plugin-opener";
 import {
   Download,
   Settings,
@@ -184,9 +183,10 @@ function Home() {
   const handleOpenFolder = async () => {
     if (config?.output_dir) {
       try {
-        await openPath(config.output_dir);
+        await invoke("open_output_folder", { path: config.output_dir });
       } catch (err) {
         toast.error("Failed to open folder");
+        console.error(err);
       }
     }
   };

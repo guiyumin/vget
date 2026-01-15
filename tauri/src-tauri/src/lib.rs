@@ -35,6 +35,48 @@ async fn extract_media(url: String) -> Result<MediaInfo, String> {
     do_extract(&url).await.map_err(|e| e.to_string())
 }
 
+// ============ FOLDER COMMANDS ============
+
+#[tauri::command]
+async fn open_output_folder(path: String) -> Result<(), String> {
+    use std::path::Path;
+    use std::process::Command;
+
+    let path = Path::new(&path);
+
+    // Create directory if it doesn't exist
+    if !path.exists() {
+        std::fs::create_dir_all(path).map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
+
+    // Open the folder using platform-specific command
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Command::new("xdg-open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    Ok(())
+}
+
 // ============ DOWNLOAD COMMANDS ============
 
 #[tauri::command]
@@ -134,6 +176,8 @@ pub fn run() {
             save_config,
             // Extractor
             extract_media,
+            // Folder
+            open_output_folder,
             // Download
             start_download,
             cancel_download,
