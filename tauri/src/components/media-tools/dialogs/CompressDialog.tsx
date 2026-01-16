@@ -52,17 +52,17 @@ export function CompressDialog({
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent>
+      <DialogContent className="overflow-hidden">
         <DialogHeader>
           <DialogTitle>Compress Video</DialogTitle>
           <DialogDescription>Reduce video file size</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden">
           <div className="space-y-2">
             <Label>Input File</Label>
             <div className="flex gap-2">
-              <Input value={inputFile} readOnly placeholder="Select a video..." className="flex-1" />
-              <Button variant="outline" onClick={onSelectInput}>
+              <Input value={inputFile} readOnly placeholder="Select a video..." className="min-w-0 flex-1" />
+              <Button variant="outline" onClick={onSelectInput} className="shrink-0">
                 <FolderOpen className="h-4 w-4" />
               </Button>
             </div>
@@ -86,9 +86,9 @@ export function CompressDialog({
             </p>
           </div>
           {inputFile && (
-            <div className="space-y-2">
+            <div className="space-y-2 overflow-hidden">
               <Label className="text-muted-foreground">Output</Label>
-              <p className="text-sm text-muted-foreground truncate">{outputPath}</p>
+              <p className="text-sm text-muted-foreground break-all" title={outputPath}>{outputPath}</p>
             </div>
           )}
           {loading && <Progress value={progress} />}

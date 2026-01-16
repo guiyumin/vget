@@ -20,22 +20,22 @@ export function MediaInfoDialog({
 }: DialogProps) {
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg overflow-hidden">
         <DialogHeader>
           <DialogTitle>Media Info</DialogTitle>
           <DialogDescription>
             View detailed information about a media file
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden">
           <div className="flex gap-2">
             <Input
               value={inputFile}
               readOnly
               placeholder="Select a file..."
-              className="flex-1"
+              className="min-w-0 flex-1"
             />
-            <Button variant="outline" onClick={onSelectInput}>
+            <Button variant="outline" onClick={onSelectInput} className="shrink-0">
               <FolderOpen className="h-4 w-4" />
             </Button>
           </div>
@@ -44,7 +44,7 @@ export function MediaInfoDialog({
               <div className="p-3 bg-muted rounded-lg space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Format</span>
-                  <span>{mediaInfo.format_long_name || mediaInfo.format_name}</span>
+                  <span className="truncate ml-2">{mediaInfo.format_long_name || mediaInfo.format_name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Size</span>
@@ -68,7 +68,7 @@ export function MediaInfoDialog({
                   <div className="font-medium capitalize">{stream.codec_type} Stream</div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Codec</span>
-                    <span>{stream.codec_long_name || stream.codec_name}</span>
+                    <span className="truncate ml-2">{stream.codec_long_name || stream.codec_name}</span>
                   </div>
                   {stream.width && stream.height && (
                     <div className="flex justify-between">
