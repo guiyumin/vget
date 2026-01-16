@@ -15,16 +15,15 @@ import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { DialogProps } from "../types";
+import { DialogProps, getBasename } from "../types";
 
 export function ExtractFramesDialog({
   open,
   inputFile,
-  outputFile,
+  outputDir,
   loading,
   progress,
   onSelectInput,
-  onSelectOutputDir,
   onClose,
   setLoading,
   setProgress,
@@ -32,14 +31,16 @@ export function ExtractFramesDialog({
 }: DialogProps) {
   const [fps, setFps] = useState(1);
 
+  const outputFolder = inputFile ? `${outputDir}/${getBasename(inputFile)}_frames` : "";
+
   const handleExtractFrames = async () => {
-    if (!inputFile || !outputFile) return;
+    if (!inputFile || !outputDir) return;
     setLoading(true);
     setProgress(0);
     try {
       const id = await invoke<string>("ffmpeg_extract_frames", {
         inputPath: inputFile,
-        outputDir: outputFile,
+        outputDir: outputFolder,
         fps,
       });
       setJobId(id);
@@ -79,22 +80,19 @@ export function ExtractFramesDialog({
               1 = one frame per second, 0.1 = one frame every 10 seconds
             </p>
           </div>
-          <div className="space-y-2">
-            <Label>Output Folder</Label>
-            <div className="flex gap-2">
-              <Input value={outputFile} readOnly placeholder="Select folder..." className="flex-1" />
-              <Button variant="outline" onClick={onSelectOutputDir}>
-                <FolderOpen className="h-4 w-4" />
-              </Button>
+          {inputFile && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Output Folder</Label>
+              <p className="text-sm text-muted-foreground truncate">{outputFolder}</p>
             </div>
-          </div>
+          )}
           {loading && <Progress value={progress} />}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleExtractFrames} disabled={!inputFile || !outputFile || loading}>
+          <Button onClick={handleExtractFrames} disabled={!inputFile || !outputDir || loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Extract
           </Button>

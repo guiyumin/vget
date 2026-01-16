@@ -21,6 +21,10 @@ export interface StreamInfo {
   duration: string | null;
 }
 
+export interface Config {
+  output_dir: string;
+}
+
 export type ToolId =
   | "info"
   | "convert"
@@ -33,13 +37,11 @@ export type ToolId =
 export interface DialogProps {
   open: boolean;
   inputFile: string;
-  outputFile: string;
+  outputDir: string;
   loading: boolean;
   progress: number;
   mediaInfo: MediaInfo | null;
   onSelectInput: () => Promise<void>;
-  onSelectOutput: (ext: string) => Promise<void>;
-  onSelectOutputDir: () => Promise<void>;
   onClose: () => void;
   setLoading: (loading: boolean) => void;
   setProgress: (progress: number) => void;
@@ -60,4 +62,17 @@ export function formatDuration(seconds: number): string {
   const s = Math.floor(seconds % 60);
   if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+export function getBasename(filePath: string): string {
+  const name = filePath.split(/[/\\]/).pop() || "";
+  const lastDot = name.lastIndexOf(".");
+  return lastDot > 0 ? name.substring(0, lastDot) : name;
+}
+
+export function generateOutputPath(outputDir: string, inputFile: string, ext: string, suffix?: string): string {
+  const basename = getBasename(inputFile);
+  const safeName = basename.replace(/[/\\?%*:|"<>]/g, "-");
+  const suffixStr = suffix ? `_${suffix}` : "";
+  return `${outputDir}/${safeName}${suffixStr}.${ext}`;
 }

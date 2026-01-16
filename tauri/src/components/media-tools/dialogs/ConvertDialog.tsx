@@ -21,16 +21,15 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { DialogProps } from "../types";
+import { DialogProps, generateOutputPath } from "../types";
 
 export function ConvertDialog({
   open,
   inputFile,
-  outputFile,
+  outputDir,
   loading,
   progress,
   onSelectInput,
-  onSelectOutput,
   onClose,
   setLoading,
   setProgress,
@@ -38,14 +37,16 @@ export function ConvertDialog({
 }: DialogProps) {
   const [outputFormat, setOutputFormat] = useState("mp4");
 
+  const outputPath = inputFile ? generateOutputPath(outputDir, inputFile, outputFormat, "converted") : "";
+
   const handleConvert = async () => {
-    if (!inputFile || !outputFile) return;
+    if (!inputFile || !outputDir) return;
     setLoading(true);
     setProgress(0);
     try {
       const id = await invoke<string>("ffmpeg_convert_video", {
         inputPath: inputFile,
-        outputPath: outputFile,
+        outputPath,
       });
       setJobId(id);
     } catch (e) {
@@ -87,22 +88,19 @@ export function ConvertDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Output File</Label>
-            <div className="flex gap-2">
-              <Input value={outputFile} readOnly placeholder="Select output..." className="flex-1" />
-              <Button variant="outline" onClick={() => onSelectOutput(outputFormat)}>
-                <FolderOpen className="h-4 w-4" />
-              </Button>
+          {inputFile && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Output</Label>
+              <p className="text-sm text-muted-foreground truncate">{outputPath}</p>
             </div>
-          </div>
+          )}
           {loading && <Progress value={progress} />}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleConvert} disabled={!inputFile || !outputFile || loading}>
+          <Button onClick={handleConvert} disabled={!inputFile || !outputDir || loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Convert
           </Button>

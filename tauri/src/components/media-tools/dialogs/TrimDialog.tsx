@@ -14,17 +14,16 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { DialogProps, formatDuration } from "../types";
+import { DialogProps, formatDuration, generateOutputPath } from "../types";
 
 export function TrimDialog({
   open,
   inputFile,
-  outputFile,
+  outputDir,
   loading,
   progress,
   mediaInfo,
   onSelectInput,
-  onSelectOutput,
   onClose,
   setLoading,
   setProgress,
@@ -33,6 +32,8 @@ export function TrimDialog({
   const [startTime, setStartTime] = useState("00:00:00");
   const [endTime, setEndTime] = useState("00:00:10");
 
+  const outputPath = inputFile ? generateOutputPath(outputDir, inputFile, "mp4", "trimmed") : "";
+
   useEffect(() => {
     if (mediaInfo?.duration) {
       setEndTime(formatDuration(mediaInfo.duration));
@@ -40,13 +41,13 @@ export function TrimDialog({
   }, [mediaInfo]);
 
   const handleTrim = async () => {
-    if (!inputFile || !outputFile) return;
+    if (!inputFile || !outputDir) return;
     setLoading(true);
     setProgress(0);
     try {
       const id = await invoke<string>("ffmpeg_trim_video", {
         inputPath: inputFile,
-        outputPath: outputFile,
+        outputPath,
         startTime,
         endTime,
       });
@@ -92,22 +93,19 @@ export function TrimDialog({
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Output File</Label>
-            <div className="flex gap-2">
-              <Input value={outputFile} readOnly placeholder="Select output..." className="flex-1" />
-              <Button variant="outline" onClick={() => onSelectOutput("mp4")}>
-                <FolderOpen className="h-4 w-4" />
-              </Button>
+          {inputFile && (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Output</Label>
+              <p className="text-sm text-muted-foreground truncate">{outputPath}</p>
             </div>
-          </div>
+          )}
           {loading && <Progress value={progress} />}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleTrim} disabled={!inputFile || !outputFile || loading}>
+          <Button onClick={handleTrim} disabled={!inputFile || !outputDir || loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Trim
           </Button>

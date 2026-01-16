@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import {
   Card,
   CardDescription,
@@ -18,7 +18,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
-import { MediaInfo, ToolId } from "./types";
+import { MediaInfo, ToolId, Config } from "./types";
 import { MediaInfoDialog } from "./dialogs/MediaInfoDialog";
 import { ConvertDialog } from "./dialogs/ConvertDialog";
 import { CompressDialog } from "./dialogs/CompressDialog";
@@ -82,11 +82,17 @@ const tools: Tool[] = [
 export function MediaToolsPage() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
   const [inputFile, setInputFile] = useState("");
-  const [outputFile, setOutputFile] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [config, setConfig] = useState<Config | null>(null);
+
+  useEffect(() => {
+    invoke<Config>("get_config")
+      .then(setConfig)
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     const unlistenProgress = listen<{ jobId: string; progress: number }>(
@@ -136,7 +142,6 @@ export function MediaToolsPage() {
 
   const resetState = () => {
     setInputFile("");
-    setOutputFile("");
     setMediaInfo(null);
     setProgress(0);
     setJobId(null);
@@ -162,22 +167,6 @@ export function MediaToolsPage() {
     }
   };
 
-  const selectOutputFile = async (ext: string) => {
-    const file = await save({
-      filters: [{ name: ext.toUpperCase(), extensions: [ext] }],
-    });
-    if (file) {
-      setOutputFile(file);
-    }
-  };
-
-  const selectOutputDir = async () => {
-    const dir = await open({ directory: true });
-    if (dir) {
-      setOutputFile(dir);
-    }
-  };
-
   const closeDialog = () => {
     if (!loading) {
       setActiveTool(null);
@@ -187,13 +176,11 @@ export function MediaToolsPage() {
 
   const dialogProps = {
     inputFile,
-    outputFile,
+    outputDir: config?.output_dir || "",
     loading,
     progress,
     mediaInfo,
     onSelectInput: selectInputFile,
-    onSelectOutput: selectOutputFile,
-    onSelectOutputDir: selectOutputDir,
     onClose: closeDialog,
     setLoading,
     setProgress,
