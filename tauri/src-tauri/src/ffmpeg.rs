@@ -18,11 +18,6 @@ fn parse_time_to_secs(time_str: &str) -> Option<f32> {
     }
 }
 
-/// Check if ffmpeg sidecar is available
-pub fn ffmpeg_available() -> bool {
-    FfmpegCommand::new().print_command().spawn().is_ok()
-}
-
 /// Merge separate video and audio files into a single output file.
 /// Uses stream copy (-c copy) for fast merging without re-encoding.
 pub async fn merge_video_audio(
@@ -109,13 +104,6 @@ pub async fn merge_video_audio(
     }
 
     Ok(())
-}
-
-/// Get the path to the bundled ffmpeg binary
-pub fn get_ffmpeg_path() -> std::path::PathBuf {
-    // ffmpeg-sidecar will automatically find the binary
-    // For Tauri sidecar, it's in the app's resource directory
-    ffmpeg_sidecar::paths::ffmpeg_path()
 }
 
 // ============ MEDIA INFO ============
