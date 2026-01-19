@@ -253,7 +253,7 @@ ui:
   # API Token
   token_title: "API Token 生成器"
   token_description: "生成用于外部 API 访问的 JWT Token（Chrome 扩展、脚本等）。Token 使用您配置的 api_key 签名。"
-  token_custom_payload: "自定义载荷（可选）"
+  token_custom_payload: "自定义字段（可选）"
   token_custom_payload_hint: "添加自定义声明到 JWT Token 中。必须是有效的 JSON。"
   token_generate: "生成 Token"
   token_generating: "生成中..."

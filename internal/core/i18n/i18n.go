@@ -284,6 +284,18 @@ type UITranslations struct {
 	ModelDownloadRateLimit        string `yaml:"model_download_rate_limit" json:"model_download_rate_limit"`
 	ModelDownloadServerDown       string `yaml:"model_download_server_down" json:"model_download_server_down"`
 	ModelDownloadInfo             string `yaml:"model_download_info" json:"model_download_info"`
+	// API Token
+	TokenTitle             string `yaml:"token_title" json:"token_title"`
+	TokenDescription       string `yaml:"token_description" json:"token_description"`
+	TokenCustomPayload     string `yaml:"token_custom_payload" json:"token_custom_payload"`
+	TokenCustomPayloadHint string `yaml:"token_custom_payload_hint" json:"token_custom_payload_hint"`
+	TokenGenerate          string `yaml:"token_generate" json:"token_generate"`
+	TokenGenerating        string `yaml:"token_generating" json:"token_generating"`
+	TokenGenerated         string `yaml:"token_generated" json:"token_generated"`
+	TokenCopy              string `yaml:"token_copy" json:"token_copy"`
+	TokenCopied            string `yaml:"token_copied" json:"token_copied"`
+	TokenUsage             string `yaml:"token_usage" json:"token_usage"`
+	TokenInvalidJSON       string `yaml:"token_invalid_json" json:"token_invalid_json"`
 }
 
 // ServerTranslations holds translations for server messages
