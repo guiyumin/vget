@@ -2,12 +2,14 @@ import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FolderOpen, Loader2, FlaskConical, Info } from "lucide-react";
+import { FileDropInput } from "@/components/ui/file-drop-input";
+import { Loader2, FlaskConical, Info } from "lucide-react";
 import { toast } from "sonner";
 import { PdfPanelProps, WatermarkRemovalResult, getBasename, generateOutputPath } from "../types";
+
+const PDF_EXTENSIONS = ["pdf"];
 
 export function RemoveWatermarkPanel({ outputDir, loading, setLoading }: PdfPanelProps) {
   const [inputFile, setInputFile] = useState("");
@@ -17,14 +19,18 @@ export function RemoveWatermarkPanel({ outputDir, loading, setLoading }: PdfPane
     ? generateOutputPath(outputDir, getBasename(inputFile), "no_watermark")
     : "";
 
+  const handleFileSelected = (file: string) => {
+    setInputFile(file);
+    setResult(null);
+  };
+
   const selectFile = async () => {
     const selected = await open({
       multiple: false,
       filters: [{ name: "PDF", extensions: ["pdf"] }],
     });
     if (selected) {
-      setInputFile(selected);
-      setResult(null);
+      handleFileSelected(selected);
     }
   };
 
@@ -70,17 +76,16 @@ export function RemoveWatermarkPanel({ outputDir, loading, setLoading }: PdfPane
 
       <div className="space-y-2">
         <Label>Input PDF</Label>
-        <div className="flex gap-2">
-          <Input
-            value={inputFile}
-            readOnly
-            placeholder="Select a PDF with watermark..."
-            className="min-w-0 flex-1"
-          />
-          <Button variant="outline" onClick={selectFile} className="shrink-0">
-            <FolderOpen className="h-4 w-4" />
-          </Button>
-        </div>
+        <FileDropInput
+          value={inputFile}
+          placeholder="Drop a PDF here or click to select"
+          accept={PDF_EXTENSIONS}
+          acceptHint=".pdf"
+          onSelectClick={selectFile}
+          onDrop={handleFileSelected}
+          disabled={loading}
+          invalidDropMessage="Please drop a PDF file"
+        />
       </div>
 
       {inputFile && (

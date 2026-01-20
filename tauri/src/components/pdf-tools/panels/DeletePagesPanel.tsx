@@ -4,9 +4,12 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FolderOpen, Loader2 } from "lucide-react";
+import { FileDropInput } from "@/components/ui/file-drop-input";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PdfPanelProps, PdfInfo, getBasename, generateOutputPath } from "../types";
+
+const PDF_EXTENSIONS = ["pdf"];
 
 export function DeletePagesPanel({ outputDir, loading, setLoading }: PdfPanelProps) {
   const [inputFile, setInputFile] = useState("");
@@ -17,21 +20,25 @@ export function DeletePagesPanel({ outputDir, loading, setLoading }: PdfPanelPro
     ? generateOutputPath(outputDir, getBasename(inputFile), "pages_removed")
     : "";
 
+  const handleFileSelected = async (file: string) => {
+    setInputFile(file);
+    setPagesToDelete("");
+    try {
+      const info = await invoke<PdfInfo>("pdf_get_info", { inputPath: file });
+      setPdfInfo(info);
+    } catch (e) {
+      console.error("Failed to get PDF info:", e);
+      setPdfInfo(null);
+    }
+  };
+
   const selectFile = async () => {
     const selected = await open({
       multiple: false,
       filters: [{ name: "PDF", extensions: ["pdf"] }],
     });
     if (selected) {
-      setInputFile(selected);
-      setPagesToDelete("");
-      try {
-        const info = await invoke<PdfInfo>("pdf_get_info", { inputPath: selected });
-        setPdfInfo(info);
-      } catch (e) {
-        console.error("Failed to get PDF info:", e);
-        setPdfInfo(null);
-      }
+      await handleFileSelected(selected);
     }
   };
 
@@ -96,17 +103,16 @@ export function DeletePagesPanel({ outputDir, loading, setLoading }: PdfPanelPro
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Input PDF</Label>
-        <div className="flex gap-2">
-          <Input
-            value={inputFile}
-            readOnly
-            placeholder="Select a PDF..."
-            className="min-w-0 flex-1"
-          />
-          <Button variant="outline" onClick={selectFile} className="shrink-0">
-            <FolderOpen className="h-4 w-4" />
-          </Button>
-        </div>
+        <FileDropInput
+          value={inputFile}
+          placeholder="Drop a PDF here or click to select"
+          accept={PDF_EXTENSIONS}
+          acceptHint=".pdf"
+          onSelectClick={selectFile}
+          onDrop={handleFileSelected}
+          disabled={loading}
+          invalidDropMessage="Please drop a PDF file"
+        />
       </div>
 
       {pdfInfo && (

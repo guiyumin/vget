@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,9 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { FolderOpen, Loader2 } from "lucide-react";
+import { FileDropInput } from "@/components/ui/file-drop-input";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PanelProps, generateOutputPath } from "../types";
+
+const AUDIO_EXTENSIONS = ["mp3", "aac", "flac", "wav", "ogg", "m4a"];
 
 export function AudioConvertPanel({
   inputFile,
@@ -21,6 +23,7 @@ export function AudioConvertPanel({
   loading,
   progress,
   onSelectInput,
+  onFileDrop,
   setLoading,
   setProgress,
   setJobId,
@@ -51,12 +54,16 @@ export function AudioConvertPanel({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Input Audio</Label>
-        <div className="flex gap-2">
-          <Input value={inputFile} readOnly placeholder="Select audio file..." className="min-w-0 flex-1" />
-          <Button variant="outline" onClick={onSelectInput} className="shrink-0">
-            <FolderOpen className="h-4 w-4" />
-          </Button>
-        </div>
+        <FileDropInput
+          value={inputFile}
+          placeholder="Drop an audio file here or click to select"
+          accept={AUDIO_EXTENSIONS}
+          acceptHint=".mp3, .aac, .flac, .wav, .ogg, .m4a"
+          onSelectClick={onSelectInput}
+          onDrop={onFileDrop}
+          disabled={loading}
+          invalidDropMessage="Please drop an audio file (mp3, aac, flac, wav, ogg, m4a)"
+        />
       </div>
       <div className="space-y-2">
         <Label>Output Format</Label>

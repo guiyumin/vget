@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,9 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { FolderOpen, Loader2 } from "lucide-react";
+import { FileDropInput } from "@/components/ui/file-drop-input";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PanelProps, generateOutputPath } from "../types";
+
+const VIDEO_EXTENSIONS = ["mp4", "mkv", "webm", "mov", "avi"];
 
 export function ConvertPanel({
   inputFile,
@@ -21,6 +23,7 @@ export function ConvertPanel({
   loading,
   progress,
   onSelectInput,
+  onFileDrop,
   setLoading,
   setProgress,
   setJobId,
@@ -49,12 +52,16 @@ export function ConvertPanel({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Input File</Label>
-        <div className="flex gap-2">
-          <Input value={inputFile} readOnly placeholder="Select a video..." className="min-w-0 flex-1" />
-          <Button variant="outline" onClick={onSelectInput} className="shrink-0">
-            <FolderOpen className="h-4 w-4" />
-          </Button>
-        </div>
+        <FileDropInput
+          value={inputFile}
+          placeholder="Drop a video here or click to select"
+          accept={VIDEO_EXTENSIONS}
+          acceptHint=".mp4, .mkv, .webm, .mov, .avi"
+          onSelectClick={onSelectInput}
+          onDrop={onFileDrop}
+          disabled={loading}
+          invalidDropMessage="Please drop a video file (mp4, mkv, webm, mov, avi)"
+        />
       </div>
       <div className="space-y-2">
         <Label>Output Format</Label>

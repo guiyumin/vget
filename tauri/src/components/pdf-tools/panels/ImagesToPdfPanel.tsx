@@ -5,13 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, Plus, X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useDropZone } from "@/hooks/useDropZone";
 import { PdfPanelProps, generateOutputPath } from "../types";
+
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "bmp", "webp"];
 
 export function ImagesToPdfPanel({ outputDir, loading, setLoading }: PdfPanelProps) {
   const [images, setImages] = useState<string[]>([]);
 
   const outputPath =
     images.length > 0 ? generateOutputPath(outputDir, "images", undefined) : "";
+
+  const { ref: dropZoneRef, isDragging } = useDropZone<HTMLDivElement>({
+    accept: IMAGE_EXTENSIONS,
+    onDrop: (paths) => {
+      setImages((prev) => [...prev, ...paths]);
+    },
+    onInvalidDrop: () => {
+      toast.error("Please drop image files only (png, jpg, gif, bmp, webp)");
+    },
+    enabled: !loading,
+  });
 
   const selectImages = async () => {
     const selected = await open({
@@ -98,10 +113,26 @@ export function ImagesToPdfPanel({ outputDir, loading, setLoading }: PdfPanelPro
             </div>
           ))}
         </div>
-        <Button variant="outline" onClick={selectImages} className="w-full">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Images
-        </Button>
+        <div
+          ref={dropZoneRef}
+          className={cn(
+            "rounded-md transition-all",
+            isDragging && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+          )}
+        >
+          <Button
+            variant="outline"
+            onClick={selectImages}
+            disabled={loading}
+            className={cn(
+              "w-full",
+              isDragging && "border-primary bg-primary/5"
+            )}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isDragging ? "Drop images here..." : "Add Images or Drop Here"}
+          </Button>
+        </div>
       </div>
 
       {images.length > 0 && (

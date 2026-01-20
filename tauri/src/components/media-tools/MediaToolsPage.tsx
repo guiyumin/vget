@@ -137,6 +137,18 @@ export function MediaToolsPage() {
     setJobId(null);
   };
 
+  const handleFileSelected = async (file: string) => {
+    setInputFile(file);
+    try {
+      const info = await invoke<MediaInfo>("ffmpeg_get_media_info", {
+        inputPath: file,
+      });
+      setMediaInfo(info);
+    } catch (e) {
+      console.error("Failed to get media info:", e);
+    }
+  };
+
   const selectInputFile = async () => {
     const file = await open({
       multiple: false,
@@ -145,16 +157,12 @@ export function MediaToolsPage() {
       ],
     });
     if (file) {
-      setInputFile(file);
-      try {
-        const info = await invoke<MediaInfo>("ffmpeg_get_media_info", {
-          inputPath: file,
-        });
-        setMediaInfo(info);
-      } catch (e) {
-        console.error("Failed to get media info:", e);
-      }
+      await handleFileSelected(file);
     }
+  };
+
+  const handleFileDrop = async (path: string) => {
+    await handleFileSelected(path);
   };
 
   const handleToolChange = (toolId: ToolId) => {
@@ -171,6 +179,7 @@ export function MediaToolsPage() {
     progress,
     mediaInfo,
     onSelectInput: selectInputFile,
+    onFileDrop: handleFileDrop,
     setLoading,
     setProgress,
     setJobId,

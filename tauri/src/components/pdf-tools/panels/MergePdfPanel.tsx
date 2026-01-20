@@ -5,13 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, Plus, X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useDropZone } from "@/hooks/useDropZone";
 import { PdfPanelProps, generateOutputPath } from "../types";
+
+const PDF_EXTENSIONS = ["pdf"];
 
 export function MergePdfPanel({ outputDir, loading, setLoading }: PdfPanelProps) {
   const [files, setFiles] = useState<string[]>([]);
 
   const outputPath =
     files.length > 0 ? generateOutputPath(outputDir, "merged", undefined) : "";
+
+  const { ref: dropZoneRef, isDragging } = useDropZone<HTMLDivElement>({
+    accept: PDF_EXTENSIONS,
+    onDrop: (paths) => {
+      setFiles((prev) => [...prev, ...paths]);
+    },
+    onInvalidDrop: () => {
+      toast.error("Please drop PDF files only");
+    },
+    enabled: !loading,
+  });
 
   const selectFiles = async () => {
     const selected = await open({
@@ -98,10 +113,26 @@ export function MergePdfPanel({ outputDir, loading, setLoading }: PdfPanelProps)
             </div>
           ))}
         </div>
-        <Button variant="outline" onClick={selectFiles} className="w-full">
-          <Plus className="h-4 w-4 mr-2" />
-          Add PDF Files
-        </Button>
+        <div
+          ref={dropZoneRef}
+          className={cn(
+            "rounded-md transition-all",
+            isDragging && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+          )}
+        >
+          <Button
+            variant="outline"
+            onClick={selectFiles}
+            disabled={loading}
+            className={cn(
+              "w-full",
+              isDragging && "border-primary bg-primary/5"
+            )}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isDragging ? "Drop PDF files here..." : "Add PDF Files or Drop Here"}
+          </Button>
+        </div>
       </div>
 
       {files.length > 0 && (

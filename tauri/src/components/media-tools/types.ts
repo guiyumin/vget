@@ -40,6 +40,7 @@ export interface PanelProps {
   progress: number;
   mediaInfo: MediaInfo | null;
   onSelectInput: () => Promise<void>;
+  onFileDrop: (path: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
   setProgress: (progress: number) => void;
   setJobId: (jobId: string | null) => void;
