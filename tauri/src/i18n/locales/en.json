@@ -21,7 +21,15 @@
     "failedToOpenFolder": "Failed to open folder",
     "noDownloadsYet": "No downloads yet. Paste a URL above to get started.",
     "startingDownload": "Starting download...",
-    "failedToCancel": "Failed to cancel download"
+    "failedToCancel": "Failed to cancel download",
+    "bulkDownloadTitle": "Bulk Download",
+    "bulkDownloadHint": "Drop a .txt file with URLs or click to select",
+    "dropTxtFile": "Please drop a .txt file containing URLs",
+    "dropMdHint": "For Markdown files, go to PDF Tools → Markdown to PDF",
+    "noUrlsInFile": "No valid URLs found in file",
+    "foundUrls": "Found {{count}} URLs",
+    "processingBulk": "Processing {{current}}/{{total}}",
+    "failedToReadFile": "Failed to read file"
   },
   "settings": {
     "back": "Back",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "Remove Watermark",
         "desc": "Try to remove watermarks from a PDF"
+      },
+      "md2pdf": {
+        "title": "Markdown to PDF",
+        "desc": "Convert Markdown files to beautifully formatted PDFs",
+        "inputFile": "Markdown File",
+        "selectFile": "Select Markdown File",
+        "dropHint": "Drop a Markdown file here or click to select",
+        "dropError": "Please use the file picker for this file",
+        "invalidFile": "Please drop a Markdown file (.md, .markdown, .txt)",
+        "change": "Change",
+        "theme": "Theme",
+        "themeLight": "Light (GitHub Style)",
+        "themeDark": "Dark",
+        "pageSize": "Page Size",
+        "output": "Output",
+        "convert": "Convert to PDF",
+        "success": "Markdown converted to PDF successfully!",
+        "clickToReveal": "Click below to reveal the file",
+        "convertAnother": "Convert Another"
       }
     }
   },

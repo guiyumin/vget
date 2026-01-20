@@ -21,7 +21,15 @@
     "failedToOpenFolder": "폴더를 열 수 없습니다",
     "noDownloadsYet": "아직 다운로드가 없습니다. 위에 URL을 붙여넣어 시작하세요.",
     "startingDownload": "다운로드 시작 중...",
-    "failedToCancel": "다운로드 취소 실패"
+    "failedToCancel": "다운로드 취소 실패",
+    "bulkDownloadTitle": "일괄 다운로드",
+    "bulkDownloadHint": "URL이 포함된 .txt 파일을 드롭하거나 클릭하여 선택",
+    "dropTxtFile": "URL이 포함된 .txt 파일을 드롭해 주세요",
+    "dropMdHint": "Markdown 파일은 PDF 도구 → Markdown을 PDF로 이동하세요",
+    "noUrlsInFile": "파일에서 유효한 URL을 찾을 수 없습니다",
+    "foundUrls": "{{count}}개의 URL을 찾았습니다",
+    "processingBulk": "처리 중 {{current}}/{{total}}",
+    "failedToReadFile": "파일 읽기 실패"
   },
   "settings": {
     "back": "뒤로",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "워터마크 제거",
         "desc": "PDF에서 워터마크 제거 시도"
+      },
+      "md2pdf": {
+        "title": "Markdown을 PDF로",
+        "desc": "Markdown 파일을 아름다운 PDF로 변환",
+        "inputFile": "Markdown 파일",
+        "selectFile": "Markdown 파일 선택",
+        "dropHint": "Markdown 파일을 여기에 드롭하거나 클릭하여 선택",
+        "dropError": "이 파일은 파일 선택기를 사용해 주세요",
+        "invalidFile": "Markdown 파일을 드롭해 주세요 (.md, .markdown, .txt)",
+        "change": "변경",
+        "theme": "테마",
+        "themeLight": "라이트 (GitHub 스타일)",
+        "themeDark": "다크",
+        "pageSize": "페이지 크기",
+        "output": "출력",
+        "convert": "PDF로 변환",
+        "success": "Markdown이 PDF로 변환되었습니다!",
+        "clickToReveal": "아래를 클릭하여 파일 표시",
+        "convertAnother": "다른 파일 변환"
       }
     }
   },

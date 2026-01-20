@@ -21,7 +21,15 @@
     "failedToOpenFolder": "Error al abrir la carpeta",
     "noDownloadsYet": "No hay descargas aún. Pega una URL arriba para comenzar.",
     "startingDownload": "Iniciando descarga...",
-    "failedToCancel": "Error al cancelar descarga"
+    "failedToCancel": "Error al cancelar descarga",
+    "bulkDownloadTitle": "Descarga Masiva",
+    "bulkDownloadHint": "Arrastra un archivo .txt con URLs o haz clic para seleccionar",
+    "dropTxtFile": "Por favor arrastra un archivo .txt con URLs",
+    "dropMdHint": "Para archivos Markdown, ve a Herramientas PDF → Markdown a PDF",
+    "noUrlsInFile": "No se encontraron URLs válidas en el archivo",
+    "foundUrls": "Se encontraron {{count}} URLs",
+    "processingBulk": "Procesando {{current}}/{{total}}",
+    "failedToReadFile": "Error al leer el archivo"
   },
   "settings": {
     "back": "Volver",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "Eliminar Marca de Agua",
         "desc": "Intenta eliminar marcas de agua de un PDF"
+      },
+      "md2pdf": {
+        "title": "Markdown a PDF",
+        "desc": "Convierte archivos Markdown a PDFs con formato elegante",
+        "inputFile": "Archivo Markdown",
+        "selectFile": "Seleccionar Archivo Markdown",
+        "dropHint": "Arrastra un archivo Markdown aquí o haz clic para seleccionar",
+        "dropError": "Por favor usa el selector de archivos para este archivo",
+        "invalidFile": "Por favor arrastra un archivo Markdown (.md, .markdown, .txt)",
+        "change": "Cambiar",
+        "theme": "Tema",
+        "themeLight": "Claro (Estilo GitHub)",
+        "themeDark": "Oscuro",
+        "pageSize": "Tamaño de Página",
+        "output": "Salida",
+        "convert": "Convertir a PDF",
+        "success": "¡Markdown convertido a PDF exitosamente!",
+        "clickToReveal": "Haz clic abajo para mostrar el archivo",
+        "convertAnother": "Convertir Otro"
       }
     }
   },

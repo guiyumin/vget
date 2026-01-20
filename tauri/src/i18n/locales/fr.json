@@ -21,7 +21,15 @@
     "failedToOpenFolder": "Impossible d'ouvrir le dossier",
     "noDownloadsYet": "Aucun téléchargement pour l'instant. Collez une URL ci-dessus pour commencer.",
     "startingDownload": "Démarrage du téléchargement...",
-    "failedToCancel": "Échec de l'annulation du téléchargement"
+    "failedToCancel": "Échec de l'annulation du téléchargement",
+    "bulkDownloadTitle": "Téléchargement en Masse",
+    "bulkDownloadHint": "Déposez un fichier .txt avec des URLs ou cliquez pour sélectionner",
+    "dropTxtFile": "Veuillez déposer un fichier .txt contenant des URLs",
+    "dropMdHint": "Pour les fichiers Markdown, allez dans Outils PDF → Markdown en PDF",
+    "noUrlsInFile": "Aucune URL valide trouvée dans le fichier",
+    "foundUrls": "{{count}} URLs trouvées",
+    "processingBulk": "Traitement {{current}}/{{total}}",
+    "failedToReadFile": "Échec de la lecture du fichier"
   },
   "settings": {
     "back": "Retour",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "Supprimer Filigrane",
         "desc": "Essayer de supprimer les filigranes d'un PDF"
+      },
+      "md2pdf": {
+        "title": "Markdown en PDF",
+        "desc": "Convertir des fichiers Markdown en PDF formatés",
+        "inputFile": "Fichier Markdown",
+        "selectFile": "Sélectionner un Fichier Markdown",
+        "dropHint": "Déposez un fichier Markdown ici ou cliquez pour sélectionner",
+        "dropError": "Veuillez utiliser le sélecteur de fichiers pour ce fichier",
+        "invalidFile": "Veuillez déposer un fichier Markdown (.md, .markdown, .txt)",
+        "change": "Changer",
+        "theme": "Thème",
+        "themeLight": "Clair (Style GitHub)",
+        "themeDark": "Sombre",
+        "pageSize": "Taille de Page",
+        "output": "Sortie",
+        "convert": "Convertir en PDF",
+        "success": "Markdown converti en PDF avec succès !",
+        "clickToReveal": "Cliquez ci-dessous pour révéler le fichier",
+        "convertAnother": "Convertir un Autre"
       }
     }
   },

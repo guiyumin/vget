@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { Combine, Image, Trash2, Droplets } from "lucide-react";
+import { Combine, Image, Trash2, Droplets, FileText } from "lucide-react";
 import { PdfToolId, Config } from "./types";
-import { MergePdfPanel, ImagesToPdfPanel, DeletePagesPanel, RemoveWatermarkPanel } from "./panels";
+import { MergePdfPanel, ImagesToPdfPanel, DeletePagesPanel, RemoveWatermarkPanel, Md2PdfPanel } from "./panels";
 
 interface Tool {
   id: PdfToolId;
@@ -37,6 +37,12 @@ const toolsConfig: Tool[] = [
     titleKey: "pdfTools.tools.removeWatermark.title",
     descKey: "pdfTools.tools.removeWatermark.desc",
     icon: <Droplets className="h-4 w-4" />,
+  },
+  {
+    id: "md-to-pdf",
+    titleKey: "pdfTools.tools.md2pdf.title",
+    descKey: "pdfTools.tools.md2pdf.desc",
+    icon: <FileText className="h-4 w-4" />,
   },
 ];
 
@@ -76,6 +82,8 @@ export function PDFToolsPage() {
         return <DeletePagesPanel {...panelProps} />;
       case "remove-watermark":
         return <RemoveWatermarkPanel {...panelProps} />;
+      case "md-to-pdf":
+        return <Md2PdfPanel {...panelProps} />;
       default:
         return null;
     }

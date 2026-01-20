@@ -21,7 +21,15 @@
     "failedToOpenFolder": "无法打开文件夹",
     "noDownloadsYet": "暂无下载任务。在上方粘贴链接开始下载。",
     "startingDownload": "开始下载...",
-    "failedToCancel": "取消下载失败"
+    "failedToCancel": "取消下载失败",
+    "bulkDownloadTitle": "批量下载",
+    "bulkDownloadHint": "拖放包含URL的.txt文件，或点击选择",
+    "dropTxtFile": "请拖放包含URL的.txt文件",
+    "dropMdHint": "Markdown文件请前往 PDF工具 → Markdown转PDF",
+    "noUrlsInFile": "文件中未找到有效的URL",
+    "foundUrls": "找到 {{count}} 个URL",
+    "processingBulk": "正在处理 {{current}}/{{total}}",
+    "failedToReadFile": "读取文件失败"
   },
   "settings": {
     "back": "返回",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "去除水印",
         "desc": "尝试从PDF中去除水印"
+      },
+      "md2pdf": {
+        "title": "Markdown转PDF",
+        "desc": "将Markdown文件转换为精美的PDF文档",
+        "inputFile": "Markdown文件",
+        "selectFile": "选择Markdown文件",
+        "dropHint": "拖放Markdown文件到此处，或点击选择",
+        "dropError": "请使用文件选择器选择此文件",
+        "invalidFile": "请拖放Markdown文件 (.md, .markdown, .txt)",
+        "change": "更换",
+        "theme": "主题",
+        "themeLight": "浅色 (GitHub风格)",
+        "themeDark": "深色",
+        "pageSize": "页面大小",
+        "output": "输出",
+        "convert": "转换为PDF",
+        "success": "Markdown已成功转换为PDF！",
+        "clickToReveal": "点击下方在文件夹中显示",
+        "convertAnother": "转换其他文件"
       }
     }
   },

@@ -3,6 +3,7 @@ mod config;
 mod downloader;
 mod extractor;
 mod ffmpeg;
+mod md2pdf;
 mod pdf;
 
 use auth::{
@@ -651,6 +652,33 @@ async fn pdf_open_external(input_path: String) -> Result<(), String> {
         .map_err(|e| e.to_string())?
 }
 
+// ============ FILE UTILITIES ============
+
+#[tauri::command]
+async fn read_text_file(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        std::fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+// ============ MARKDOWN TO PDF ============
+
+#[tauri::command]
+async fn md_to_pdf(
+    input_path: String,
+    output_path: String,
+    theme: String,
+    page_size: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        md2pdf::convert_md_to_pdf(&input_path, &output_path, &theme, &page_size)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 // ============ TAURI SETUP ============
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -699,6 +727,10 @@ pub fn run() {
             pdf_remove_watermark,
             pdf_print,
             pdf_open_external,
+            // File utilities
+            read_text_file,
+            // Markdown to PDF
+            md_to_pdf,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -21,7 +21,15 @@
     "failedToOpenFolder": "フォルダを開けませんでした",
     "noDownloadsYet": "ダウンロードはまだありません。上にURLを貼り付けて開始してください。",
     "startingDownload": "ダウンロードを開始中...",
-    "failedToCancel": "ダウンロードのキャンセルに失敗しました"
+    "failedToCancel": "ダウンロードのキャンセルに失敗しました",
+    "bulkDownloadTitle": "一括ダウンロード",
+    "bulkDownloadHint": "URLを含む.txtファイルをドロップ、またはクリックして選択",
+    "dropTxtFile": "URLを含む.txtファイルをドロップしてください",
+    "dropMdHint": "Markdownファイルは PDFツール → MarkdownからPDF へ",
+    "noUrlsInFile": "ファイルに有効なURLが見つかりません",
+    "foundUrls": "{{count}}件のURLが見つかりました",
+    "processingBulk": "処理中 {{current}}/{{total}}",
+    "failedToReadFile": "ファイルの読み込みに失敗しました"
   },
   "settings": {
     "back": "戻る",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "透かし削除",
         "desc": "PDFから透かしを削除を試みる"
+      },
+      "md2pdf": {
+        "title": "MarkdownからPDF",
+        "desc": "Markdownファイルを美しいPDFに変換",
+        "inputFile": "Markdownファイル",
+        "selectFile": "Markdownファイルを選択",
+        "dropHint": "Markdownファイルをここにドロップ、またはクリックして選択",
+        "dropError": "このファイルはファイルピッカーをご使用ください",
+        "invalidFile": "Markdownファイルをドロップしてください (.md, .markdown, .txt)",
+        "change": "変更",
+        "theme": "テーマ",
+        "themeLight": "ライト (GitHubスタイル)",
+        "themeDark": "ダーク",
+        "pageSize": "ページサイズ",
+        "output": "出力",
+        "convert": "PDFに変換",
+        "success": "MarkdownをPDFに変換しました！",
+        "clickToReveal": "下をクリックしてファイルを表示",
+        "convertAnother": "別のファイルを変換"
       }
     }
   },

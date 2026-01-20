@@ -15,7 +15,7 @@ export interface Config {
   output_dir: string;
 }
 
-export type PdfToolId = "merge" | "images-to-pdf" | "delete-pages" | "remove-watermark";
+export type PdfToolId = "merge" | "images-to-pdf" | "delete-pages" | "remove-watermark" | "md-to-pdf";
 
 export interface PdfPanelProps {
   outputDir: string;

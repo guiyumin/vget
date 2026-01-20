@@ -21,7 +21,15 @@
     "failedToOpenFolder": "Ordner konnte nicht geöffnet werden",
     "noDownloadsYet": "Noch keine Downloads. Fügen Sie oben eine URL ein, um zu beginnen.",
     "startingDownload": "Download wird gestartet...",
-    "failedToCancel": "Download konnte nicht abgebrochen werden"
+    "failedToCancel": "Download konnte nicht abgebrochen werden",
+    "bulkDownloadTitle": "Massendownload",
+    "bulkDownloadHint": "Eine .txt-Datei mit URLs ablegen oder klicken zum Auswählen",
+    "dropTxtFile": "Bitte eine .txt-Datei mit URLs ablegen",
+    "dropMdHint": "Für Markdown-Dateien gehen Sie zu PDF-Tools → Markdown zu PDF",
+    "noUrlsInFile": "Keine gültigen URLs in der Datei gefunden",
+    "foundUrls": "{{count}} URLs gefunden",
+    "processingBulk": "Verarbeite {{current}}/{{total}}",
+    "failedToReadFile": "Datei konnte nicht gelesen werden"
   },
   "settings": {
     "back": "Zurück",
@@ -172,6 +180,25 @@
       "removeWatermark": {
         "title": "Wasserzeichen Entfernen",
         "desc": "Versuchen, Wasserzeichen aus einem PDF zu entfernen"
+      },
+      "md2pdf": {
+        "title": "Markdown zu PDF",
+        "desc": "Markdown-Dateien in formatierte PDFs konvertieren",
+        "inputFile": "Markdown-Datei",
+        "selectFile": "Markdown-Datei Auswählen",
+        "dropHint": "Markdown-Datei hier ablegen oder klicken zum Auswählen",
+        "dropError": "Bitte verwenden Sie den Dateiauswahl für diese Datei",
+        "invalidFile": "Bitte eine Markdown-Datei ablegen (.md, .markdown, .txt)",
+        "change": "Ändern",
+        "theme": "Design",
+        "themeLight": "Hell (GitHub-Stil)",
+        "themeDark": "Dunkel",
+        "pageSize": "Seitengröße",
+        "output": "Ausgabe",
+        "convert": "In PDF Konvertieren",
+        "success": "Markdown erfolgreich in PDF konvertiert!",
+        "clickToReveal": "Klicken Sie unten, um die Datei anzuzeigen",
+        "convertAnother": "Weitere Konvertieren"
       }
     }
   },

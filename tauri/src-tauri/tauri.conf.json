@@ -18,7 +18,8 @@
         "height": 700,
         "minWidth": 600,
         "minHeight": 500,
-        "center": true
+        "center": true,
+        "dragDropEnabled": true
       }
     ],
     "security": {
@@ -34,6 +35,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "resources": [
+      "resources/fonts/*"
     ],
     "externalBin": [
       "binaries/ffmpeg"

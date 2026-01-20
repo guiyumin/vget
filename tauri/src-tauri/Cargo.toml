@@ -41,3 +41,9 @@ ffmpeg-sidecar = "2"
 lopdf = "0.34"
 image = "0.25"
 printpdf = "0.8"
+
+# Markdown to PDF
+pulldown-cmark = "0.12"
+headless_chrome = "1.0"
+syntect = "5"
+base64 = "0.22"
