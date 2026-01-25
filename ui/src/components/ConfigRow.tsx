@@ -14,8 +14,8 @@ export function ConfigRow({
   onChange,
 }: ConfigRowProps) {
   return (
-    <div className="ConfigRow flex items-center gap-3">
-      <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+    <div className="ConfigRow flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+      <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
         {label}
       </span>
       <select

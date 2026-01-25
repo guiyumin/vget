@@ -81,12 +81,12 @@ export function TokenPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-6">
-        <h1 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4 sm:p-6">
+        <h1 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-white mb-4">
           {t.token_title}
         </h1>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+        <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-6">
           {t.token_description}
         </p>
 
@@ -96,7 +96,7 @@ export function TokenPage() {
             {t.token_custom_payload}
           </label>
           <textarea
-            className={`w-full h-32 px-3 py-2 font-mono text-sm border rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`w-full h-24 sm:h-32 px-3 py-2 font-mono text-xs sm:text-sm border rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               payloadError
                 ? "border-red-500"
                 : "border-zinc-300 dark:border-zinc-700"

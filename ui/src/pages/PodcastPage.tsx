@@ -124,24 +124,26 @@ export function PodcastPage() {
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
       {/* Search Bar */}
-      <form className="flex gap-3" onSubmit={handleSearch}>
-        {viewState.type === "channel" && (
-          <button
-            type="button"
-            onClick={handleBack}
-            className="px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <FaArrowLeft />
-          </button>
-        )}
-        <input
-          type="text"
-          className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-base focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t.podcast_search_hint}
-          disabled={!isConnected || searching}
-        />
+      <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleSearch}>
+        <div className="flex gap-3 flex-1">
+          {viewState.type === "channel" && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+            >
+              <FaArrowLeft />
+            </button>
+          )}
+          <input
+            type="text"
+            className="flex-1 min-w-0 px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-base focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.podcast_search_hint}
+            disabled={!isConnected || searching}
+          />
+        </div>
         <button
           type="submit"
           className="px-6 py-3 border-none rounded-lg bg-blue-500 text-white text-base font-medium cursor-pointer hover:bg-blue-600 disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed transition-colors"

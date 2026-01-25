@@ -56,3 +56,15 @@ body,
   align-items: center;
   justify-content: center;
 }
+
+/* Ensure content fills on mobile */
+@media (max-width: 767px) {
+  #root {
+    align-items: stretch;
+  }
+
+  #root > div {
+    max-width: 100% !important;
+    width: 100%;
+  }
+}

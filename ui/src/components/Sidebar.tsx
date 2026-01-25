@@ -13,11 +13,13 @@ import {
   FaWandMagicSparkles,
   FaMicrophone,
   FaKey,
+  FaXmark,
 } from "react-icons/fa6";
 import { useApp } from "../context/AppContext";
 
 interface SidebarProps {
   lang: string;
+  onClose?: () => void;
 }
 
 interface NavItem {
@@ -28,7 +30,7 @@ interface NavItem {
   children?: NavItem[];
 }
 
-export function Sidebar({ lang }: SidebarProps) {
+export function Sidebar({ lang, onClose }: SidebarProps) {
   const location = useLocation();
   const { t } = useApp();
 
@@ -152,6 +154,7 @@ export function Sidebar({ lang }: SidebarProps) {
       <Link
         key={item.to}
         to={item.to!}
+        onClick={onClose}
         className={clsx(
           "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
           isChild && "pl-4",
@@ -173,7 +176,17 @@ export function Sidebar({ lang }: SidebarProps) {
         "w-48"
       )}
     >
-      <div className="flex-1 py-4">
+      {/* Mobile close button */}
+      <div className="md:hidden flex justify-end p-2">
+        <button
+          onClick={onClose}
+          className="p-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+          aria-label="Close menu"
+        >
+          <FaXmark className="text-lg" />
+        </button>
+      </div>
+      <div className="flex-1 py-4 md:pt-4">
         <nav className="flex flex-col gap-1 px-2">
           {visibleItems.map((item) => renderNavItem(item))}
         </nav>

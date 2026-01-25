@@ -115,14 +115,14 @@ export function BulkDownloadPage() {
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
+      <h1 className="text-lg sm:text-xl font-semibold text-zinc-800 dark:text-zinc-100">
         {t.bulk_download}
       </h1>
 
       {/* File drop zone / select */}
       <div
         className={clsx(
-          "border-2 border-dashed rounded-lg p-6 transition-colors",
+          "border-2 border-dashed rounded-lg p-4 sm:p-6 transition-colors",
           "flex flex-col items-center gap-3",
           dragOver
             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
@@ -134,13 +134,13 @@ export function BulkDownloadPage() {
       >
         <FaUpload
           className={clsx(
-            "text-3xl",
+            "text-2xl sm:text-3xl",
             dragOver
               ? "text-blue-500"
               : "text-zinc-400 dark:text-zinc-600"
           )}
         />
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -150,7 +150,7 @@ export function BulkDownloadPage() {
             <FaFileAlt />
             {t.bulk_select_file}
           </button>
-          <span className="text-zinc-500 dark:text-zinc-400 text-sm">
+          <span className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm text-center">
             {t.bulk_drag_drop}
           </span>
         </div>
@@ -167,7 +167,7 @@ export function BulkDownloadPage() {
       <div className="flex flex-col gap-2">
         <textarea
           className={clsx(
-            "w-full h-64 px-4 py-3 border rounded-lg font-mono text-sm resize-y",
+            "w-full h-48 sm:h-64 px-3 sm:px-4 py-3 border rounded-lg font-mono text-xs sm:text-sm resize-y",
             "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white",
             "border-zinc-300 dark:border-zinc-700",
             "focus:outline-none focus:border-blue-500",
@@ -185,7 +185,7 @@ export function BulkDownloadPage() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="text-sm text-zinc-600 dark:text-zinc-400">
           {urls.length > 0 && (
             <span>
@@ -197,7 +197,7 @@ export function BulkDownloadPage() {
           <button
             type="button"
             onClick={handleClear}
-            className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!urlText || submitting}
           >
             {t.bulk_clear}
@@ -205,7 +205,7 @@ export function BulkDownloadPage() {
           <button
             type="button"
             onClick={handleSubmitAll}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none px-6 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isConnected || urls.length === 0 || submitting}
           >
             {submitting ? t.bulk_submitting : t.bulk_submit_all}

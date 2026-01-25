@@ -98,15 +98,15 @@ export function DownloadJobCard({
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4">
-      <div className="flex justify-between items-center mb-2">
-        <code className="text-xs text-zinc-400 dark:text-zinc-600">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-3 sm:p-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+        <code className="text-xs text-zinc-400 dark:text-zinc-600 truncate">
           {job.id}
         </code>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span
             className={clsx(
-              "inline-block px-2 py-1 rounded text-[0.7rem] font-medium uppercase",
+              "inline-block px-2 py-1 rounded text-[0.65rem] sm:text-[0.7rem] font-medium uppercase",
               statusStyles[job.status]
             )}
           >
@@ -114,7 +114,7 @@ export function DownloadJobCard({
           </span>
           {canCancel && (
             <button
-              className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent text-zinc-500 dark:text-zinc-600 text-[0.7rem] cursor-pointer hover:border-red-500 hover:text-red-500 transition-colors"
+              className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent text-zinc-500 dark:text-zinc-600 text-[0.65rem] sm:text-[0.7rem] cursor-pointer hover:border-red-500 hover:text-red-500 transition-colors"
               onClick={onCancel}
             >
               {t.cancel}
@@ -122,7 +122,7 @@ export function DownloadJobCard({
           )}
           {canClear && (
             <button
-              className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent text-zinc-500 text-[0.7rem] cursor-pointer hover:border-red-500 hover:text-red-500 transition-colors"
+              className="px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-transparent text-zinc-500 text-[0.65rem] sm:text-[0.7rem] cursor-pointer hover:border-red-500 hover:text-red-500 transition-colors"
               onClick={onClear}
             >
               {t.clear_history}
@@ -139,7 +139,7 @@ export function DownloadJobCard({
         </p>
       )}
       {job.status === "downloading" && (
-        <div className="flex items-center gap-3 mt-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-3">
           <div className="flex-1 h-1 bg-zinc-300 dark:bg-zinc-700 rounded overflow-hidden">
             <div
               className={clsx(
@@ -149,14 +149,16 @@ export function DownloadJobCard({
               style={{ width: job.total > 0 ? `${job.progress}%` : "100%" }}
             />
           </div>
-          <span className="text-xs text-zinc-400 dark:text-zinc-600 min-w-18 text-right">
-            {job.total > 0
-              ? `${job.progress.toFixed(1)}%`
-              : formatBytes(job.downloaded)}
-          </span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-500 min-w-20 text-right">
-            {formatSpeed(speed)}
-          </span>
+          <div className="flex justify-between sm:justify-end gap-3">
+            <span className="text-xs text-zinc-400 dark:text-zinc-600 sm:min-w-18 text-left sm:text-right">
+              {job.total > 0
+                ? `${job.progress.toFixed(1)}%`
+                : formatBytes(job.downloaded)}
+            </span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-500 sm:min-w-20 text-right">
+              {formatSpeed(speed)}
+            </span>
+          </div>
         </div>
       )}
       {job.status === "failed" && job.error && (

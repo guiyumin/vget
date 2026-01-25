@@ -168,9 +168,9 @@ export function WebDAVPage() {
   // Show loading while fetching remotes
   if (!remotesLoaded) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">{t.webdav_browser}</h1>
-        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-8 text-center">
+      <div className="p-0">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t.webdav_browser}</h1>
+        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-6 sm:p-8 text-center">
           <p className="text-zinc-500 dark:text-zinc-400">{t.loading}</p>
         </div>
       </div>
@@ -180,9 +180,9 @@ export function WebDAVPage() {
   // No remotes configured
   if (remotes.length === 0) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">{t.webdav_browser}</h1>
-        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-8 text-center">
+      <div className="p-0">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t.webdav_browser}</h1>
+        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-6 sm:p-8 text-center">
           <p className="text-zinc-500 dark:text-zinc-400 mb-4">
             {t.no_webdav_servers}
           </p>
@@ -198,8 +198,8 @@ export function WebDAVPage() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">{t.webdav_browser}</h1>
+    <div className="p-0">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t.webdav_browser}</h1>
 
       {/* Remote Selector */}
       <div className="mb-4">
@@ -212,7 +212,7 @@ export function WebDAVPage() {
             setSelectedRemote(e.target.value);
             setCurrentPath("/");
           }}
-          className="w-full max-w-xs px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
+          className="w-full sm:max-w-xs px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
         >
           {remotes.map((remote) => (
             <option key={remote.name} value={remote.name}>
@@ -270,8 +270,8 @@ export function WebDAVPage() {
           ) : (
             <>
               {/* Header */}
-              <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-900 flex items-center gap-4 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                <div className="w-6">
+              <div className="px-3 sm:px-4 py-2 bg-zinc-50 dark:bg-zinc-900 flex items-center gap-2 sm:gap-4 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
+                <div className="w-5 sm:w-6 shrink-0">
                   {selectableFiles.length > 0 && (
                     <input
                       type="checkbox"
@@ -281,22 +281,22 @@ export function WebDAVPage() {
                     />
                   )}
                 </div>
-                <div className="flex-1">{t.name}</div>
-                <div className="w-24 text-right">Size</div>
+                <div className="flex-1 min-w-0">{t.name}</div>
+                <div className="w-16 sm:w-24 text-right shrink-0">Size</div>
               </div>
 
               {/* Parent directory */}
               {currentPath !== "/" && (
                 <button
                   onClick={navigateUp}
-                  className="w-full px-4 py-3 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-left"
+                  className="w-full px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-left"
                 >
-                  <div className="w-6"></div>
-                  <div className="flex items-center gap-2 flex-1 text-zinc-600 dark:text-zinc-400">
-                    <FaArrowUp className="text-zinc-400" />
+                  <div className="w-5 sm:w-6 shrink-0"></div>
+                  <div className="flex items-center gap-2 flex-1 text-zinc-600 dark:text-zinc-400 min-w-0">
+                    <FaArrowUp className="text-zinc-400 shrink-0" />
                     <span>..</span>
                   </div>
-                  <div className="w-24 text-right text-zinc-400">-</div>
+                  <div className="w-16 sm:w-24 text-right text-zinc-400 shrink-0">-</div>
                 </button>
               )}
 
@@ -305,7 +305,7 @@ export function WebDAVPage() {
                 <div
                   key={file.path}
                   className={clsx(
-                    "px-4 py-3 flex items-center gap-4",
+                    "px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-4",
                     file.isDir
                       ? "cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                       : selectedFiles.has(file.path)
@@ -314,7 +314,7 @@ export function WebDAVPage() {
                   )}
                   onClick={() => file.isDir && navigateTo(file.path)}
                 >
-                  <div className="w-6">
+                  <div className="w-5 sm:w-6 shrink-0">
                     {!file.isDir && (
                       <input
                         type="checkbox"
@@ -334,9 +334,9 @@ export function WebDAVPage() {
                     ) : (
                       <FaFile className="text-zinc-400 shrink-0" />
                     )}
-                    <span className="truncate">{file.name}</span>
+                    <span className="truncate text-sm sm:text-base">{file.name}</span>
                   </div>
-                  <div className="w-24 text-right text-zinc-500 dark:text-zinc-400 text-sm">
+                  <div className="w-16 sm:w-24 text-right text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm shrink-0">
                     {formatSize(file.size)}
                   </div>
                 </div>
@@ -347,8 +347,8 @@ export function WebDAVPage() {
 
         {/* Actions */}
         {selectedFiles.size > 0 && (
-          <div className="px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="px-3 sm:px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
               {selectedFiles.size} {t.selected_files} (
               {formatSize(selectedSize)})
             </span>
@@ -356,7 +356,7 @@ export function WebDAVPage() {
               onClick={handleDownload}
               disabled={submitting}
               className={clsx(
-                "px-4 py-2 rounded-lg flex items-center gap-2 text-white",
+                "px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-white w-full sm:w-auto",
                 submitting
                   ? "bg-zinc-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700"

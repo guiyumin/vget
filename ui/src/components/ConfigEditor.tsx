@@ -171,12 +171,12 @@ export function ConfigEditor({
     "flex-1 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm font-mono focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50";
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-4 mb-4">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg p-3 sm:p-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
           {t.settings}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 self-end sm:self-auto">
           <button
             className="px-3 py-1.5 rounded text-xs cursor-pointer transition-colors bg-transparent border border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleCancel}
@@ -215,8 +215,8 @@ export function ConfigEditor({
           disabled={!isConnected || savingConfig}
           onChange={setPendingQuality}
         />
-        <div className="flex items-center gap-3">
-          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.twitter_auth}
           </span>
           <input
@@ -228,16 +228,16 @@ export function ConfigEditor({
             disabled={!isConnected || savingConfig}
           />
         </div>
-        <div className="flex items-center gap-3">
-          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.server_port}
           </span>
           <span className="flex-1 px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-500 text-sm font-mono">
             {serverPort || 8080}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.max_concurrent}
           </span>
           <input
@@ -250,8 +250,8 @@ export function ConfigEditor({
             max="50"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             {t.api_key}
           </span>
           <input
@@ -268,8 +268,8 @@ export function ConfigEditor({
         <div className="text-sm font-semibold text-zinc-900 dark:text-white mt-4 mb-2 pt-3 border-t border-zinc-300 dark:border-zinc-700">
           Kuaidi100 (快递查询)
         </div>
-        <div className="flex items-center gap-3">
-          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             API Key
           </span>
           <input
@@ -281,8 +281,8 @@ export function ConfigEditor({
             disabled={!isConnected || savingConfig}
           />
         </div>
-        <div className="flex items-center gap-3">
-          <span className="min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
             Customer ID
           </span>
           <input
@@ -331,10 +331,10 @@ export function ConfigEditor({
             ))}
           </div>
         )}
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-2">
           <input
             type="text"
-            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-25 focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.name}
             value={newWebDAVName}
             onChange={(e) => setNewWebDAVName(e.target.value)}
@@ -342,7 +342,7 @@ export function ConfigEditor({
           />
           <input
             type="text"
-            className="flex-1 min-w-37.5 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="sm:col-span-2 md:col-span-1 px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.url}
             value={newWebDAVUrl}
             onChange={(e) => setNewWebDAVUrl(e.target.value)}
@@ -350,7 +350,7 @@ export function ConfigEditor({
           />
           <input
             type="text"
-            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-25 focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.username}
             value={newWebDAVUsername}
             onChange={(e) => setNewWebDAVUsername(e.target.value)}
@@ -358,25 +358,25 @@ export function ConfigEditor({
           />
           <input
             type="password"
-            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm w-25 focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
+            className="px-2 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
             placeholder={t.password}
             value={newWebDAVPassword}
             onChange={(e) => setNewWebDAVPassword(e.target.value)}
             disabled={!isConnected || addingWebDAV}
           />
-          <button
-            className="px-3 py-1.5 border border-blue-500 rounded bg-blue-500 text-white text-sm cursor-pointer hover:bg-blue-600 hover:border-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            onClick={handleAddWebDAV}
-            disabled={
-              !isConnected ||
-              addingWebDAV ||
-              !newWebDAVName.trim() ||
-              !newWebDAVUrl.trim()
-            }
-          >
-            {addingWebDAV ? "..." : t.add}
-          </button>
         </div>
+        <button
+          className="mt-2 w-full sm:w-auto px-3 py-1.5 border border-blue-500 rounded bg-blue-500 text-white text-sm cursor-pointer hover:bg-blue-600 hover:border-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          onClick={handleAddWebDAV}
+          disabled={
+            !isConnected ||
+            addingWebDAV ||
+            !newWebDAVName.trim() ||
+            !newWebDAVUrl.trim()
+          }
+        >
+          {addingWebDAV ? "..." : t.add}
+        </button>
       </div>
     </div>
   );

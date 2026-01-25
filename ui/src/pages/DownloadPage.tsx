@@ -63,14 +63,14 @@ export function DownloadPage() {
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
         <span className="text-zinc-700 dark:text-zinc-200 text-sm whitespace-nowrap">
           {t.download_to}
         </span>
         <input
           type="text"
           className={clsx(
-            "flex-1 px-3 py-2 border rounded font-mono text-sm transition-colors focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
+            "flex-1 px-3 py-2 border rounded font-mono text-xs sm:text-sm transition-colors focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
             editingDir
               ? "border-blue-500 bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white"
               : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 cursor-default"
@@ -85,7 +85,7 @@ export function DownloadPage() {
           placeholder="..."
         />
         {editingDir ? (
-          <div className="flex gap-2">
+          <div className="flex gap-2 self-end sm:self-auto">
             <button
               onClick={handleSaveDir}
               className="px-3 py-1.5 border border-green-500 text-green-500 rounded text-xs cursor-pointer whitespace-nowrap hover:bg-green-500 hover:text-white transition-colors"
@@ -102,7 +102,7 @@ export function DownloadPage() {
         ) : (
           <button
             onClick={handleEditDir}
-            className="px-3 py-1.5 border border-zinc-300 dark:border-zinc-700 text-zinc-500 rounded text-xs cursor-pointer whitespace-nowrap hover:border-blue-500 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 border border-zinc-300 dark:border-zinc-700 text-zinc-500 rounded text-xs cursor-pointer whitespace-nowrap hover:border-blue-500 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors self-end sm:self-auto"
             disabled={!isConnected}
           >
             {t.edit}
@@ -110,7 +110,7 @@ export function DownloadPage() {
         )}
       </div>
 
-      <form className="flex gap-3" onSubmit={handleSubmit}>
+      <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleSubmit}>
         <input
           type="text"
           className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-base focus:outline-none focus:border-blue-500 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 disabled:opacity-50"
