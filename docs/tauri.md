@@ -388,9 +388,8 @@ CLI and Desktop share the same config directory at `~/.config/vget/`. This ensur
 ├── auth.json               # Authentication tokens
 ├── xhs_cookies.json        # Xiaohongshu browser cookies
 ├── youtube_session.json    # YouTube session data
-├── telegram/               # Telegram MTProto session
-│   └── session
-└── models/                 # AI models (whisper, etc.)
+└── telegram/               # Telegram MTProto session
+    └── session
 ```
 
 ### config.yml Format

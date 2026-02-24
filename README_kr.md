@@ -34,10 +34,6 @@ rm vget.zip
 
 ![다운로드 진행률](screenshots/pikpak_download.png)
 
-### AI 음성 인식
-
-![AI 음성 인식](screenshots/vget-ai-transcribe-screenshot.png)
-
 ### Docker 서버 UI
 
 ![](screenshots/vget_server_ui.png)
@@ -45,20 +41,8 @@ rm vget.zip
 ## Docker
 
 ```bash
-# --gpus 없음: GPU 액세스 없음, 전사에 클라우드 API 사용
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
-
-# --gpus all: 컨테이너가 호스트의 NVIDIA GPU를 사용하여 로컬 전사 가능
-docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
-
-**런타임 동작:**
-| 모드 | 조건 | 전사 |
-|------|------|------|
-| 클라우드 API | `--gpus` 없음 또는 NVIDIA GPU 없음 | OpenAI Whisper API, Groq 등 |
-| 로컬 GPU | `--gpus all` + NVIDIA GPU | 온디맨드 모델 다운로드 |
-
-[Docker GPU 패스스루 가이드](docs/ai/docker-gpu-passthrough.md)에서 설정 방법 확인 (Windows/Linux).
 
 ## 지원 소스
 

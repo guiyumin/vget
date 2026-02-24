@@ -34,10 +34,6 @@ rm vget.zip
 
 ![ダウンロード進捗](screenshots/pikpak_download.png)
 
-### AI 文字起こし
-
-![AI 文字起こし](screenshots/vget-ai-transcribe-screenshot.png)
-
 ### Docker サーバー UI
 
 ![](screenshots/vget_server_ui.png)
@@ -45,20 +41,8 @@ rm vget.zip
 ## Docker
 
 ```bash
-# --gpus なし：GPU アクセスなし、文字起こしにクラウド API を使用
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
-
-# --gpus all：コンテナがホストの NVIDIA GPU を使用してローカル文字起こしが可能
-docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
-
-**ランタイム動作：**
-| モード | 条件 | 文字起こし |
-|--------|------|------------|
-| クラウド API | `--gpus` なしまたは NVIDIA GPU なし | OpenAI Whisper API、Groq など |
-| ローカル GPU | `--gpus all` + NVIDIA GPU | オンデマンドでモデルをダウンロード |
-
-[Docker GPU パススルーガイド](docs/ai/docker-gpu-passthrough.md)でセットアップ手順を確認（Windows/Linux）。
 
 ## 対応ソース
 

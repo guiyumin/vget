@@ -34,10 +34,6 @@ Laden Sie `vget-windows-amd64.zip` von [Releases](https://github.com/guiyumin/vg
 
 ![Download-Fortschritt](screenshots/pikpak_download.png)
 
-### KI-Transkription
-
-![KI-Transkription](screenshots/vget-ai-transcribe-screenshot.png)
-
 ### Docker Server-Benutzeroberfläche
 
 ![](screenshots/vget_server_ui.png)
@@ -45,20 +41,8 @@ Laden Sie `vget-windows-amd64.zip` von [Releases](https://github.com/guiyumin/vg
 ## Docker
 
 ```bash
-# Ohne --gpus: Kein GPU-Zugriff, verwendet Cloud-API für Transkription
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
-
-# Mit --gpus all: Container kann NVIDIA GPU des Hosts für lokale Transkription nutzen
-docker run -d --gpus all -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
-
-**Laufzeitverhalten:**
-| Modus | Bedingung | Transkription |
-|-------|-----------|---------------|
-| Cloud-API | Kein `--gpus` oder keine NVIDIA GPU | OpenAI Whisper API, Groq usw. |
-| Lokale GPU | `--gpus all` + NVIDIA GPU | Modelle bei Bedarf herunterladen |
-
-Siehe [Docker GPU Passthrough Guide](docs/ai/docker-gpu-passthrough.md) für Einrichtungsanleitung (Windows/Linux).
 
 ## Unterstützte Quellen
 
