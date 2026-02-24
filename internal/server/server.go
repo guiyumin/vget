@@ -48,9 +48,8 @@ type Server struct {
 	port       int
 	outputDir  string
 	apiKey     string
-	jobQueue   *JobQueue
-	aiJobQueue *AIJobQueue
-	historyDB  *HistoryDB
+	jobQueue  *JobQueue
+	historyDB *HistoryDB
 	cfg        *config.Config
 	server     *http.Server
 	engine     *gin.Engine
@@ -79,9 +78,6 @@ func NewServer(port int, outputDir, apiKey string, maxConcurrent int) *Server {
 		s.jobQueue.SetHistoryDB(historyDB)
 	}
 
-	// Create AI job queue (limit to 2 concurrent to avoid API rate limits)
-	s.aiJobQueue = NewAIJobQueue(2, outputDir, cfg)
-
 	return s
 }
 
@@ -105,9 +101,6 @@ func (s *Server) Start() error {
 
 	// Start job queue workers
 	s.jobQueue.Start()
-
-	// Start AI job queue workers
-	s.aiJobQueue.Start()
 
 	// Set Gin mode
 	gin.SetMode(gin.ReleaseMode)
@@ -173,32 +166,6 @@ func (s *Server) Start() error {
 	api.GET("/bilibili/qr/poll", s.handleBilibiliQRPoll)
 	api.GET("/bilibili/status", s.handleBilibiliStatus)
 
-	// AI routes
-	api.GET("/ai/config", s.handleGetAIConfig)
-	api.GET("/ai/models", s.handleGetAIModels)
-	api.POST("/ai/config/account", s.handleAddAIAccount)
-	api.DELETE("/ai/config/account/:name", s.handleDeleteAIAccount)
-	api.POST("/ai/config/default", s.handleSetDefaultAIAccount)
-	api.POST("/ai/upload", s.handleUploadAudio)
-	api.GET("/ai/files", s.handleListDownloadedAudio)
-
-	// AI processing job routes
-	api.POST("/ai/process", s.handleStartAIProcess)
-	api.GET("/ai/jobs", s.handleGetAIJobs)
-	api.GET("/ai/jobs/:id", s.handleGetAIJob)
-	api.DELETE("/ai/jobs/:id", s.handleCancelAIJob)
-	api.DELETE("/ai/jobs", s.handleClearAIJobs)
-
-	// Local ASR routes
-	api.GET("/ai/local-asr/capabilities", s.handleGetLocalASRCapabilities)
-	api.POST("/ai/local-asr/config", s.handleUpdateLocalASRConfig)
-
-	// Model download routes (vmirror CDN)
-	api.GET("/ai/vmirror/models", s.handleGetVmirrorModels)
-	api.GET("/ai/vmirror/auth", s.handleGetModelDownloadAuth)
-	api.POST("/ai/vmirror/auth", s.handleSaveModelDownloadAuth)
-	api.POST("/ai/vmirror/download", s.handleRequestModelDownload)
-
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
 		s.setupStaticFiles(distFS)
@@ -225,7 +192,6 @@ func (s *Server) Start() error {
 // Stop gracefully shuts down the server
 func (s *Server) Stop(ctx context.Context) error {
 	s.jobQueue.Stop()
-	s.aiJobQueue.Stop()
 	if s.historyDB != nil {
 		s.historyDB.Close()
 	}

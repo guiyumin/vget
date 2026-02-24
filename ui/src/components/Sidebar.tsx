@@ -10,8 +10,6 @@ import {
   FaCloud,
   FaPodcast,
   FaB,
-  FaWandMagicSparkles,
-  FaMicrophone,
   FaKey,
   FaXmark,
   FaClockRotateLeft,
@@ -53,25 +51,6 @@ export function Sidebar({ lang, onClose }: SidebarProps) {
       icon: <FaClockRotateLeft />,
       label: t.history,
       show: true,
-    },
-    {
-      icon: <FaWandMagicSparkles />,
-      label: t.ai,
-      show: true,
-      children: [
-        {
-          to: "/ai/speech-to-text",
-          icon: <FaMicrophone />,
-          label: t.ai_speech_to_text,
-          show: true,
-        },
-        {
-          to: "/ai/settings",
-          icon: <FaGear />,
-          label: t.settings,
-          show: true,
-        },
-      ],
     },
     {
       to: "/bilibili",

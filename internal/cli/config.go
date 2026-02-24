@@ -61,24 +61,6 @@ var configShowCmd = &cobra.Command{
 			}
 		}
 
-		// Show AI config
-		if len(cfg.AI.Accounts) > 0 {
-			fmt.Println("\nAI Accounts:")
-			for _, account := range cfg.AI.Accounts {
-				defaultMarker := ""
-				if account.IsDefault {
-					defaultMarker = " (default)"
-				}
-				fmt.Printf("  %s%s:\n", account.Label, defaultMarker)
-				fmt.Printf("    Provider: %s\n", account.Provider)
-				if strings.HasPrefix(account.APIKey, "plain:") {
-					fmt.Println("    API Key: [plain text]")
-				} else if account.APIKey != "" {
-					fmt.Println("    API Key: [encrypted]")
-				}
-			}
-		}
-
 	},
 }
 
@@ -107,9 +89,6 @@ Supported keys:
   server.port        Server listen port
   server.max_concurrent  Max concurrent downloads
   server.api_key     Server API key
-
-AI configuration:
-  ai.default_account          Default account name to use
 
 Express tracking (dynamic keys):
   express.<provider>.<key>  Set express provider config
@@ -226,11 +205,6 @@ func setConfigValue(cfg *config.Config, key, value string) error {
 		return nil
 	}
 
-	// Handle ai.* keys
-	if strings.HasPrefix(key, "ai.") {
-		return setAIConfigValue(cfg, key, value)
-	}
-
 	switch key {
 	case "language":
 		cfg.Language = value
@@ -264,27 +238,6 @@ func setConfigValue(cfg *config.Config, key, value string) error {
 	return nil
 }
 
-// setAIConfigValue handles ai.* config keys
-func setAIConfigValue(cfg *config.Config, key, value string) error {
-	switch key {
-	case "ai.default_account":
-		// Validate that the account exists
-		if cfg.AI.GetAccount(value) == nil && value != "" {
-			accounts := cfg.AI.ListAccounts()
-			if len(accounts) == 0 {
-				return fmt.Errorf("no AI accounts configured. Configure AI in the web UI Settings page")
-			}
-			return fmt.Errorf("account '%s' not found. Available: %v", value, accounts)
-		}
-		if value != "" {
-			cfg.AI.SetDefault(value)
-		}
-	default:
-		return fmt.Errorf("unknown AI config key: %s\nSupported: ai.default_account", key)
-	}
-	return nil
-}
-
 // getConfigValue gets a config value by key
 func getConfigValue(cfg *config.Config, key string) (string, error) {
 	// Handle express.<provider>.<key> pattern (e.g., express.kuaidi100.key)
@@ -300,11 +253,6 @@ func getConfigValue(cfg *config.Config, key string) (string, error) {
 			return "", nil
 		}
 		return providerCfg[configKey], nil
-	}
-
-	// Handle ai.* keys
-	if strings.HasPrefix(key, "ai.") {
-		return getAIConfigValue(cfg, key)
 	}
 
 	switch key {
@@ -331,20 +279,6 @@ func getConfigValue(cfg *config.Config, key string) (string, error) {
 	}
 }
 
-// getAIConfigValue handles ai.* config keys
-func getAIConfigValue(cfg *config.Config, key string) (string, error) {
-	switch key {
-	case "ai.default_account":
-		account := cfg.AI.GetDefaultAccount()
-		if account != nil {
-			return account.Label, nil
-		}
-		return "", nil
-	default:
-		return "", fmt.Errorf("unknown AI config key: %s\nSupported: ai.default_account", key)
-	}
-}
-
 // unsetConfigValue clears a config value by key
 func unsetConfigValue(cfg *config.Config, key string) error {
 	// Handle express.<provider>.<key> pattern (e.g., express.kuaidi100.key)
@@ -357,11 +291,6 @@ func unsetConfigValue(cfg *config.Config, key string) error {
 		configKey := parts[2]
 		cfg.DeleteExpressConfig(provider, configKey)
 		return nil
-	}
-
-	// Handle ai.* keys
-	if strings.HasPrefix(key, "ai.") {
-		return unsetAIConfigValue(cfg, key)
 	}
 
 	switch key {
@@ -385,24 +314,6 @@ func unsetConfigValue(cfg *config.Config, key string) error {
 		cfg.Server.APIKey = ""
 	default:
 		return fmt.Errorf("unknown config key: %s\nRun 'vget config unset --help' to see supported keys", key)
-	}
-	return nil
-}
-
-// unsetAIConfigValue handles ai.* config keys
-func unsetAIConfigValue(cfg *config.Config, key string) error {
-	switch key {
-	case "ai.default_account":
-		// Clear default flag from all accounts
-		for i := range cfg.AI.Accounts {
-			cfg.AI.Accounts[i].IsDefault = false
-		}
-		// Set first account as default if any exist
-		if len(cfg.AI.Accounts) > 0 {
-			cfg.AI.Accounts[0].IsDefault = true
-		}
-	default:
-		return fmt.Errorf("unknown AI config key: %s\nSupported: ai.default_account", key)
 	}
 	return nil
 }

@@ -21,10 +21,6 @@ jobs:
       - name: Create placeholders for embed
         run: |
           mkdir -p internal/server/dist && touch internal/server/dist/.gitkeep
-          mkdir -p internal/core/ai/transcriber/bin
-          touch internal/core/ai/transcriber/bin/whisper-darwin-arm64
-          touch internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-          touch internal/core/ai/transcriber/bin/whisper-linux-amd64
 
       - name: Run tests
         run: CGO_ENABLED=0 go test -v ./...
@@ -43,10 +39,6 @@ jobs:
       - name: Create placeholders for embed
         run: |
           mkdir -p internal/server/dist && touch internal/server/dist/.gitkeep
-          mkdir -p internal/core/ai/transcriber/bin
-          touch internal/core/ai/transcriber/bin/whisper-darwin-arm64
-          touch internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-          touch internal/core/ai/transcriber/bin/whisper-linux-amd64
 
       - name: Run staticcheck
         uses: dominikh/staticcheck-action@v1

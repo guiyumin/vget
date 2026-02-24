@@ -10,91 +10,13 @@ permissions:
   packages: write
 
 jobs:
-  # Build whisper.cpp for CLI embedding
-  # Skip for pre-release tags (e.g., v1.0.0-beta)
-  build-darwin-arm64:
-    if: ${{ !contains(github.ref_name, '-') }}
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Build whisper.cpp with Metal (static)
-        run: |
-          git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
-          cd whisper.cpp
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DWHISPER_METAL=ON -DBUILD_SHARED_LIBS=OFF
-          cmake --build build --config Release -j$(sysctl -n hw.ncpu)
-          mkdir -p ../internal/core/ai/transcriber/bin
-          cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-darwin-arm64
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bin-darwin-arm64
-          path: internal/core/ai/transcriber/bin/
-
-  build-windows-amd64:
-    if: ${{ !contains(github.ref_name, '-') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Download whisper.cpp (pre-built CUDA)
-        run: |
-          mkdir -p internal/core/ai/transcriber/bin
-          curl -SL https://github.com/ggerganov/whisper.cpp/releases/download/v1.8.2/whisper-cublas-12.4.0-bin-x64.zip -o whisper.zip
-          unzip whisper.zip
-          cp Release/whisper-cli.exe internal/core/ai/transcriber/bin/whisper-windows-amd64.exe
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bin-windows-amd64
-          path: internal/core/ai/transcriber/bin/
-
-  build-linux-amd64:
-    if: ${{ !contains(github.ref_name, '-') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.30
-        with:
-          cuda: "12.6.0"
-          method: network
-          sub-packages: '["nvcc", "cudart-dev"]'
-          non-cuda-sub-packages: '["libcublas-dev"]'
-
-      - name: Build whisper.cpp with CUDA (static)
-        run: |
-          git clone --depth 1 --branch v1.8.2 https://github.com/ggerganov/whisper.cpp
-          cd whisper.cpp
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DBUILD_SHARED_LIBS=OFF
-          cmake --build build --config Release -j$(nproc)
-          mkdir -p ../internal/core/ai/transcriber/bin
-          cp build/bin/whisper-cli ../internal/core/ai/transcriber/bin/whisper-linux-amd64
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bin-linux-amd64
-          path: internal/core/ai/transcriber/bin/
-
   release:
-    if: always()
-    needs: [build-darwin-arm64, build-windows-amd64, build-linux-amd64]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Download binaries
-        if: ${{ !contains(github.ref_name, '-') }}
-        uses: actions/download-artifact@v4
-        with:
-          pattern: bin-*
-          path: internal/core/ai/transcriber/bin/
-          merge-multiple: true
 
       - name: Set up Go
         uses: actions/setup-go@v5

@@ -24,7 +24,6 @@ type Translations struct {
 	UI           UITranslations           `yaml:"ui"`
 	Server       ServerTranslations       `yaml:"server"`
 	YouTube      YouTubeTranslations      `yaml:"youtube"`
-	AICLI        AICLITranslations        `yaml:"ai_cli"`
 }
 
 type ConfigTranslations struct {
@@ -213,77 +212,6 @@ type UITranslations struct {
 	PodcastEpisodesCount   string `yaml:"podcast_episodes_count" json:"podcast_episodes_count"`
 	PodcastBack            string `yaml:"podcast_back" json:"podcast_back"`
 	PodcastDownloadStarted string `yaml:"podcast_download_started" json:"podcast_download_started"`
-	// AI
-	AI                    string `yaml:"ai" json:"ai"`
-	AISpeechToText        string `yaml:"ai_speech_to_text" json:"ai_speech_to_text"`
-	AISettings            string `yaml:"ai_settings" json:"ai_settings"`
-	AINoAccounts          string `yaml:"ai_no_accounts" json:"ai_no_accounts"`
-	AIEncryptionNote      string `yaml:"ai_encryption_note" json:"ai_encryption_note"`
-	AIAccountName         string `yaml:"ai_account_name" json:"ai_account_name"`
-	AIProvider            string `yaml:"ai_provider" json:"ai_provider"`
-	AIApiKey              string `yaml:"ai_api_key" json:"ai_api_key"`
-	AISameKeyForSummary   string `yaml:"ai_same_key_for_summary" json:"ai_same_key_for_summary"`
-	AISummaryApiKey       string `yaml:"ai_summary_api_key" json:"ai_summary_api_key"`
-	AIPin                 string `yaml:"ai_pin" json:"ai_pin"`
-	AIPinHint             string `yaml:"ai_pin_hint" json:"ai_pin_hint"`
-	AIAdvancedOptions     string `yaml:"ai_advanced_options" json:"ai_advanced_options"`
-	AITranscriptionModel  string `yaml:"ai_transcription_model" json:"ai_transcription_model"`
-	AITranscriptionURL    string `yaml:"ai_transcription_url" json:"ai_transcription_url"`
-	AISummaryModel        string `yaml:"ai_summary_model" json:"ai_summary_model"`
-	AISummaryURL          string `yaml:"ai_summary_url" json:"ai_summary_url"`
-	AITranscribe          string `yaml:"ai_transcribe" json:"ai_transcribe"`
-	AISummarize           string `yaml:"ai_summarize" json:"ai_summarize"`
-	AIProcessing          string `yaml:"ai_processing" json:"ai_processing"`
-	AIRun                 string `yaml:"ai_run" json:"ai_run"`
-	AISelectModel         string `yaml:"ai_select_model" json:"ai_select_model"`
-	// AI step names
-	AIStepExtractAudio  string `yaml:"ai_step_extract_audio" json:"ai_step_extract_audio"`
-	AIStepCompressAudio string `yaml:"ai_step_compress_audio" json:"ai_step_compress_audio"`
-	AIStepChunkAudio    string `yaml:"ai_step_chunk_audio" json:"ai_step_chunk_audio"`
-	AIStepTranscribe    string `yaml:"ai_step_transcribe" json:"ai_step_transcribe"`
-	AIStepMerge         string `yaml:"ai_step_merge" json:"ai_step_merge"`
-	AIStepTranslate     string `yaml:"ai_step_translate" json:"ai_step_translate"`
-	AIStepSummarize     string `yaml:"ai_step_summarize" json:"ai_step_summarize"`
-	// AI step details
-	AIDetailAlreadyAudio          string `yaml:"ai_detail_already_audio" json:"ai_detail_already_audio"`
-	AIDetailAudioReady            string `yaml:"ai_detail_audio_ready" json:"ai_detail_audio_ready"`
-	AIDetailFileSmallEnough       string `yaml:"ai_detail_file_small_enough" json:"ai_detail_file_small_enough"`
-	AIDetailTranscriptionComplete string `yaml:"ai_detail_transcription_complete" json:"ai_detail_transcription_complete"`
-	AIDetailNoChunksToMerge       string `yaml:"ai_detail_no_chunks_to_merge" json:"ai_detail_no_chunks_to_merge"`
-	AIDetailSummaryGenerated      string `yaml:"ai_detail_summary_generated" json:"ai_detail_summary_generated"`
-	// AI output options
-	AIOutputFormat    string `yaml:"ai_output_format" json:"ai_output_format"`
-	AIAudioLanguage   string `yaml:"ai_audio_language" json:"ai_audio_language"`
-	AISummaryLanguage string `yaml:"ai_summary_language" json:"ai_summary_language"`
-	// Local Speech to Text
-	LocalSTTTitle        string `yaml:"local_stt_title" json:"local_stt_title"`
-	LocalSTTAvailable    string `yaml:"local_stt_available" json:"local_stt_available"`
-	LocalSTTUnavailable  string `yaml:"local_stt_unavailable" json:"local_stt_unavailable"`
-	LocalSTTNoGPU        string `yaml:"local_stt_no_gpu" json:"local_stt_no_gpu"`
-	LocalSTTGPURequired  string `yaml:"local_stt_gpu_required" json:"local_stt_gpu_required"`
-	LocalSTTModel        string `yaml:"local_stt_model" json:"local_stt_model"`
-	LocalSTTModelUpdated string `yaml:"local_stt_model_updated" json:"local_stt_model_updated"`
-	LocalSTTUpdateFailed string `yaml:"local_stt_update_failed" json:"local_stt_update_failed"`
-	LocalSTTInfo         string `yaml:"local_stt_info" json:"local_stt_info"`
-	// Model Download
-	ModelDownloadTitle             string `yaml:"model_download_title" json:"model_download_title"`
-	ModelDownloadSource            string `yaml:"model_download_source" json:"model_download_source"`
-	ModelDownloadSourceHuggingface string `yaml:"model_download_source_huggingface" json:"model_download_source_huggingface"`
-	ModelDownloadSourceVmirror     string `yaml:"model_download_source_vmirror" json:"model_download_source_vmirror"`
-	ModelDownloadSourceVmirrorHint string `yaml:"model_download_source_vmirror_hint" json:"model_download_source_vmirror_hint"`
-	ModelDownloadEmail             string `yaml:"model_download_email" json:"model_download_email"`
-	ModelDownloadEmailHint        string `yaml:"model_download_email_hint" json:"model_download_email_hint"`
-	ModelDownloadEmailPlaceholder string `yaml:"model_download_email_placeholder" json:"model_download_email_placeholder"`
-	ModelDownloadEmailRequired    string `yaml:"model_download_email_required" json:"model_download_email_required"`
-	ModelDownloadEmailSaved       string `yaml:"model_download_email_saved" json:"model_download_email_saved"`
-	ModelDownloadInvalidEmail     string `yaml:"model_download_invalid_email" json:"model_download_invalid_email"`
-	ModelDownloadDownloaded       string `yaml:"model_download_downloaded" json:"model_download_downloaded"`
-	ModelDownloadGettingURL       string `yaml:"model_download_getting_url" json:"model_download_getting_url"`
-	ModelDownloadSuccess          string `yaml:"model_download_success" json:"model_download_success"`
-	ModelDownloadFailed           string `yaml:"model_download_failed" json:"model_download_failed"`
-	ModelDownloadRateLimit        string `yaml:"model_download_rate_limit" json:"model_download_rate_limit"`
-	ModelDownloadServerDown       string `yaml:"model_download_server_down" json:"model_download_server_down"`
-	ModelDownloadInfo             string `yaml:"model_download_info" json:"model_download_info"`
 	// API Token
 	TokenTitle             string `yaml:"token_title" json:"token_title"`
 	TokenDescription       string `yaml:"token_description" json:"token_description"`
@@ -317,24 +245,6 @@ type YouTubeTranslations struct {
 	DockerRequired   string `yaml:"docker_required"`
 	DockerHintServer string `yaml:"docker_hint_server"`
 	DockerHintCLI    string `yaml:"docker_hint_cli"`
-}
-
-// AICLITranslations holds translations for AI CLI messages
-type AICLITranslations struct {
-	ModelNotFound      string `yaml:"model_not_found"`
-	DownloadWith       string `yaml:"download_with"`
-	AvailableModels    string `yaml:"available_models"`
-	VmirrorHint        string `yaml:"vmirror_hint"`
-	NoModelsDownloaded string `yaml:"no_models_downloaded"`
-	DownloadAModel     string `yaml:"download_a_model"`
-	SeeAvailableModels string `yaml:"see_available_models"`
-	EnterEmail         string `yaml:"enter_email"`
-	FakeEmailWarning   string `yaml:"fake_email_warning"`
-	InvalidEmail       string `yaml:"invalid_email"`
-	AuthFailed         string `yaml:"auth_failed"`
-	EmailRequired      string `yaml:"email_required"`
-	AuthServerDown     string `yaml:"auth_server_down"`
-	RateLimitExceeded  string `yaml:"rate_limit_exceeded"`
 }
 
 var (

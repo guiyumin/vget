@@ -1,13 +1,4 @@
 # vget Docker Image for ARM64 (Apple Silicon, Raspberry Pi, ARM servers)
-# No local AI - use cloud API for transcription
-#
-# Why no local AI on ARM64?
-# - Apple Silicon (Metal): Docker runs in a Linux VM, no Metal access
-# - NVIDIA Jetson: Has CUDA but needs special l4t base images (niche, not supported)
-# - ARM Linux servers: Typically no NVIDIA GPU
-# - CPU-only AI is too slow to be practical
-#
-# For Metal GPU acceleration on Mac, run vget natively instead of Docker
 
 # Build stage for UI
 FROM node:22-slim AS ui-builder
@@ -28,10 +19,9 @@ RUN go mod download
 COPY . .
 COPY --from=ui-builder /app/ui/dist ./internal/server/dist
 
-# Build without AI (pure Go, no CGO, no whisper)
-RUN CGO_ENABLED=0 go build -tags noai -ldflags="-s -w" -o /vget-server ./cmd/vget-server
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /vget-server ./cmd/vget-server
 
-# Runtime stage - slim image, no AI libraries needed
+# Runtime stage
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

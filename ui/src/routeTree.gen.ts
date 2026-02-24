@@ -19,9 +19,6 @@ import { Route as ConfigRouteImport } from './routes/config'
 import { Route as BulkRouteImport } from './routes/bulk'
 import { Route as BilibiliRouteImport } from './routes/bilibili'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AiSpeechToTextRouteImport } from './routes/ai/speech-to-text'
-import { Route as AiSettingsRouteImport } from './routes/ai/settings'
-
 const WebdavRoute = WebdavRouteImport.update({
   id: '/webdav',
   path: '/webdav',
@@ -72,17 +69,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiSpeechToTextRoute = AiSpeechToTextRouteImport.update({
-  id: '/ai/speech-to-text',
-  path: '/ai/speech-to-text',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiSettingsRoute = AiSettingsRouteImport.update({
-  id: '/ai/settings',
-  path: '/ai/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bilibili': typeof BilibiliRoute
@@ -94,8 +80,6 @@ export interface FileRoutesByFullPath {
   '/token': typeof TokenRoute
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
-  '/ai/settings': typeof AiSettingsRoute
-  '/ai/speech-to-text': typeof AiSpeechToTextRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,8 +92,6 @@ export interface FileRoutesByTo {
   '/token': typeof TokenRoute
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
-  '/ai/settings': typeof AiSettingsRoute
-  '/ai/speech-to-text': typeof AiSpeechToTextRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,8 +105,6 @@ export interface FileRoutesById {
   '/token': typeof TokenRoute
   '/torrent': typeof TorrentRoute
   '/webdav': typeof WebdavRoute
-  '/ai/settings': typeof AiSettingsRoute
-  '/ai/speech-to-text': typeof AiSpeechToTextRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,8 +119,6 @@ export interface FileRouteTypes {
     | '/token'
     | '/torrent'
     | '/webdav'
-    | '/ai/settings'
-    | '/ai/speech-to-text'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,8 +131,6 @@ export interface FileRouteTypes {
     | '/token'
     | '/torrent'
     | '/webdav'
-    | '/ai/settings'
-    | '/ai/speech-to-text'
   id:
     | '__root__'
     | '/'
@@ -167,8 +143,6 @@ export interface FileRouteTypes {
     | '/token'
     | '/torrent'
     | '/webdav'
-    | '/ai/settings'
-    | '/ai/speech-to-text'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,8 +156,6 @@ export interface RootRouteChildren {
   TokenRoute: typeof TokenRoute
   TorrentRoute: typeof TorrentRoute
   WebdavRoute: typeof WebdavRoute
-  AiSettingsRoute: typeof AiSettingsRoute
-  AiSpeechToTextRoute: typeof AiSpeechToTextRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -258,20 +230,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai/speech-to-text': {
-      id: '/ai/speech-to-text'
-      path: '/ai/speech-to-text'
-      fullPath: '/ai/speech-to-text'
-      preLoaderRoute: typeof AiSpeechToTextRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai/settings': {
-      id: '/ai/settings'
-      path: '/ai/settings'
-      fullPath: '/ai/settings'
-      preLoaderRoute: typeof AiSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -286,8 +244,6 @@ const rootRouteChildren: RootRouteChildren = {
   TokenRoute: TokenRoute,
   TorrentRoute: TorrentRoute,
   WebdavRoute: WebdavRoute,
-  AiSettingsRoute: AiSettingsRoute,
-  AiSpeechToTextRoute: AiSpeechToTextRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
