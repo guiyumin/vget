@@ -39,6 +39,7 @@ interface ConfigEditorProps {
   initialApiKey: string;
   initialKuaidi100Key: string;
   initialKuaidi100Customer: string;
+  initialTelegramTdataPath: string;
   serverPort: number;
   webdavServers: Record<string, WebDAVServer>;
   // Callbacks
@@ -62,6 +63,7 @@ export interface ConfigValues {
   apiKey: string;
   kuaidi100Key: string;
   kuaidi100Customer: string;
+  telegramTdataPath: string;
 }
 
 export function ConfigEditor({
@@ -74,6 +76,7 @@ export function ConfigEditor({
   initialApiKey,
   initialKuaidi100Key,
   initialKuaidi100Customer,
+  initialTelegramTdataPath,
   serverPort,
   webdavServers,
   onSave,
@@ -100,6 +103,9 @@ export function ConfigEditor({
   const [pendingKuaidi100Customer, setPendingKuaidi100Customer] = useState(
     initialKuaidi100Customer || ""
   );
+  const [pendingTelegramTdataPath, setPendingTelegramTdataPath] = useState(
+    initialTelegramTdataPath || ""
+  );
 
   // WebDAV add form
   const [newWebDAVName, setNewWebDAVName] = useState("");
@@ -120,6 +126,7 @@ export function ConfigEditor({
         apiKey: pendingApiKey,
         kuaidi100Key: pendingKuaidi100Key,
         kuaidi100Customer: pendingKuaidi100Customer,
+        telegramTdataPath: pendingTelegramTdataPath,
       });
     } finally {
       setSavingConfig(false);
@@ -136,6 +143,7 @@ export function ConfigEditor({
     setPendingApiKey(initialApiKey || "");
     setPendingKuaidi100Key(initialKuaidi100Key || "");
     setPendingKuaidi100Customer(initialKuaidi100Customer || "");
+    setPendingTelegramTdataPath(initialTelegramTdataPath || "");
     // Reset WebDAV form
     setNewWebDAVName("");
     setNewWebDAVUrl("");
@@ -294,6 +302,24 @@ export function ConfigEditor({
             disabled={!isConnected || savingConfig}
           />
         </div>
+      </div>
+
+      {/* Telegram Section */}
+      <div className="text-sm font-semibold text-zinc-900 dark:text-white mt-4 mb-2 pt-3 border-t border-zinc-300 dark:border-zinc-700">
+        Telegram
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+        <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
+          TData Path
+        </span>
+        <input
+          type="text"
+          className={inputBaseClass}
+          placeholder="Custom Telegram Desktop tdata directory path"
+          value={pendingTelegramTdataPath}
+          onChange={(e) => setPendingTelegramTdataPath(e.target.value)}
+          disabled={!isConnected || savingConfig}
+        />
       </div>
 
       {/* WebDAV Servers Section */}

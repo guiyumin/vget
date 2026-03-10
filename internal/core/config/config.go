@@ -81,12 +81,21 @@ type Config struct {
 
 	// Bilibili configuration
 	Bilibili BilibiliConfig `yaml:"bilibili,omitempty"`
+
+	// Telegram configuration
+	Telegram TelegramConfig `yaml:"telegram,omitempty"`
 }
 
 // BilibiliConfig holds Bilibili authentication settings
 type BilibiliConfig struct {
 	// Cookie is the full cookie string (SESSDATA, bili_jct, DedeUserID)
 	Cookie string `yaml:"cookie,omitempty"`
+}
+
+// TelegramConfig holds Telegram authentication settings
+type TelegramConfig struct {
+	// TDataPath is the custom path to Telegram Desktop tdata directory
+	TDataPath string `yaml:"tdata_path,omitempty"`
 }
 
 // TorrentConfig holds configuration for remote torrent client integration

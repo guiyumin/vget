@@ -542,7 +542,8 @@ func (s *Server) handleGetConfig(c *gin.Context) {
 			"express":               cfg.Express,
 			"torrent_enabled":       cfg.Torrent.Enabled,
 			"bilibili_cookie":       cfg.Bilibili.Cookie,
-		},
+			"telegram_tdata_path":   cfg.Telegram.TDataPath,
+			},
 		Message: "config retrieved",
 	})
 }
@@ -1170,6 +1171,8 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Server.APIKey = value
 	case "bilibili.cookie", "bilibili_cookie":
 		cfg.Bilibili.Cookie = value
+	case "telegram.tdata_path", "telegram_tdata_path":
+		cfg.Telegram.TDataPath = value
 	default:
 		return fmt.Errorf("unknown config key: %s", key)
 	}

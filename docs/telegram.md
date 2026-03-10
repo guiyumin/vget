@@ -75,6 +75,7 @@ vget telegram status                 # Show login state
   - macOS: `~/Library/Application Support/Telegram Desktop/tdata/`
   - Linux: `~/.local/share/TelegramDesktop/tdata/`
   - Windows: `%APPDATA%/Telegram Desktop/tdata/`
+  - **Custom path**: Set via `vget config set telegram.tdata_path /path/to/tdata`
 - Imports session using Desktop's API credentials (2040)
 - Session stored in `~/.config/vget/telegram/desktop-session.json`
 

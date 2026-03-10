@@ -57,6 +57,7 @@ interface AppContextType {
   kuaidi100Customer: string;
   configExists: boolean;
   torrentEnabled: boolean;
+  telegramTdataPath: string;
 
   // Translations
   t: UITranslations;
@@ -112,6 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [kuaidi100Key, setKuaidi100Key] = useState("");
   const [kuaidi100Customer, setKuaidi100Customer] = useState("");
   const [torrentEnabled, setTorrentEnabled] = useState(false);
+  const [telegramTdataPath, setTelegramTdataPath] = useState("");
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const showToast = useCallback((type: ToastType, message: string) => {
@@ -159,6 +161,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setKuaidi100Key(kuaidi100Cfg?.key || "");
         setKuaidi100Customer(kuaidi100Cfg?.customer || "");
         setTorrentEnabled(configRes.data.torrent_enabled || false);
+        setTelegramTdataPath(configRes.data.telegram_tdata_path || "");
       }
       if (i18nRes.code === 200) {
         // Merge with defaults to ensure new keys are available
@@ -246,6 +249,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           values.kuaidi100Customer
         );
       }
+      if (values.telegramTdataPath) {
+        await setConfigValue("telegram.tdata_path", values.telegramTdataPath);
+      }
       refresh();
     },
     [refresh]
@@ -292,6 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         kuaidi100Customer,
         configExists,
         torrentEnabled,
+        telegramTdataPath,
         t,
         serverT,
         darkMode,

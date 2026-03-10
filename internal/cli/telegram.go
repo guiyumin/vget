@@ -13,6 +13,7 @@ import (
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/tg"
 	tgpkg "github.com/guiyumin/vget/internal/core/extractor/telegram"
+	"github.com/guiyumin/vget/internal/core/config"
 	"github.com/spf13/cobra"
 )
 
@@ -63,11 +64,17 @@ func runTelegramLogin(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Find Telegram Desktop tdata directory
-	tdataPath := getTelegramDesktopPath()
+	// Check config for custom Telegram directory
+	cfg := config.LoadOrDefault()
+	tdataPath := cfg.Telegram.TDataPath
+	
+	// If no custom path, use default locations
 	if tdataPath == "" {
-		return fmt.Errorf("could not find Telegram Desktop data directory.\n" +
-			"Make sure Telegram Desktop is installed and you're logged in")
+		tdataPath = getTelegramDesktopPath()
+		if tdataPath == "" {
+			return fmt.Errorf("could not find Telegram Desktop data directory.\n"+
+				"Make sure Telegram Desktop is installed and you're logged in")
+		}
 	}
 
 	fmt.Printf("Found Telegram Desktop at: %s\n", tdataPath)
