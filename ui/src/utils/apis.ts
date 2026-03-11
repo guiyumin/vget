@@ -48,6 +48,7 @@ export interface ConfigData {
   express?: Record<string, Record<string, string>>;
   torrent_enabled?: boolean;
   bilibili_cookie?: string;
+  telegram_tdata_path?: string;
 }
 
 export interface TorrentConfig {

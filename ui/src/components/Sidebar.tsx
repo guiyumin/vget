@@ -163,7 +163,7 @@ export function Sidebar({ lang, onClose }: SidebarProps) {
       )}
     >
       {/* Mobile close button */}
-      <div className="md:hidden flex justify-end p-2">
+      <div className="md:hidden flex justify-end p-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           onClick={onClose}
           className="p-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
