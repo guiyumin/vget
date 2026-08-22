@@ -164,12 +164,6 @@ ui:
   podcast_episodes_count: "épisodes"
   podcast_back: "Retour"
   podcast_download_started: "Téléchargement démarré"
-  # AI
-  ai: "IA"
-  # Noms des étapes AI
-  # Détails des étapes AI
-  # Reconnaissance vocale locale
-  # Téléchargement de modèles
   # API Token
   token_title: "Générateur de Token API"
   token_description: "Générez des tokens JWT pour l'accès API externe (extension Chrome, scripts, etc.). Les tokens sont signés avec votre api_key configurée."

@@ -67,7 +67,6 @@ docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/
 | `vget config webdav show <name>`   | 显示服务器详情                        |
 | `vget config webdav delete <name>` | 删除服务器                            |
 | `vget telegram login --import-desktop` | 从桌面应用导入 Telegram 会话      |
-| `vget kuaidi100 <单号>`            | 查询快递物流信息（需配置快递100 API） |
 
 ### 示例
 

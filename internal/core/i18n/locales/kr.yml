@@ -164,12 +164,6 @@ ui:
   podcast_episodes_count: "에피소드"
   podcast_back: "뒤로"
   podcast_download_started: "다운로드 시작됨"
-  # AI
-  ai: "AI"
-  # AI 단계 이름
-  # AI 단계 상세
-  # 로컬 음성 인식
-  # 모델 다운로드
   # API Token
   token_title: "API Token 생성기"
   token_description: "외부 API 접근을 위한 JWT Token을 생성합니다 (Chrome 확장 프로그램, 스크립트 등). Token은 설정된 api_key로 서명됩니다."

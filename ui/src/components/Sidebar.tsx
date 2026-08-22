@@ -4,7 +4,6 @@ import clsx from "clsx";
 import {
   FaDownload,
   FaGear,
-  FaTruck,
   FaLayerGroup,
   FaMagnet,
   FaCloud,
@@ -76,12 +75,6 @@ export function Sidebar({ lang, onClose }: SidebarProps) {
       icon: <FaMagnet />,
       label: t.torrent,
       show: true,
-    },
-    {
-      to: "/kuaidi100",
-      icon: <FaTruck />,
-      label: "快递查询",
-      show: lang === "zh",
     },
     {
       to: "/token",

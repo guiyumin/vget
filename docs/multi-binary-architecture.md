@@ -8,7 +8,6 @@ vget is split into separate binaries with a shared core module:
 |--------|---------|--------------|
 | `vget` | CLI tool | GitHub Releases (all platforms) |
 | `vget-server` | HTTP server + Web UI | GitHub Releases + Docker Image |
-| `vget-desktop` | Desktop GUI (PySide6) | Separate private repo |
 
 ## Current Structure
 
@@ -23,7 +22,6 @@ internal/
     downloader/             # Download logic, progress callbacks
     extractor/              # URL matching, media extraction
     i18n/                   # Translations
-    tracker/                # Package tracking (kuaidi100)
     version/                # Version info
     webdav/                 # WebDAV client
 
@@ -94,7 +92,3 @@ Configuration is read from `~/.config/vget/config.yml` (same as CLI).
 | macOS arm64 | vget-darwin-arm64 | vget-server-darwin-arm64 |
 | Windows | vget-windows-amd64.exe | vget-server-windows-amd64.exe |
 | Docker | - | guiyumin/vget |
-
-## Desktop App
-
-The desktop app (`vget-desktop`) is maintained in a separate private repository. It is built with PySide6, the official Python binding for Qt 6.

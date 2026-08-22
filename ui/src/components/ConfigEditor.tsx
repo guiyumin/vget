@@ -37,8 +37,6 @@ interface ConfigEditorProps {
   initialQuality: string;
   initialMaxConcurrent: number;
   initialApiKey: string;
-  initialKuaidi100Key: string;
-  initialKuaidi100Customer: string;
   initialTelegramTdataPath: string;
   serverPort: number;
   webdavServers: Record<string, WebDAVServer>;
@@ -61,8 +59,6 @@ export interface ConfigValues {
   twitterAuth: string;
   maxConcurrent: string;
   apiKey: string;
-  kuaidi100Key: string;
-  kuaidi100Customer: string;
   telegramTdataPath: string;
 }
 
@@ -74,8 +70,6 @@ export function ConfigEditor({
   initialQuality,
   initialMaxConcurrent,
   initialApiKey,
-  initialKuaidi100Key,
-  initialKuaidi100Customer,
   initialTelegramTdataPath,
   serverPort,
   webdavServers,
@@ -97,12 +91,6 @@ export function ConfigEditor({
     String(initialMaxConcurrent || 10)
   );
   const [pendingApiKey, setPendingApiKey] = useState(initialApiKey || "");
-  const [pendingKuaidi100Key, setPendingKuaidi100Key] = useState(
-    initialKuaidi100Key || ""
-  );
-  const [pendingKuaidi100Customer, setPendingKuaidi100Customer] = useState(
-    initialKuaidi100Customer || ""
-  );
   const [pendingTelegramTdataPath, setPendingTelegramTdataPath] = useState(
     initialTelegramTdataPath || ""
   );
@@ -124,8 +112,6 @@ export function ConfigEditor({
         twitterAuth: pendingTwitterAuth,
         maxConcurrent: pendingMaxConcurrent,
         apiKey: pendingApiKey,
-        kuaidi100Key: pendingKuaidi100Key,
-        kuaidi100Customer: pendingKuaidi100Customer,
         telegramTdataPath: pendingTelegramTdataPath,
       });
     } finally {
@@ -141,8 +127,6 @@ export function ConfigEditor({
     setPendingTwitterAuth("");
     setPendingMaxConcurrent(String(initialMaxConcurrent || 10));
     setPendingApiKey(initialApiKey || "");
-    setPendingKuaidi100Key(initialKuaidi100Key || "");
-    setPendingKuaidi100Customer(initialKuaidi100Customer || "");
     setPendingTelegramTdataPath(initialTelegramTdataPath || "");
     // Reset WebDAV form
     setNewWebDAVName("");
@@ -268,37 +252,6 @@ export function ConfigEditor({
             placeholder="(optional)"
             value={pendingApiKey}
             onChange={(e) => setPendingApiKey(e.target.value)}
-            disabled={!isConnected || savingConfig}
-          />
-        </div>
-
-        {/* Kuaidi100 Section */}
-        <div className="text-sm font-semibold text-zinc-900 dark:text-white mt-4 mb-2 pt-3 border-t border-zinc-300 dark:border-zinc-700">
-          Kuaidi100 (快递查询)
-        </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
-            API Key
-          </span>
-          <input
-            type="password"
-            className={inputBaseClass}
-            placeholder="(optional)"
-            value={pendingKuaidi100Key}
-            onChange={(e) => setPendingKuaidi100Key(e.target.value)}
-            disabled={!isConnected || savingConfig}
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-          <span className="sm:min-w-25 text-sm text-zinc-700 dark:text-zinc-200">
-            Customer ID
-          </span>
-          <input
-            type="text"
-            className={inputBaseClass}
-            placeholder="(optional)"
-            value={pendingKuaidi100Customer}
-            onChange={(e) => setPendingKuaidi100Customer(e.target.value)}
             disabled={!isConnected || savingConfig}
           />
         </div>

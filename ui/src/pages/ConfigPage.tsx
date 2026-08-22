@@ -14,8 +14,6 @@ export function ConfigPage() {
     serverPort,
     maxConcurrent,
     apiKey,
-    kuaidi100Key,
-    kuaidi100Customer,
     telegramTdataPath,
     webdavServers,
     saveConfig,
@@ -51,8 +49,6 @@ export function ConfigPage() {
         initialQuality={configQuality}
         initialMaxConcurrent={maxConcurrent}
         initialApiKey={apiKey}
-        initialKuaidi100Key={kuaidi100Key}
-        initialKuaidi100Customer={kuaidi100Customer}
         initialTelegramTdataPath={telegramTdataPath}
         serverPort={serverPort}
         webdavServers={webdavServers}

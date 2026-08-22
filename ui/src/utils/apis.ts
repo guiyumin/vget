@@ -45,7 +45,6 @@ export interface ConfigData {
   server_max_concurrent: number;
   server_api_key: string;
   webdav_servers: Record<string, WebDAVServer>;
-  express?: Record<string, Record<string, string>>;
   torrent_enabled?: boolean;
   bilibili_cookie?: string;
   telegram_tdata_path?: string;

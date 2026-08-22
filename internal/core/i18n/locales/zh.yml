@@ -176,12 +176,6 @@ ui:
   podcast_episodes_count: "集"
   podcast_back: "返回"
   podcast_download_started: "下载已开始"
-  # AI
-  ai: "AI"
-  # AI 步骤名称
-  # AI 步骤详情
-  # 本地语音转文字
-  # 模型下载
   # API Token
   token_title: "API Token 生成器"
   token_description: "生成用于外部 API 访问的 JWT Token（Chrome 扩展、脚本等）。Token 使用您配置的 api_key 签名。"

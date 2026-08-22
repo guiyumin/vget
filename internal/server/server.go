@@ -18,7 +18,6 @@ import (
 	"github.com/guiyumin/vget/internal/core/downloader"
 	"github.com/guiyumin/vget/internal/core/extractor"
 	"github.com/guiyumin/vget/internal/core/i18n"
-	"github.com/guiyumin/vget/internal/core/tracker"
 	"github.com/guiyumin/vget/internal/core/version"
 	"github.com/guiyumin/vget/internal/core/webdav"
 	"github.com/guiyumin/vget/internal/torrent"
@@ -143,7 +142,6 @@ func (s *Server) Start() error {
 	api.POST("/config/webdav", s.handleAddWebDAV)
 	api.DELETE("/config/webdav/:name", s.handleDeleteWebDAV)
 	api.GET("/i18n", s.handleI18n)
-	api.POST("/kuaidi100", s.handleKuaidi100)
 
 	// WebDAV browsing routes
 	api.GET("/webdav/remotes", s.handleWebDAVRemotes)
@@ -539,7 +537,6 @@ func (s *Server) handleGetConfig(c *gin.Context) {
 			"server_max_concurrent": cfg.Server.MaxConcurrent,
 			"server_api_key":        cfg.Server.APIKey,
 			"webdav_servers":        webdavServers,
-			"express":               cfg.Express,
 			"torrent_enabled":       cfg.Torrent.Enabled,
 			"bilibili_cookie":       cfg.Bilibili.Cookie,
 			"telegram_tdata_path":   cfg.Telegram.TDataPath,
@@ -759,73 +756,6 @@ func (s *Server) handleDeleteWebDAV(c *gin.Context) {
 		Code:    200,
 		Data:    gin.H{"name": name},
 		Message: "webdav server deleted",
-	})
-}
-
-// Kuaidi100 handler
-
-// TrackRequest is the request body for POST /kuaidi100
-type TrackRequest struct {
-	TrackingNumber string `json:"tracking_number" binding:"required"`
-	Courier        string `json:"courier" binding:"required"`
-}
-
-func (s *Server) handleKuaidi100(c *gin.Context) {
-	var req TrackRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, Response{
-			Code:    400,
-			Data:    nil,
-			Message: "tracking_number and courier are required",
-		})
-		return
-	}
-
-	// Load config to get kuaidi100 credentials
-	cfg := config.LoadOrDefault()
-	expressCfg := cfg.GetExpressConfig("kuaidi100")
-	if expressCfg == nil || expressCfg["key"] == "" || expressCfg["customer"] == "" {
-		c.JSON(http.StatusBadRequest, Response{
-			Code:    400,
-			Data:    nil,
-			Message: "快递100凭证未配置。请在设置中配置 API Key 和 Customer ID。",
-		})
-		return
-	}
-
-	// Create tracker and query
-	t := tracker.NewKuaidi100Tracker(expressCfg["key"], expressCfg["customer"])
-	courierCode := tracker.GetCourierCode(req.Courier)
-
-	result, err := t.Track(courierCode, req.TrackingNumber)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, Response{
-			Code:    500,
-			Data:    nil,
-			Message: fmt.Sprintf("tracking failed: %v", err),
-		})
-		return
-	}
-
-	// Get courier info for display
-	courierInfo := tracker.GetCourierInfo(req.Courier)
-	courierName := courierCode
-	if courierInfo != nil {
-		courierName = courierInfo.Name
-	}
-
-	c.JSON(http.StatusOK, Response{
-		Code: 200,
-		Data: gin.H{
-			"tracking_number": result.Nu,
-			"courier_code":    result.Com,
-			"courier_name":    courierName,
-			"state":           result.State,
-			"state_desc":      result.StateDescription(),
-			"is_delivered":    result.IsDelivered(),
-			"data":            result.Data,
-		},
-		Message: "tracking info retrieved",
 	})
 }
 
@@ -1138,18 +1068,6 @@ func (s *Server) createTorrentClient(cfg *config.TorrentConfig) (torrent.Client,
 
 // setConfigValue sets a config value by key
 func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
-	// Handle express.<provider>.<key> pattern
-	if strings.HasPrefix(key, "express.") {
-		parts := strings.SplitN(key, ".", 3)
-		if len(parts) != 3 {
-			return fmt.Errorf("invalid express config key format: %s (use express.<provider>.<key>)", key)
-		}
-		provider := parts[1]
-		configKey := parts[2]
-		cfg.SetExpressConfig(provider, configKey, value)
-		return nil
-	}
-
 	switch key {
 	case "language":
 		cfg.Language = value

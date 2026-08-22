@@ -65,17 +65,6 @@ type Config struct {
 	// Server configuration for `vget serve`
 	Server ServerConfig `yaml:"server,omitempty"`
 
-	// Express tracking providers configuration
-	// Each provider has its own config structure stored as map[string]string
-	// Example YAML:
-	//   express:
-	//     kuaidi100:
-	//       key: "xxx"
-	//       customer: "yyy"
-	//     fedex:
-	//       api_key: "zzz"
-	Express map[string]map[string]string `yaml:"express,omitempty"`
-
 	// Torrent client configuration for dispatching magnet links
 	Torrent TorrentConfig `yaml:"torrent,omitempty"`
 
@@ -120,37 +109,6 @@ type TorrentConfig struct {
 
 	// DefaultSavePath overrides the client's default download directory
 	DefaultSavePath string `yaml:"default_save_path,omitempty"`
-}
-
-// GetExpressConfig returns the config for a specific express provider
-func (c *Config) GetExpressConfig(provider string) map[string]string {
-	if c.Express == nil {
-		return nil
-	}
-	return c.Express[provider]
-}
-
-// SetExpressConfig sets a config value for an express provider
-func (c *Config) SetExpressConfig(provider, key, value string) {
-	if c.Express == nil {
-		c.Express = make(map[string]map[string]string)
-	}
-	if c.Express[provider] == nil {
-		c.Express[provider] = make(map[string]string)
-	}
-	c.Express[provider][key] = value
-}
-
-// DeleteExpressConfig removes a config value for an express provider
-func (c *Config) DeleteExpressConfig(provider, key string) {
-	if c.Express == nil || c.Express[provider] == nil {
-		return
-	}
-	delete(c.Express[provider], key)
-	// Clean up empty provider map
-	if len(c.Express[provider]) == 0 {
-		delete(c.Express, provider)
-	}
 }
 
 // TwitterConfig holds Twitter/X authentication settings

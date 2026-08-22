@@ -13,7 +13,6 @@ import { Route as WebdavRouteImport } from './routes/webdav'
 import { Route as TorrentRouteImport } from './routes/torrent'
 import { Route as TokenRouteImport } from './routes/token'
 import { Route as PodcastRouteImport } from './routes/podcast'
-import { Route as Kuaidi100RouteImport } from './routes/kuaidi100'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as ConfigRouteImport } from './routes/config'
 import { Route as BulkRouteImport } from './routes/bulk'
@@ -38,11 +37,6 @@ const TokenRoute = TokenRouteImport.update({
 const PodcastRoute = PodcastRouteImport.update({
   id: '/podcast',
   path: '/podcast',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Kuaidi100Route = Kuaidi100RouteImport.update({
-  id: '/kuaidi100',
-  path: '/kuaidi100',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -77,7 +71,6 @@ export interface FileRoutesByFullPath {
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/history': typeof HistoryRoute
-  '/kuaidi100': typeof Kuaidi100Route
   '/podcast': typeof PodcastRoute
   '/token': typeof TokenRoute
   '/torrent': typeof TorrentRoute
@@ -89,7 +82,6 @@ export interface FileRoutesByTo {
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/history': typeof HistoryRoute
-  '/kuaidi100': typeof Kuaidi100Route
   '/podcast': typeof PodcastRoute
   '/token': typeof TokenRoute
   '/torrent': typeof TorrentRoute
@@ -102,7 +94,6 @@ export interface FileRoutesById {
   '/bulk': typeof BulkRoute
   '/config': typeof ConfigRoute
   '/history': typeof HistoryRoute
-  '/kuaidi100': typeof Kuaidi100Route
   '/podcast': typeof PodcastRoute
   '/token': typeof TokenRoute
   '/torrent': typeof TorrentRoute
@@ -116,7 +107,6 @@ export interface FileRouteTypes {
     | '/bulk'
     | '/config'
     | '/history'
-    | '/kuaidi100'
     | '/podcast'
     | '/token'
     | '/torrent'
@@ -128,7 +118,6 @@ export interface FileRouteTypes {
     | '/bulk'
     | '/config'
     | '/history'
-    | '/kuaidi100'
     | '/podcast'
     | '/token'
     | '/torrent'
@@ -140,7 +129,6 @@ export interface FileRouteTypes {
     | '/bulk'
     | '/config'
     | '/history'
-    | '/kuaidi100'
     | '/podcast'
     | '/token'
     | '/torrent'
@@ -153,7 +141,6 @@ export interface RootRouteChildren {
   BulkRoute: typeof BulkRoute
   ConfigRoute: typeof ConfigRoute
   HistoryRoute: typeof HistoryRoute
-  Kuaidi100Route: typeof Kuaidi100Route
   PodcastRoute: typeof PodcastRoute
   TokenRoute: typeof TokenRoute
   TorrentRoute: typeof TorrentRoute
@@ -188,13 +175,6 @@ declare module '@tanstack/react-router' {
       path: '/podcast'
       fullPath: '/podcast'
       preLoaderRoute: typeof PodcastRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kuaidi100': {
-      id: '/kuaidi100'
-      path: '/kuaidi100'
-      fullPath: '/kuaidi100'
-      preLoaderRoute: typeof Kuaidi100RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -241,7 +221,6 @@ const rootRouteChildren: RootRouteChildren = {
   BulkRoute: BulkRoute,
   ConfigRoute: ConfigRoute,
   HistoryRoute: HistoryRoute,
-  Kuaidi100Route: Kuaidi100Route,
   PodcastRoute: PodcastRoute,
   TokenRoute: TokenRoute,
   TorrentRoute: TorrentRoute,

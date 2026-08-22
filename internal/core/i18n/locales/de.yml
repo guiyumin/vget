@@ -164,12 +164,6 @@ ui:
   podcast_episodes_count: "Episoden"
   podcast_back: "Zurück"
   podcast_download_started: "Download gestartet"
-  # AI
-  ai: "KI"
-  # AI-Schrittnamen
-  # AI-Schrittdetails
-  # Lokale Spracherkennung
-  # Modell-Download
   # API Token
   token_title: "API-Token-Generator"
   token_description: "Generieren Sie JWT-Tokens für externen API-Zugriff (Chrome-Erweiterung, Skripte, etc.). Tokens werden mit Ihrem konfigurierten api_key signiert."

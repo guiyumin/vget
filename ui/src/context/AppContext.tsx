@@ -53,8 +53,6 @@ interface AppContextType {
   maxConcurrent: number;
   apiKey: string;
   webdavServers: Record<string, WebDAVServer>;
-  kuaidi100Key: string;
-  kuaidi100Customer: string;
   configExists: boolean;
   torrentEnabled: boolean;
   telegramTdataPath: string;
@@ -110,8 +108,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [webdavServers, setWebdavServers] = useState<
     Record<string, WebDAVServer>
   >({});
-  const [kuaidi100Key, setKuaidi100Key] = useState("");
-  const [kuaidi100Customer, setKuaidi100Customer] = useState("");
   const [torrentEnabled, setTorrentEnabled] = useState(false);
   const [telegramTdataPath, setTelegramTdataPath] = useState("");
   const [toasts, setToasts] = useState<ToastData[]>([]);
@@ -157,9 +153,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMaxConcurrent(configRes.data.server_max_concurrent || 10);
         setApiKey(configRes.data.server_api_key || "");
         setWebdavServers(configRes.data.webdav_servers || {});
-        const kuaidi100Cfg = configRes.data.express?.kuaidi100;
-        setKuaidi100Key(kuaidi100Cfg?.key || "");
-        setKuaidi100Customer(kuaidi100Cfg?.customer || "");
         setTorrentEnabled(configRes.data.torrent_enabled || false);
         setTelegramTdataPath(configRes.data.telegram_tdata_path || "");
       }
@@ -240,15 +233,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (values.twitterAuth) {
         await setConfigValue("twitter.auth_token", values.twitterAuth);
       }
-      if (values.kuaidi100Key) {
-        await setConfigValue("express.kuaidi100.key", values.kuaidi100Key);
-      }
-      if (values.kuaidi100Customer) {
-        await setConfigValue(
-          "express.kuaidi100.customer",
-          values.kuaidi100Customer
-        );
-      }
       if (values.telegramTdataPath) {
         await setConfigValue("telegram.tdata_path", values.telegramTdataPath);
       }
@@ -294,8 +278,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         maxConcurrent,
         apiKey,
         webdavServers,
-        kuaidi100Key,
-        kuaidi100Customer,
         configExists,
         torrentEnabled,
         telegramTdataPath,

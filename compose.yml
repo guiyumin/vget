@@ -1,12 +1,6 @@
 # vget Docker Compose
 #
-# Image variants (choose based on your system):
-#   ghcr.io/guiyumin/vget:latest      - No models, downloads on first use (~200MB)
-#   ghcr.io/guiyumin/vget:full-small  - Whisper Small bundled (~500MB)
-#   ghcr.io/guiyumin/vget:full-medium - Whisper Medium bundled (~1.5GB)
-#   ghcr.io/guiyumin/vget:full-large  - Whisper Large V3 Turbo bundled (~1.8GB)
-#
-# Whisper models support 99 languages including Chinese, Japanese, Korean.
+# Image: ghcr.io/guiyumin/vget:latest
 #
 # Configure via .env file or environment variables:
 #   VGET_PORT=8080              # Web UI port
@@ -22,7 +16,6 @@
 
 services:
   vget:
-    # Change to :full-small, :full-medium, or :full-large based on your RAM/GPU
     image: ghcr.io/guiyumin/vget:latest
     container_name: vget
     restart: unless-stopped
