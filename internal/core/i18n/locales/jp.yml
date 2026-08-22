@@ -189,9 +189,3 @@ ui:
 server:
   no_config_warning: "設定ファイルが見つかりません。デフォルト設定を使用します。"
   run_init_hint: "'vget init' を実行して対話的に設定してください。"
-
-# YouTube メッセージ
-youtube:
-  docker_required: "YouTubeのダウンロードにはDockerが必要です。"
-  docker_hint_server: "vget サーバーを Docker で実行（NAS ユーザー向け）："
-  docker_hint_cli: "またはコマンドラインで直接ダウンロード："

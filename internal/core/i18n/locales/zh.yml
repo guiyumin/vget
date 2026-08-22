@@ -201,9 +201,3 @@ ui:
 server:
   no_config_warning: "未找到配置文件，使用默认设置。"
   run_init_hint: "点击「设置」进行配置，或在终端运行 'vget init'。"
-
-# YouTube 消息
-youtube:
-  docker_required: "YouTube 下载需要在 Docker 中运行。"
-  docker_hint_server: "部署 vget 服务器（推荐 NAS 用户）："
-  docker_hint_cli: "或直接通过命令行下载："

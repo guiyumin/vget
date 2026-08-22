@@ -159,11 +159,6 @@ func (s *Server) Start() error {
 	api.POST("/podcast/search", s.handlePodcastSearch)
 	api.POST("/podcast/episodes", s.handlePodcastEpisodes)
 
-	// Bilibili login routes
-	api.POST("/bilibili/qr/generate", s.handleBilibiliQRGenerate)
-	api.GET("/bilibili/qr/poll", s.handleBilibiliQRPoll)
-	api.GET("/bilibili/status", s.handleBilibiliStatus)
-
 	// Serve embedded UI if available
 	if distFS := GetDistFS(); distFS != nil {
 		s.setupStaticFiles(distFS)
@@ -538,7 +533,6 @@ func (s *Server) handleGetConfig(c *gin.Context) {
 			"server_api_key":        cfg.Server.APIKey,
 			"webdav_servers":        webdavServers,
 			"torrent_enabled":       cfg.Torrent.Enabled,
-			"bilibili_cookie":       cfg.Bilibili.Cookie,
 			"telegram_tdata_path":   cfg.Telegram.TDataPath,
 			},
 		Message: "config retrieved",
@@ -1087,8 +1081,6 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Server.MaxConcurrent = val
 	case "server.api_key", "server_api_key":
 		cfg.Server.APIKey = value
-	case "bilibili.cookie", "bilibili_cookie":
-		cfg.Bilibili.Cookie = value
 	case "telegram.tdata_path", "telegram_tdata_path":
 		cfg.Telegram.TDataPath = value
 	default:
@@ -1229,9 +1221,6 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 	var headers map[string]string
 
 	switch m := media.(type) {
-	case *extractor.YouTubeDirectDownload:
-		return extractor.DownloadWithYtdlpProgress(ctx, m.URL, s.outputDir, progressFn)
-
 	case *extractor.VideoMedia:
 		if len(m.Formats) == 0 {
 			return fmt.Errorf("no video formats available")
@@ -1264,7 +1253,7 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 
 		s.updateJobFilename(url, outputPath)
 
-		// Handle separate audio stream (e.g., Bilibili DASH)
+		// Handle separate audio stream (e.g., DASH)
 		if format.AudioURL != "" {
 			return s.downloadVideoWithAudio(ctx, format, outputPath, progressFn)
 		}
@@ -1481,14 +1470,6 @@ func (s *Server) downloadAndStream(c *gin.Context, url, filename string) {
 	var outputFilename string
 
 	switch m := media.(type) {
-	case *extractor.YouTubeDirectDownload:
-		c.JSON(http.StatusBadRequest, Response{
-			Code:    400,
-			Data:    nil,
-			Message: "YouTube streaming not supported. Use queued download instead.",
-		})
-		return
-
 	case *extractor.VideoMedia:
 		if len(m.Formats) == 0 {
 			c.JSON(http.StatusInternalServerError, Response{

@@ -105,25 +105,9 @@ func runDownload(url string) error {
 		}
 	}
 
-	// Check Bilibili login status and prompt for confirmation if not logged in
-	if bilibiliExt, ok := ext.(*extractor.BilibiliExtractor); ok {
-		_ = bilibiliExt // Mark as used
-		if cfg.Bilibili.Cookie == "" {
-			if !confirmBilibiliNoLogin() {
-				return nil // User cancelled
-			}
-		}
-	}
-
 	// Extract media info with spinner
 	media, err := runExtractWithSpinner(ext, url, cfg.Language)
 	if err != nil {
-		// YouTube Docker requirement is already displayed in the TUI, don't show again
-		var ytErr *extractor.YouTubeDockerRequiredError
-		if errors.As(err, &ytErr) {
-			return nil // Message already shown, exit cleanly
-		}
-
 		// Handle Twitter-specific errors with translated messages
 		var twitterErr *extractor.TwitterError
 		if errors.As(err, &twitterErr) {
@@ -151,14 +135,6 @@ func runDownload(url string) error {
 
 	// Handle based on media type
 	switch m := media.(type) {
-	case *extractor.YouTubeDirectDownload:
-		// YouTube: let yt-dlp handle the entire download (Docker only)
-		fmt.Printf("\n  %s Downloading with yt-dlp...\n\n", "⬇")
-		if err := extractor.DownloadWithYtdlp(m.URL, cfg.OutputDir); err != nil {
-			return fmt.Errorf("yt-dlp download failed: %w", err)
-		}
-		fmt.Printf("\n  %s %s\n\n", "✓", t.Download.Completed)
-		return nil
 	case *extractor.VideoMedia:
 		return downloadVideo(m, dl, t, cfg.Language, cfg.OutputDir)
 	case *extractor.AudioMedia:
@@ -651,22 +627,6 @@ func selectVideoFormat(formats []extractor.VideoFormat, preferred string) *extra
 // isTelegramURL checks if the URL is a Telegram message URL
 func isTelegramURL(urlStr string) bool {
 	return strings.Contains(urlStr, "t.me/") || strings.Contains(urlStr, "telegram.me/")
-}
-
-// confirmBilibiliNoLogin prompts user to confirm download without login
-func confirmBilibiliNoLogin() bool {
-	fmt.Println()
-	fmt.Println("  \033[33m未登录 Bilibili，只能下载 360P/480P 低清视频\033[0m")
-	fmt.Println("  \033[36m提示: 运行 'vget login bilibili' 登录后可下载更高清晰度\033[0m")
-	fmt.Println()
-	fmt.Print("  是否继续下载? [y/N]: ")
-
-	var response string
-	fmt.Scanln(&response)
-
-	response = strings.TrimSpace(strings.ToLower(response))
-	// Default to no if empty, only continue on explicit yes
-	return response == "y" || response == "yes" || response == "是"
 }
 
 // runTelegramDownload handles a single Telegram media download with TUI progress

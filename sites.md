@@ -8,7 +8,6 @@
 | Telegram                  | t.me                     | Video/Image     |
 | Xiaoyuzhou FM (小宇宙)    | xiaoyuzhoufm.com         | Audio (Podcast) |
 | Apple Podcasts            | podcasts.apple.com       | Audio (Podcast) |
-| Xiaohongshu (小红书)      | xiaohongshu.com          | Video/Image     |
 
 ## NSFW
 

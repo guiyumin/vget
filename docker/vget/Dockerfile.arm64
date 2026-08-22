@@ -29,19 +29,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     fonts-noto-cjk \
     fonts-noto-color-emoji \
-    python3 \
-    python3-pip \
-    python3-venv \
     ffmpeg \
     nodejs \
     gosu \
     curl \
     bzip2 \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install --no-cache-dir --break-system-packages \
-    yt-dlp \
-    youtube-dl
 
 RUN (getent group 1000 >/dev/null || groupadd -g 1000 vget) && \
     (id -u 1000 >/dev/null 2>&1 || useradd -u 1000 -g 1000 -m -d /home/vget vget) && \

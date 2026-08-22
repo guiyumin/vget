@@ -68,17 +68,8 @@ type Config struct {
 	// Torrent client configuration for dispatching magnet links
 	Torrent TorrentConfig `yaml:"torrent,omitempty"`
 
-	// Bilibili configuration
-	Bilibili BilibiliConfig `yaml:"bilibili,omitempty"`
-
 	// Telegram configuration
 	Telegram TelegramConfig `yaml:"telegram,omitempty"`
-}
-
-// BilibiliConfig holds Bilibili authentication settings
-type BilibiliConfig struct {
-	// Cookie is the full cookie string (SESSDATA, bili_jct, DedeUserID)
-	Cookie string `yaml:"cookie,omitempty"`
 }
 
 // TelegramConfig holds Telegram authentication settings

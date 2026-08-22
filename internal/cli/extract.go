@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -109,17 +108,6 @@ func (m extractModel) View() string {
 	done, result, err := m.state.get()
 
 	if err != nil {
-		// Special handling for YouTube Docker requirement (info message, not error)
-		var ytErr *extractor.YouTubeDockerRequiredError
-		if errors.As(err, &ytErr) {
-			return fmt.Sprintf("\n  %s %s\n\n  %s\n    docker run -d -p <port>:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget\n\n  %s\n    docker run --rm -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget \"%s\"\n\n",
-				extractMessageStyle.Render("ℹ"),
-				m.t.YouTube.DockerRequired,
-				extractHintStyle.Render(m.t.YouTube.DockerHintServer),
-				extractHintStyle.Render(m.t.YouTube.DockerHintCLI),
-				ytErr.URL,
-			)
-		}
 		return fmt.Sprintf("\n  %s %s: %v\n\n",
 			extractErrStyle.Render("✗"),
 			m.t.Errors.ExtractionFailed,

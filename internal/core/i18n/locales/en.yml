@@ -201,9 +201,3 @@ ui:
 server:
   no_config_warning: "No config file found. Using default settings."
   run_init_hint: "Click Settings to configure, or run 'vget init' in terminal."
-
-# YouTube messages
-youtube:
-  docker_required: "YouTube extraction requires Docker."
-  docker_hint_server: "Run vget server in Docker (recommended for NAS):"
-  docker_hint_cli: "Or download directly via CLI:"

@@ -32,7 +32,7 @@ vget is a media downloader CLI built with Go. It uses Cobra for command parsing 
 
 The `MediaType` enum in `internal/extractor/extractor.go` defines supported media types:
 
-- `MediaTypeVideo` - Video files (Twitter, YouTube, etc.)
+- `MediaTypeVideo` - Video files (Twitter, etc.)
 - `MediaTypeAudio` - Audio files (podcasts)
 - `MediaTypePDF` - PDF documents
 - `MediaTypeEPUB` - EPUB ebooks
@@ -106,9 +106,9 @@ Supported keys for `vget config set`:
 - Critical for Docker UX (no container restart needed)
 - Never change this behavior
 
-### Xiaohongshu (XHS) Extractor
+### Browser-based Extractor (sites.yml / generic m3u8)
 
-The XHS extractor (`internal/extractor/xiaohongshu.go`) uses browser automation:
+The generic browser extractor (`internal/core/extractor/browser.go`) uses browser automation for sites configured in `sites.yml` and as a fallback m3u8 sniffer for unknown sites:
 
 - **Browser**: Rod's auto-downloaded Chromium (NOT system Chrome)
 - **Binary location**: `~/.cache/rod/browser/`

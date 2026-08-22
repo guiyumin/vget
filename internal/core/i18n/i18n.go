@@ -23,7 +23,6 @@ type Translations struct {
 	Sites        SitesTranslations        `yaml:"sites"`
 	UI           UITranslations           `yaml:"ui"`
 	Server       ServerTranslations       `yaml:"server"`
-	YouTube      YouTubeTranslations      `yaml:"youtube"`
 }
 
 type ConfigTranslations struct {
@@ -238,13 +237,6 @@ type UITranslations struct {
 type ServerTranslations struct {
 	NoConfigWarning string `yaml:"no_config_warning" json:"no_config_warning"`
 	RunInitHint     string `yaml:"run_init_hint" json:"run_init_hint"`
-}
-
-// YouTubeTranslations holds translations for YouTube messages
-type YouTubeTranslations struct {
-	DockerRequired   string `yaml:"docker_required"`
-	DockerHintServer string `yaml:"docker_hint_server"`
-	DockerHintCLI    string `yaml:"docker_hint_cli"`
 }
 
 var (

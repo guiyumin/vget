@@ -8,7 +8,6 @@ import {
   FaMagnet,
   FaCloud,
   FaPodcast,
-  FaB,
   FaKey,
   FaXmark,
   FaClockRotateLeft,
@@ -51,13 +50,6 @@ export function Sidebar({ lang, onClose }: SidebarProps) {
       label: t.history,
       show: true,
     },
-    {
-      to: "/bilibili",
-      icon: <FaB />,
-      label: "哔哩哔哩",
-      show: lang === "zh",
-    },
-
     {
       to: "/podcast",
       icon: <FaPodcast />,

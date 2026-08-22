@@ -2,7 +2,7 @@
 
 ## Problem
 
-Browser-based extractors (m3u8 detection, XHS, etc.) would hang indefinitely in Docker while working fine on macOS CLI.
+Browser-based extractors (m3u8 detection, etc.) would hang indefinitely in Docker while working fine on macOS CLI.
 
 **Symptoms:**
 - CLI on Mac: Works

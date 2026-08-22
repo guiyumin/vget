@@ -9,7 +9,7 @@ func TestSanitizeFilename(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Bilibili title with CJK brackets and special chars",
+			name:     "Title with CJK brackets and special chars",
 			input:    "【这还不薅吗？】阿里云史低神价：35元/年，197.7元/5年！395.4元解锁10年\u201c超值传家宝\u201d，享200Mbps带宽+隐藏福利！哇！哇！哇！",
 			expected: "这还不薅吗阿里云史低神价-35元-年，197.7元-5年！395.4元解锁10年\u201c超值传家宝\u201d，享200Mbps带宽+隐", // truncated to 60 runes
 		},

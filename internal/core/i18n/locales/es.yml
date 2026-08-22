@@ -189,9 +189,3 @@ ui:
 server:
   no_config_warning: "No se encontró archivo de configuración. Usando configuración predeterminada."
   run_init_hint: "Ejecute 'vget init' para configurar vget de forma interactiva."
-
-# Mensajes de YouTube
-youtube:
-  docker_required: "La descarga de YouTube requiere Docker."
-  docker_hint_server: "Ejecute el servidor vget en Docker (recomendado para NAS):"
-  docker_hint_cli: "O descargue directamente via CLI:"

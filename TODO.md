@@ -6,7 +6,7 @@
 - [ ] Retry on failure
 - [ ] Quiet/verbose modes
 - [ ] Dry run mode
-- [ ] More extractors (YouTube, TikTok, etc.)
+- [ ] More extractors (TikTok, etc.)
 - [ ] Playlist support
 - [ ] Rate limiting
 - [ ] Metadata embedding
