@@ -17,7 +17,6 @@ var (
 	extractDoneStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
 	extractErrStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	extractHintStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("248"))
-	extractMessageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("33")) // blue for info messages
 )
 
 // extractState holds extraction state
