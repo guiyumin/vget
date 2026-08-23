@@ -9,13 +9,6 @@
 | Xiaoyuzhou FM (小宇宙)    | xiaoyuzhoufm.com         | Audio (Podcast) |
 | Apple Podcasts            | podcasts.apple.com       | Audio (Podcast) |
 
-## NSFW
-
-| Source         | URL                      | Type            |
-| -------------- | ------------------------ | --------------- |
-| hsex.icu       | hsex.icu                 | Video           |
-| kanav.ad       | kanav.ad                 | Video           |
-
 ## Notes
 
 ### Twitter/X Age-Restricted Content

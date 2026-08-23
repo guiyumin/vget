@@ -106,17 +106,6 @@ Supported keys for `vget config set`:
 - Critical for Docker UX (no container restart needed)
 - Never change this behavior
 
-### Browser-based Extractor (sites.yml / generic m3u8)
-
-The generic browser extractor (`internal/core/extractor/browser.go`) uses browser automation for sites configured in `sites.yml` and as a fallback m3u8 sniffer for unknown sites:
-
-- **Browser**: Rod's auto-downloaded Chromium (NOT system Chrome)
-- **Binary location**: `~/.cache/rod/browser/`
-- **User data**: `~/.config/vget/browser/` (persistent, shared by all extractors)
-- **Stealth**: Uses `go-rod/stealth` for anti-bot detection
-
-**Important**: Never use system Chrome profiles with browser automation - it can corrupt session data.
-
 ### Self-Update
 
 `internal/updater/` uses go-selfupdate to fetch releases from GitHub (`guiyumin/vget`). Version is set in `internal/version/version.go`.

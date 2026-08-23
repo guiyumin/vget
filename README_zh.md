@@ -73,7 +73,7 @@ docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/
 ```bash
 vget https://twitter.com/user/status/123456789
 vget https://www.xiaoyuzhoufm.com/episode/abc123
-vget https://example.com/video -o my_video.mp4
+vget https://example.com/video.mp4 -o my_video.mp4
 vget --info https://example.com/video
 vget search --podcast "科技"
 vget pikpak:/path/to/file.mp4              # WebDAV 下载

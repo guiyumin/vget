@@ -1191,15 +1191,7 @@ func (s *Server) downloadWithExtractor(ctx context.Context, url, filename string
 	// Find matching extractor
 	ext := extractor.Match(url)
 	if ext == nil {
-		sitesConfig, _ := config.LoadSites()
-		if sitesConfig != nil {
-			if site := sitesConfig.MatchSite(url); site != nil {
-				ext = extractor.NewBrowserExtractor(site, false)
-			}
-		}
-		if ext == nil {
-			ext = extractor.NewGenericBrowserExtractor(false)
-		}
+		return fmt.Errorf("no extractor found for URL: %s", url)
 	}
 
 	// Configure Twitter extractor with auth if available
@@ -1438,15 +1430,12 @@ func (s *Server) downloadVideoWithAudio(ctx context.Context, format *extractor.V
 func (s *Server) downloadAndStream(c *gin.Context, url, filename string) {
 	ext := extractor.Match(url)
 	if ext == nil {
-		sitesConfig, _ := config.LoadSites()
-		if sitesConfig != nil {
-			if site := sitesConfig.MatchSite(url); site != nil {
-				ext = extractor.NewBrowserExtractor(site, false)
-			}
-		}
-		if ext == nil {
-			ext = extractor.NewGenericBrowserExtractor(false)
-		}
+		c.JSON(http.StatusBadRequest, Response{
+			Code:    400,
+			Data:    nil,
+			Message: fmt.Sprintf("no extractor found for URL: %s", url),
+		})
+		return
 	}
 
 	if twitterExt, ok := ext.(*extractor.TwitterExtractor); ok {

@@ -16,7 +16,7 @@ vget 不是爬虫。
 **问题**：
 
 - 爬虫类来源（小红书 / B 站 / YouTube）维护成本极高：追平台接口、伪装浏览器、cookie 逆向，随时会坏，还有封号和法律风险
-- 为了这些来源，Docker 镜像背了 Chromium + Python + yt-dlp，CLI 背了浏览器自动化
+- 为了这些来源，Docker 镜像背了 Chromium + Python + yt-dlp，CLI 背了浏览器自动化（Rod）
 - 功能发散，用户画像说不清，推广没有抓手
 
 **洞察**：推广靠的是**资源本身**，下载器只是入口。资源在"库"里；库要多，只能靠社区；社区要一个统一、开放、不锁定的协议——**WebDAV + HTTP Basic Auth 就是这个协议**，vget 的 WebDAV 客户端已经是这个形态。
@@ -59,9 +59,8 @@ vget 不是爬虫。
 
 ### 4.2 已砍
 
-- 本次：**小红书**（Rod 浏览器）、**B 站**（extractor + 扫码登录 + Web UI 页）、**YouTube**（yt-dlp，仅 Docker）；Docker 镜像同步去掉 python / yt-dlp
+- 本次：**小红书**（Rod 浏览器）、**B 站**（extractor + 扫码登录 + Web UI 页）、**YouTube**（yt-dlp，仅 Docker）、**通用浏览器抓取**（`sites.yml` 配置站点 + 未知站点 m3u8 嗅探，Rod + Chromium）；Docker 镜像同步去掉 python / yt-dlp / chromium / CJK 字体，Go 依赖去掉 go-rod
 - 此前：AI 转写（whisper）、快递查询（kuaidi100）、Tauri 桌面端
-- **注意**：通用浏览器抓取（`sites.yml` 配置站点 + 未知站点 m3u8 嗅探，`browser.go`，Rod + Chromium）**尚未砍**，Docker 里的 Chromium 因此还在。是否一并砍掉是待决问题（见 §10）
 
 ### 4.3 新增（路线图，按先后）
 
@@ -150,12 +149,12 @@ ui/                 React Web UI → internal/server/dist（go:embed）
 ## 10. 待决问题
 
 1. Telegram、播客（小宇宙 / Apple Podcasts）、Torrent dispatch 去留
-2. 通用浏览器抓取（`sites.yml` + m3u8 嗅探 + Chromium）去留——决定 Docker 能否真正瘦身、Rod 依赖能否去掉
-3. SFTP 要不要做
-4. 公开目录形态：GitHub 仓库 + 静态站，还是自托管站
-5. 第一个库放什么、放哪（VPS / NAS / 网盘 + 302）
-6. 付费方式标准化到什么程度（只留链接 vs 邀请码标准）
-7. 过时文档处理：`docs/http-server-mode.md`、`docs/multi-binary-architecture.md` 的发布表
+2. SFTP 要不要做
+3. 公开目录形态：GitHub 仓库 + 静态站，还是自托管站
+4. 第一个库放什么、放哪（VPS / NAS / 网盘 + 302）
+5. 付费方式标准化到什么程度（只留链接 vs 邀请码标准）
+6. 过时文档处理：`docs/http-server-mode.md`、`docs/multi-binary-architecture.md` 的发布表
+7. 未知 URL 的兜底：现在直接报"无可用解析器"；是否改为先 HEAD 探测直链（Content-Type / Content-Disposition）再下载
 
 ## 附录 A：今天就能开一个库（不依赖 vget 新功能）
 
@@ -203,4 +202,5 @@ vget mylib:/path/to/file.pdf
 |---|---|---|
 | 2026-08 | 砍 AI 转写、kuaidi100、Tauri 桌面端 | 与定位无关 |
 | 2026-08 | 砍小红书、B 站、YouTube | 爬虫类来源，维护成本与风险高 |
+| 2026-08 | 砍通用浏览器抓取（sites.yml + m3u8 嗅探），Docker 去掉 Chromium | 同上；镜像瘦身、去掉 Rod 依赖 |
 | 2026-08 | 重新定位为"资源下载器 + 资源库客户端" | 本文 |

@@ -20,7 +20,6 @@ type Translations struct {
 	Errors       ErrorTranslations        `yaml:"errors"`
 	Search       SearchTranslations       `yaml:"search"`
 	Twitter      TwitterTranslations      `yaml:"twitter"`
-	Sites        SitesTranslations        `yaml:"sites"`
 	UI           UITranslations           `yaml:"ui"`
 	Server       ServerTranslations       `yaml:"server"`
 }
@@ -112,19 +111,6 @@ type TwitterTranslations struct {
 	DeprecatedClear      string `yaml:"deprecated_clear"`
 	DeprecatedUseNew     string `yaml:"deprecated_use_new"`
 	DeprecatedUseNewUnset string `yaml:"deprecated_use_new_unset"`
-}
-
-type SitesTranslations struct {
-	ConfigureSite   string `yaml:"configure_site"`
-	DomainMatch     string `yaml:"domain_match"`
-	SelectType      string `yaml:"select_type"`
-	OnlyM3u8ForNow  string `yaml:"only_m3u8_for_now"`
-	ExistingSites   string `yaml:"existing_sites"`
-	SiteAdded       string `yaml:"site_added"`
-	SavedTo         string `yaml:"saved_to"`
-	Cancelled       string `yaml:"cancelled"`
-	EnterConfirm    string `yaml:"enter_confirm"`
-	EscCancel       string `yaml:"esc_cancel"`
 }
 
 // UITranslations holds translations for the web UI

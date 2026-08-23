@@ -26,9 +26,6 @@ FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    chromium \
-    fonts-noto-cjk \
-    fonts-noto-color-emoji \
     ffmpeg \
     nodejs \
     gosu \
@@ -42,8 +39,6 @@ RUN (getent group 1000 >/dev/null || groupadd -g 1000 vget) && \
     chown -R 1000:1000 /home/vget
 
 COPY --from=go-builder /vget-server /usr/local/bin/vget-server
-
-ENV ROD_BROWSER=/usr/bin/chromium
 
 COPY docker/vget/entrypoint-arm64.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

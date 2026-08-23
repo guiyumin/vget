@@ -10,8 +10,6 @@ require (
 	github.com/creativeprojects/go-selfupdate v1.5.1
 	github.com/emersion/go-webdav v0.7.0
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-rod/rod v0.116.2
-	github.com/go-rod/stealth v0.4.9
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/gotd/td v0.136.0
 	github.com/spf13/cobra v1.10.1
@@ -93,11 +91,6 @@ require (
 	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/xanzy/go-gitlab v0.115.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	github.com/ysmood/fetchup v0.2.3 // indirect
-	github.com/ysmood/goob v0.4.0 // indirect
-	github.com/ysmood/got v0.40.0 // indirect
-	github.com/ysmood/gson v0.7.3 // indirect
-	github.com/ysmood/leakless v0.9.0 // indirect
 	go.opentelemetry.io/otel v1.38.0 // indirect
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect

@@ -73,7 +73,7 @@ See [sites.md](sites.md) for the full list of supported sites.
 ```bash
 vget https://twitter.com/user/status/123456789
 vget https://www.xiaoyuzhoufm.com/episode/abc123
-vget https://example.com/video -o my_video.mp4
+vget https://example.com/video.mp4 -o my_video.mp4
 vget --info https://example.com/video
 vget search --podcast "tech news"
 vget pikpak:/path/to/file.mp4              # WebDAV download

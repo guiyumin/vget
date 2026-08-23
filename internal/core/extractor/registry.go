@@ -81,7 +81,7 @@ func RegisterFallback(e Extractor) {
 }
 
 // Match finds the extractor for a URL using O(1) hostname lookup
-// Returns nil for unknown hosts (caller should check sites.yml)
+// Returns nil for unknown hosts
 func Match(rawURL string) Extractor {
 	// Normalize URL: add https:// if no scheme present
 	normalized, err := NormalizeURL(rawURL)
@@ -124,7 +124,7 @@ func Match(rawURL string) Extractor {
 		}
 	}
 
-	// Unknown host - return nil so caller can check sites.yml
+	// Unknown host
 	return nil
 }
 

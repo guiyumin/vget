@@ -22,7 +22,6 @@ var (
 	quality   string
 	info      bool
 	inputFile string
-	visible   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -56,7 +55,6 @@ func init() {
 	rootCmd.Flags().StringVarP(&quality, "quality", "q", "", "preferred quality (e.g., 1080p, 720p)")
 	rootCmd.Flags().BoolVar(&info, "info", false, "show video info without downloading")
 	rootCmd.Flags().StringVarP(&inputFile, "file", "f", "", "read URLs from file (one per line)")
-	rootCmd.Flags().BoolVar(&visible, "visible", false, "show browser window (for debugging)")
 }
 
 func Execute() error {
@@ -85,17 +83,7 @@ func runDownload(url string) error {
 	// Find matching extractor
 	ext := extractor.Match(url)
 	if ext == nil {
-		// Try sites.yml for configured sites first
-		sitesConfig, _ := config.LoadSites()
-		if sitesConfig != nil {
-			if site := sitesConfig.MatchSite(url); site != nil {
-				ext = extractor.NewBrowserExtractor(site, visible)
-			}
-		}
-		// Fall back to generic m3u8 detection for unknown sites
-		if ext == nil {
-			ext = extractor.NewGenericBrowserExtractor(visible)
-		}
+		return fmt.Errorf("%s: %s", t.Errors.NoExtractor, url)
 	}
 
 	// Configure Twitter extractor with auth if available

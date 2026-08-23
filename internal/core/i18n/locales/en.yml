@@ -82,18 +82,6 @@ twitter:
   deprecated_use_new: "Please use: vget config set twitter.auth_token <value>"
   deprecated_use_new_unset: "Please use: vget config unset twitter.auth_token"
 
-sites:
-  configure_site: "Configure Site"
-  domain_match: "Domain match (e.g., kanav.ad):"
-  select_type: "Select type:"
-  only_m3u8_for_now: "(only m3u8 for now)"
-  existing_sites: "Existing sites in ./sites.yml:"
-  site_added: "Site added"
-  saved_to: "Saved to ./sites.yml"
-  cancelled: "Cancelled"
-  enter_confirm: "enter confirm"
-  esc_cancel: "esc cancel"
-
 # Web UI translations
 ui:
   download_to: "Download to:"
