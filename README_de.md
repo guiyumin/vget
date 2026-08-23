@@ -66,7 +66,6 @@ Siehe [sites.md](sites.md) für die vollständige Liste der unterstützten Seite
 | `vget config webdav add <name>`    | WebDAV-Server hinzufügen              |
 | `vget config webdav show <name>`   | Serverdetails anzeigen                |
 | `vget config webdav delete <name>` | Server löschen                        |
-| `vget telegram login --import-desktop` | Telegram-Sitzung von Desktop-App importieren |
 
 ### Beispiele
 

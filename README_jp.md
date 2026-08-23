@@ -66,7 +66,6 @@ docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/
 | `vget config webdav add <name>`    | WebDAV サーバーを追加                 |
 | `vget config webdav show <name>`   | サーバー詳細を表示                    |
 | `vget config webdav delete <name>` | サーバーを削除                        |
-| `vget telegram login --import-desktop` | デスクトップアプリから Telegram セッションをインポート |
 
 ### 例
 

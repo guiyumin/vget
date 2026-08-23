@@ -119,4 +119,3 @@ Use legal test torrents:
 - Deluge support
 - Aria2 support (already has remote RPC)
 - QNAP Download Station
-- Torrent notifications via Telegram

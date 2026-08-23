@@ -68,14 +68,6 @@ type Config struct {
 	// Torrent client configuration for dispatching magnet links
 	Torrent TorrentConfig `yaml:"torrent,omitempty"`
 
-	// Telegram configuration
-	Telegram TelegramConfig `yaml:"telegram,omitempty"`
-}
-
-// TelegramConfig holds Telegram authentication settings
-type TelegramConfig struct {
-	// TDataPath is the custom path to Telegram Desktop tdata directory
-	TDataPath string `yaml:"tdata_path,omitempty"`
 }
 
 // TorrentConfig holds configuration for remote torrent client integration

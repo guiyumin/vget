@@ -55,7 +55,6 @@ interface AppContextType {
   webdavServers: Record<string, WebDAVServer>;
   configExists: boolean;
   torrentEnabled: boolean;
-  telegramTdataPath: string;
 
   // Translations
   t: UITranslations;
@@ -109,7 +108,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     Record<string, WebDAVServer>
   >({});
   const [torrentEnabled, setTorrentEnabled] = useState(false);
-  const [telegramTdataPath, setTelegramTdataPath] = useState("");
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const showToast = useCallback((type: ToastType, message: string) => {
@@ -154,7 +152,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setApiKey(configRes.data.server_api_key || "");
         setWebdavServers(configRes.data.webdav_servers || {});
         setTorrentEnabled(configRes.data.torrent_enabled || false);
-        setTelegramTdataPath(configRes.data.telegram_tdata_path || "");
       }
       if (i18nRes.code === 200) {
         // Merge with defaults to ensure new keys are available
@@ -233,9 +230,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (values.twitterAuth) {
         await setConfigValue("twitter.auth_token", values.twitterAuth);
       }
-      if (values.telegramTdataPath) {
-        await setConfigValue("telegram.tdata_path", values.telegramTdataPath);
-      }
       refresh();
     },
     [refresh]
@@ -280,7 +274,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         webdavServers,
         configExists,
         torrentEnabled,
-        telegramTdataPath,
         t,
         serverT,
         darkMode,

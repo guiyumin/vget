@@ -53,13 +53,13 @@ vget 不是爬虫。
 - **下载引擎**：并发、进度、m3u8/HLS、批量（txt）；断点续传待补
 - **Docker：`vget-server` + Web UI**：任务队列、历史（SQLite）、配置、WebDAV 浏览、磁力分发、API Token（JWT）
 - **Torrent dispatch**：把磁力 / 种子发给 Transmission / qBittorrent / 群晖（待定保留）
-- **Telegram**：官方 MTProto（gotd），导入 Desktop 会话（待定保留）
 - **播客**：小宇宙 / Apple Podcasts 搜索与下载（待定保留）
 - i18n 七种语言、自更新、`vget init`、`config set|get|unset`
 
 ### 4.2 已砍
 
 - 本次：**小红书**（Rod 浏览器）、**B 站**（extractor + 扫码登录 + Web UI 页）、**YouTube**（yt-dlp，仅 Docker）、**通用浏览器抓取**（`sites.yml` 配置站点 + 未知站点 m3u8 嗅探，Rod + Chromium）；Docker 镜像同步去掉 python / yt-dlp / chromium / CJK 字体，Go 依赖去掉 go-rod
+- 本次：**Telegram**（官方 MTProto / gotd，导入 Desktop 会话）——不属于 WebDAV 资源库模型、需登录、gotd 是最重的依赖，且使用者少
 - 此前：AI 转写（whisper）、快递查询（kuaidi100）、Tauri 桌面端
 
 ### 4.3 新增（路线图，按先后）
@@ -111,7 +111,7 @@ vget 不是爬虫。
 ```
 cmd/vget            CLI（goreleaser / Homebrew 发布）
 cmd/vget-server     HTTP + 内嵌 Web UI（Docker 发布）
-internal/core       config · downloader · extractor(twitter, telegram, podcast) · webdav · i18n
+internal/core       config · downloader · extractor(twitter, podcast) · webdav · i18n
 internal/server     任务队列 · 历史 · 配置 API · WebDAV 浏览 · 磁力分发 · JWT
 internal/torrent    transmission · qbittorrent · synology
 ui/                 React Web UI → internal/server/dist（go:embed）
@@ -148,7 +148,7 @@ ui/                 React Web UI → internal/server/dist（go:embed）
 
 ## 10. 待决问题
 
-1. Telegram、播客（小宇宙 / Apple Podcasts）、Torrent dispatch 去留
+1. 播客（小宇宙 / Apple Podcasts）、Torrent dispatch 去留
 2. SFTP 要不要做
 3. 公开目录形态：GitHub 仓库 + 静态站，还是自托管站
 4. 第一个库放什么、放哪（VPS / NAS / 网盘 + 302）
@@ -203,4 +203,5 @@ vget mylib:/path/to/file.pdf
 | 2026-08 | 砍 AI 转写、kuaidi100、Tauri 桌面端 | 与定位无关 |
 | 2026-08 | 砍小红书、B 站、YouTube | 爬虫类来源，维护成本与风险高 |
 | 2026-08 | 砍通用浏览器抓取（sites.yml + m3u8 嗅探），Docker 去掉 Chromium | 同上；镜像瘦身、去掉 Rod 依赖 |
+| 2026-08 | 砍 Telegram（gotd/MTProto） | 不属于库模型、需登录、最重依赖、用户少 |
 | 2026-08 | 重新定位为"资源下载器 + 资源库客户端" | 本文 |

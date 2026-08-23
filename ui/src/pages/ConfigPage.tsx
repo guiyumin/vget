@@ -14,7 +14,6 @@ export function ConfigPage() {
     serverPort,
     maxConcurrent,
     apiKey,
-    telegramTdataPath,
     webdavServers,
     saveConfig,
     addWebDAV,
@@ -49,7 +48,6 @@ export function ConfigPage() {
         initialQuality={configQuality}
         initialMaxConcurrent={maxConcurrent}
         initialApiKey={apiKey}
-        initialTelegramTdataPath={telegramTdataPath}
         serverPort={serverPort}
         webdavServers={webdavServers}
         onSave={handleSaveConfig}

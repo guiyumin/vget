@@ -4,8 +4,7 @@
 
 | Source                    | URL                      | Type            |
 | ------------------------- | ------------------------ | --------------- |
-| Twitter/X                 | twitter.com, x.com       | Video           |
-| Telegram                  | t.me                     | Video/Image     |
+| Twitter/X                 | twitter.com, x.com       | Video/Image     |
 | Xiaoyuzhou FM (小宇宙)    | xiaoyuzhoufm.com         | Audio (Podcast) |
 | Apple Podcasts            | podcasts.apple.com       | Audio (Podcast) |
 
@@ -33,34 +32,4 @@ To download age-restricted (NSFW) content from Twitter/X, you need to set your a
 4. 运行：
    ```bash
    vget config set twitter.auth_token YOUR_AUTH_TOKEN
-   ```
-
-### Telegram
-
-To download videos and images from Telegram, you need to import your session from Telegram Desktop:
-
-1. Update vget to v0.7.0 or later
-2. Make sure you have [Telegram Desktop](https://desktop.telegram.org/) installed and logged in
-3. Run the login command to import your session:
-   ```bash
-   vget telegram login --import-desktop
-   ```
-4. Download media like any other URL:
-   ```bash
-   vget https://t.me/channel/123
-   ```
-
-### Telegram (中文)
-
-要从 Telegram 下载视频和图片，需要从 Telegram Desktop 导入会话：
-
-1. 更新 vget 到 v0.7.0 或更高版本
-2. 确保已安装并登录 [Telegram Desktop](https://desktop.telegram.org/)
-3. 运行登录命令导入会话：
-   ```bash
-   vget telegram login --import-desktop
-   ```
-4. 像其他 URL 一样下载媒体：
-   ```bash
-   vget https://t.me/channel/123
    ```

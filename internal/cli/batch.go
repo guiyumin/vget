@@ -59,44 +59,11 @@ func runBatch(filename string) error {
 
 	fmt.Printf("Found %d URL(s) to download\n\n", len(urls))
 
-	// Separate Telegram URLs from other URLs
-	var telegramURLs, otherURLs []string
-	for _, url := range urls {
-		if isTelegramURL(url) {
-			telegramURLs = append(telegramURLs, url)
-		} else {
-			otherURLs = append(otherURLs, url)
-		}
-	}
-
 	var succeeded, failed int
 	var failedURLs []string
 
-	// Handle Telegram URLs with batch function (uses takeout if multiple)
-	if len(telegramURLs) >= 2 {
-		s, f, fURLs := runTelegramBatchDownload(telegramURLs)
-		succeeded += s
-		failed += f
-		failedURLs = append(failedURLs, fURLs...)
-	} else {
-		// Single Telegram URL - use regular download
-		for _, url := range telegramURLs {
-			fmt.Printf("[1/%d] %s\n", len(urls), truncateURL(url, 60))
-			if err := runTelegramDownload(url, ""); err != nil {
-				fmt.Fprintf(os.Stderr, "  Error: %v\n", err)
-				failed++
-				failedURLs = append(failedURLs, url)
-			} else {
-				succeeded++
-			}
-			fmt.Println()
-		}
-	}
-
-	// Download other URLs
-	startIdx := len(telegramURLs) + 1
-	for i, url := range otherURLs {
-		fmt.Printf("[%d/%d] %s\n", startIdx+i, len(urls), truncateURL(url, 60))
+	for i, url := range urls {
+		fmt.Printf("[%d/%d] %s\n", i+1, len(urls), truncateURL(url, 60))
 
 		if err := runDownload(url); err != nil {
 			fmt.Fprintf(os.Stderr, "  Error: %v\n", err)

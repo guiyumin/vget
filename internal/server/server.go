@@ -533,7 +533,6 @@ func (s *Server) handleGetConfig(c *gin.Context) {
 			"server_api_key":        cfg.Server.APIKey,
 			"webdav_servers":        webdavServers,
 			"torrent_enabled":       cfg.Torrent.Enabled,
-			"telegram_tdata_path":   cfg.Telegram.TDataPath,
 			},
 		Message: "config retrieved",
 	})
@@ -1081,8 +1080,6 @@ func (s *Server) setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Server.MaxConcurrent = val
 	case "server.api_key", "server_api_key":
 		cfg.Server.APIKey = value
-	case "telegram.tdata_path", "telegram_tdata_path":
-		cfg.Telegram.TDataPath = value
 	default:
 		return fmt.Errorf("unknown config key: %s", key)
 	}

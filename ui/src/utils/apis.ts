@@ -46,7 +46,6 @@ export interface ConfigData {
   server_api_key: string;
   webdav_servers: Record<string, WebDAVServer>;
   torrent_enabled?: boolean;
-  telegram_tdata_path?: string;
 }
 
 export interface TorrentConfig {

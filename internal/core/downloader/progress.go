@@ -453,64 +453,6 @@ func downloadFromReaderWithProgress(reader io.ReadCloser, total int64, output st
 	return nil
 }
 
-// TelegramDownloadResult matches the extractor telegram result
-type TelegramDownloadResult struct {
-	Title    string
-	Filename string
-	Size     int64
-}
-
-// TelegramDownloadFunc is the signature for the telegram download function
-type TelegramDownloadFunc func(urlStr string, outputPath string, progressFn func(downloaded, total int64)) (*TelegramDownloadResult, error)
-
-// RunTelegramDownloadTUI runs Telegram download with TUI progress
-func RunTelegramDownloadTUI(urlStr, outputPath, lang string, downloadFn TelegramDownloadFunc) error {
-	state := &downloadState{
-		startTime: time.Now(),
-	}
-
-	var result *TelegramDownloadResult
-	var downloadErr error
-
-	// Start download in background
-	go func() {
-		progressFn := func(downloaded, total int64) {
-			state.update(downloaded, total)
-		}
-		result, downloadErr = downloadFn(urlStr, outputPath, progressFn)
-		if downloadErr != nil {
-			state.setError(downloadErr)
-		} else {
-			state.setDone()
-		}
-	}()
-
-	// Use the filename from URL as display ID initially
-	displayID := "Telegram media"
-
-	model := newDownloadModel("", displayID, lang, state)
-
-	p := tea.NewProgram(model)
-	_, err := p.Run()
-	if err != nil {
-		return err
-	}
-
-	if downloadErr != nil {
-		return downloadErr
-	}
-
-	if result != nil {
-		displayPath := result.Filename
-		if absPath, err := filepath.Abs(result.Filename); err == nil {
-			displayPath = absPath
-		}
-		fmt.Printf("  Saved: %s\n", displayPath)
-	}
-
-	return nil
-}
-
 // RunMultiStreamDownloadWithAuthCallback runs a multi-stream download with auth and progress callback (for server use)
 func RunMultiStreamDownloadWithAuthCallback(ctx context.Context, url, authHeader, output string, totalSize int64, config MultiStreamConfig, progressFn func(downloaded, total int64)) error {
 	state := &downloadState{
