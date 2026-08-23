@@ -1,8 +1,20 @@
 # vget
 
-Versatile downloader for audio, video, podcasts, PDFs and more. Available as CLI and Docker
+A small, focused downloader for media links and WebDAV resource libraries. Available as CLI and Docker.
 
 [简体中文](README_zh.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
+
+## What it is
+
+vget is a thin, simple interface over the resources behind it. Point it at a link or a WebDAV resource library and it fetches the file — with a progress bar in the terminal, or a web UI on your NAS.
+
+The tool stays deliberately small. The value isn't the downloader; it's the resource libraries it connects to. So vget speaks standard protocols instead of scraping — it doesn't break when a site changes its markup, and any WebDAV server anyone runs becomes a library it can browse and pull from.
+
+- **Media links** — Twitter/X (video/image), podcasts (Xiaoyuzhou, Apple Podcasts), direct file URLs, m3u8/HLS streams
+- **WebDAV resource libraries** — PikPak, a NAS, a seedbox, or anyone's shared WebDAV library: browse, pick, download
+- **Cloud drives without native WebDAV** (Baidu, Quark, Aliyun, 115, …) — bridge them through [OpenList](https://github.com/OpenListTeam/OpenList)/Alist, then point vget at the WebDAV endpoint
+
+> Direction and roadmap (one-command library hosting, a library client, a public directory) live in [docs/PRD.md](docs/PRD.md).
 
 ## Installation
 
@@ -40,13 +52,15 @@ Download `vget-windows-amd64.zip` from [Releases](https://github.com/guiyumin/vg
 
 ## Docker
 
+The Docker image runs a web UI + HTTP API — handy on a NAS, where you paste links or browse WebDAV libraries from any device.
+
 ```bash
 docker run -d -p 8080:8080 -v ~/downloads:/home/vget/downloads ghcr.io/guiyumin/vget:latest
 ```
 
 ## Supported Sources
 
-See [sites.md](sites.md) for the full list of supported sites.
+See [sites.md](sites.md) for native extractors. Beyond those, any WebDAV server works out of the box.
 
 ## Commands
 
@@ -70,13 +84,17 @@ See [sites.md](sites.md) for the full list of supported sites.
 ### Examples
 
 ```bash
+# Media links
 vget https://twitter.com/user/status/123456789
 vget https://www.xiaoyuzhoufm.com/episode/abc123
 vget https://example.com/video.mp4 -o my_video.mp4
-vget --info https://example.com/video
+vget --info https://example.com/video.mp4
 vget search --podcast "tech news"
-vget pikpak:/path/to/file.mp4              # WebDAV download
-vget ls pikpak:/Movies                     # List remote directory
+
+# WebDAV resource libraries
+vget config webdav add pikpak       # add a library (url + user + pass)
+vget ls pikpak:/Movies              # browse it
+vget pikpak:/path/to/file.mp4       # download from it
 ```
 
 ## Configuration

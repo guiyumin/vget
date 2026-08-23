@@ -1,6 +1,6 @@
 # vget
 
-Vielseitiger Downloader für Audio, Video, Podcasts, PDFs und mehr. Verfügbar als CLI und Docker.
+Ein kleiner, fokussierter Downloader für Medien-Links und WebDAV-Ressourcenbibliotheken. Verfügbar als CLI und Docker.
 
 [English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md)
 
@@ -72,7 +72,7 @@ Siehe [sites.md](sites.md) für die vollständige Liste der unterstützten Seite
 ```bash
 vget https://twitter.com/user/status/123456789
 vget https://www.xiaoyuzhoufm.com/episode/abc123
-vget https://example.com/video -o mein_video.mp4
+vget https://example.com/video.mp4 -o mein_video.mp4
 vget --info https://example.com/video
 vget search --podcast "tech news"
 vget pikpak:/path/to/file.mp4              # WebDAV-Download
