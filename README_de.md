@@ -2,7 +2,19 @@
 
 Ein kleiner, fokussierter Downloader für Medien-Links und WebDAV-Ressourcenbibliotheken. Verfügbar als CLI und Docker.
 
-[English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md)
+[English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md)
+
+## Was es ist
+
+vget ist eine dünne, einfache Schnittstelle zu den Ressourcen dahinter. Richte es auf einen Link oder eine WebDAV-Ressourcenbibliothek, und es lädt die Datei herunter — mit einem Fortschrittsbalken im Terminal oder einer Web-Oberfläche auf deinem NAS.
+
+Das Werkzeug bleibt bewusst klein. Der Wert ist nicht der Downloader, sondern die Ressourcenbibliotheken, mit denen es sich verbindet. Deshalb spricht vget Standardprotokolle statt zu scrapen — es geht nicht kaputt, wenn eine Website ihr Markup ändert, und jeder WebDAV-Server, den jemand betreibt, wird zu einer Bibliothek, die es durchsuchen und herunterladen kann.
+
+- **Medien-Links** — Twitter/X (Video/Bild), Podcasts (Xiaoyuzhou, Apple Podcasts), direkte Datei-URLs, m3u8/HLS-Streams
+- **WebDAV-Ressourcenbibliotheken** — PikPak, ein NAS, eine Seedbox oder die von jemandem geteilte WebDAV-Bibliothek: durchsuchen, auswählen, herunterladen
+- **Cloud-Speicher ohne natives WebDAV** (Baidu, Quark, Aliyun, 115, …) — binde sie über [OpenList](https://github.com/OpenListTeam/OpenList)/Alist ein und richte vget auf den WebDAV-Endpunkt
+
+> Ausrichtung und Roadmap (Bibliothek mit einem Befehl hosten, ein Bibliotheks-Client, ein öffentliches Verzeichnis) stehen in [docs/PRD.md](docs/PRD.md).
 
 ## Installation
 

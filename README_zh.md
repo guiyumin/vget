@@ -2,7 +2,7 @@
 
 一个小而专注的下载器，面向媒体链接和 WebDAV 资源库。提供 CLI 和 Docker 两种方式。
 
-[English](README.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
+[English](README.md) | [日本語](README_jp.md) | [한국어](README_kr.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
 
 ## 这是什么
 

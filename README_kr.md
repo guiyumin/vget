@@ -2,7 +2,19 @@
 
 미디어 링크와 WebDAV 리소스 라이브러리를 위한 작고 단순한 다운로더. CLI 및 Docker로 사용 가능.
 
-[English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
+[English](README.md) | [简体中文](README_zh.md) | [日本語](README_jp.md) | [Español](README_es.md) | [Français](README_fr.md) | [Deutsch](README_de.md) | [Português](README_pt.md)
+
+## vget란
+
+vget는 그 뒤에 있는 리소스에 대한 얇고 단순한 인터페이스입니다. 링크나 WebDAV 리소스 라이브러리를 지정하면 파일을 가져옵니다 — 터미널에서는 진행 표시줄로, NAS에서는 웹 UI로.
+
+도구 자체는 의도적으로 작게 유지합니다. 가치는 다운로더가 아니라 연결하는 리소스 라이브러리에 있습니다. 그래서 vget은 스크래핑 대신 표준 프로토콜을 사용합니다 — 사이트 마크업이 바뀌어도 깨지지 않고, 누군가 운영하는 WebDAV 서버가 그대로 탐색·다운로드할 수 있는 라이브러리가 됩니다.
+
+- **미디어 링크** — Twitter/X(동영상/이미지), 팟캐스트(Xiaoyuzhou, Apple Podcasts), 직접 파일 URL, m3u8/HLS 스트림
+- **WebDAV 리소스 라이브러리** — PikPak, NAS, seedbox, 또는 누군가 공유한 WebDAV 라이브러리: 탐색, 선택, 다운로드
+- **네이티브 WebDAV가 없는 클라우드 드라이브**(Baidu, Quark, Aliyun, 115 등) — [OpenList](https://github.com/OpenListTeam/OpenList)/Alist로 WebDAV로 변환한 뒤 그 WebDAV 주소를 vget에 지정하세요
+
+> 방향성과 로드맵(명령 한 번으로 라이브러리 호스팅, 라이브러리 클라이언트, 공개 디렉터리)은 [docs/PRD.md](docs/PRD.md)에 있습니다.
 
 ## 설치
 
