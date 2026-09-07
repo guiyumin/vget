@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -12,21 +13,24 @@ import (
 
 	"github.com/emersion/go-webdav"
 	"github.com/guiyumin/vget/internal/core/config"
+	"github.com/guiyumin/vget/internal/core/tailcat"
 )
 
 // Client wraps go-webdav client with convenience methods
 type Client struct {
-	client   *webdav.Client
-	baseURL  string
-	username string
-	password string
+	client     *webdav.Client
+	baseURL    string
+	username   string
+	password   string
+	httpClient *http.Client // nil means http.DefaultClient
+	tailcat    string       // the tailcat address, when the library is reached through a tunnel
 }
 
 // FileInfo contains information about a remote file
 type FileInfo struct {
-	Name string
-	Path string
-	Size int64
+	Name  string
+	Path  string
+	Size  int64
 	IsDir bool
 }
 
@@ -49,30 +53,43 @@ func NewClient(rawURL string) (*Client, error) {
 	// Build base URL without credentials and path
 	baseURL := fmt.Sprintf("%s://%s", scheme, parsed.Host)
 
-	// Extract credentials and create HTTP client
-	var httpClient webdav.HTTPClient
-	if parsed.User != nil {
-		username := parsed.User.Username()
-		password, _ := parsed.User.Password()
-		httpClient = webdav.HTTPClientWithBasicAuth(nil, username, password)
-	}
-
-	client, err := webdav.NewClient(httpClient, baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create WebDAV client: %w", err)
-	}
-
 	var username, password string
 	if parsed.User != nil {
 		username = parsed.User.Username()
 		password, _ = parsed.User.Password()
 	}
+	return newClient(baseURL, username, password, nil, "")
+}
 
+// NewTailcatClient creates a client for a library reached through a tailcat
+// tunnel. The address is the bearer credential for the tunnel; username and
+// password are the library's Basic Auth account, if it has one.
+func NewTailcatClient(addr, username, password string) (*Client, error) {
+	if err := tailcat.Validate(addr); err != nil {
+		return nil, err
+	}
+	return newClient(tailcat.BaseURL, username, password, tailcat.HTTPClient(addr), addr)
+}
+
+func newClient(baseURL, username, password string, hc *http.Client, tcAddr string) (*Client, error) {
+	var httpClient webdav.HTTPClient
+	if hc != nil {
+		httpClient = hc
+	}
+	if username != "" {
+		httpClient = webdav.HTTPClientWithBasicAuth(httpClient, username, password)
+	}
+	client, err := webdav.NewClient(httpClient, baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create WebDAV client: %w", err)
+	}
 	return &Client{
-		client:   client,
-		baseURL:  baseURL,
-		username: username,
-		password: password,
+		client:     client,
+		baseURL:    baseURL,
+		username:   username,
+		password:   password,
+		httpClient: hc,
+		tailcat:    tcAddr,
 	}, nil
 }
 
@@ -83,6 +100,26 @@ func ParseURL(rawURL string) (string, error) {
 		return "", err
 	}
 	return parsed.Path, nil
+}
+
+// IsTailcat reports whether the client reaches its library through a tailcat tunnel.
+func (c *Client) IsTailcat() bool { return c.tailcat != "" }
+
+// DialContext returns the dialer the download engine must use to reach this
+// library, or nil when plain HTTP(S) works.
+func (c *Client) DialContext() func(ctx context.Context, network, addr string) (net.Conn, error) {
+	if c.tailcat == "" {
+		return nil
+	}
+	return tailcat.DialContext(c.tailcat)
+}
+
+// HTTPClient returns the HTTP client reaching this library (without auth headers).
+func (c *Client) HTTPClient() *http.Client {
+	if c.httpClient != nil {
+		return c.httpClient
+	}
+	return http.DefaultClient
 }
 
 // Stat returns information about a file
@@ -157,6 +194,32 @@ func (c *Client) Open(ctx context.Context, filePath string) (io.ReadCloser, int6
 	return reader, info.Size, nil
 }
 
+// Mkdir creates a directory (MKCOL).
+func (c *Client) Mkdir(ctx context.Context, dirPath string) error {
+	return c.client.Mkdir(ctx, dirPath)
+}
+
+// MkdirAll creates dirPath and any missing parents.
+func (c *Client) MkdirAll(ctx context.Context, dirPath string) error {
+	dirPath = path.Clean("/" + dirPath)
+	if dirPath == "/" {
+		return nil
+	}
+	if info, err := c.Stat(ctx, dirPath); err == nil {
+		if !info.IsDir {
+			return fmt.Errorf("%s exists and is not a directory", dirPath)
+		}
+		return nil
+	}
+	if err := c.MkdirAll(ctx, path.Dir(dirPath)); err != nil {
+		return err
+	}
+	if err := c.client.Mkdir(ctx, dirPath); err != nil {
+		return fmt.Errorf("failed to create %s: %w", dirPath, err)
+	}
+	return nil
+}
+
 // IsWebDAVURL checks if a URL is a WebDAV URL or a remote path (remote:path)
 func IsWebDAVURL(rawURL string) bool {
 	return strings.HasPrefix(rawURL, "webdav://") ||
@@ -204,24 +267,16 @@ func ParseRemotePath(remotePath string) (remoteName, filePath string, err error)
 	return remoteName, filePath, nil
 }
 
-// NewClientFromConfig creates a WebDAV client from a configured server
+// NewClientFromConfig creates a WebDAV client from a configured server,
+// through a tailcat tunnel when the server has a tailcat address.
 func NewClientFromConfig(server *config.WebDAVServer) (*Client, error) {
-	var httpClient webdav.HTTPClient
-	if server.Username != "" {
-		httpClient = webdav.HTTPClientWithBasicAuth(nil, server.Username, server.Password)
+	if server.Tailcat != "" {
+		return NewTailcatClient(server.Tailcat, server.Username, server.Password)
 	}
-
-	client, err := webdav.NewClient(httpClient, server.URL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create WebDAV client: %w", err)
+	if server.URL == "" {
+		return nil, fmt.Errorf("the server has neither a URL nor a tailcat address")
 	}
-
-	return &Client{
-		client:   client,
-		baseURL:  server.URL,
-		username: server.Username,
-		password: server.Password,
-	}, nil
+	return newClient(server.URL, server.Username, server.Password, nil, "")
 }
 
 // ExtractFilename extracts the filename from a WebDAV path
@@ -261,8 +316,7 @@ func (c *Client) SupportsRangeRequests(ctx context.Context, filePath string) (bo
 		req.Header.Set("Authorization", auth)
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := c.HTTPClient().Do(req)
 	if err != nil {
 		return false, err
 	}

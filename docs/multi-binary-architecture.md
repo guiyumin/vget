@@ -45,12 +45,16 @@ go build ./cmd/...
 
 ## Binary Comparison
 
-| Binary | Size | Contains |
+| Binary | Size (stripped, `-s -w`) | Contains |
 |--------|------|----------|
-| `vget` | ~28 MB | CLI commands, Bubbletea TUI, extractors, downloaders |
+| `vget` | ~28 MB (was ~19 MB before tailcat) | CLI commands, Bubbletea TUI, extractors, downloaders, library server, tailcat transport |
 | `vget-server` | ~25 MB | HTTP server, embedded Web UI, extractors, downloaders |
 
-The server binary is smaller because it doesn't include CLI components (Cobra commands, Bubbletea TUI).
+Measured 2026-09 on darwin/arm64. The tailcat transport (`tailscale.com` data
+plane: WireGuard, netstack, DERP) adds about 12 MB, or 9 MB when built with
+tailcat's `ts_omit_*` tag list as the release build does (see `.goreleaser.yml`).
+`tailscale.com` is imported only from `internal/core/tailcat`; both binaries link
+it because the shared WebDAV client dials tailcat remotes through it.
 
 ## Docker
 

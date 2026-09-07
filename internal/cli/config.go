@@ -2,13 +2,19 @@ package cli
 
 import (
 	"bufio"
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/guiyumin/vget/internal/core/config"
 	"github.com/guiyumin/vget/internal/core/i18n"
+	"github.com/guiyumin/vget/internal/core/tailcat"
+	"github.com/guiyumin/vget/internal/core/webdav"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -37,7 +43,11 @@ var configShowCmd = &cobra.Command{
 			fmt.Println("\nWebDAV servers:")
 			for name, server := range cfg.WebDAVServers {
 				fmt.Printf("  %s:\n", name)
-				fmt.Printf("    URL:      %s\n", server.URL)
+				if server.Tailcat != "" {
+					fmt.Printf("    Tailcat:  %s\n", tailcat.Mask(server.Tailcat))
+				} else {
+					fmt.Printf("    URL:      %s\n", server.URL)
+				}
 				if server.Username != "" {
 					fmt.Printf("    Username: %s\n", server.Username)
 					fmt.Printf("    Password: %s\n", server.Password)
@@ -50,7 +60,57 @@ var configShowCmd = &cobra.Command{
 			fmt.Printf("  auth_token: %s\n", cfg.Twitter.AuthToken)
 		}
 
+		if s := cfg.Serve; s.Dir != "" || s.User != "" || s.Listen != "" || s.Inbox != "" || s.DERP.Host != "" || s.RW || s.Tailcat != nil || len(s.Allow) > 0 {
+			fmt.Println("\nServe (vget serve):")
+			if s.Dir != "" {
+				fmt.Printf("  dir:      %s\n", s.Dir)
+			}
+			if s.User != "" {
+				fmt.Printf("  user:     %s\n", s.User)
+				fmt.Printf("  password: %s\n", s.Password)
+			}
+			fmt.Printf("  tailcat:  %v\n", s.TailcatEnabled())
+			if s.Listen != "" {
+				fmt.Printf("  listen:   %s\n", s.Listen)
+			}
+			if s.RW {
+				fmt.Printf("  rw:       true\n")
+			}
+			if s.Inbox != "" {
+				fmt.Printf("  inbox:    %s\n", s.Inbox)
+			}
+			if s.DERP.Host != "" {
+				fmt.Printf("  derp:     %s\n", describeDERP(s.DERP))
+			}
+			if len(s.Allow) > 0 {
+				fmt.Printf("  allow:    %s\n", strings.Join(s.Allow, ", "))
+			}
+		}
 	},
+}
+
+// describeDERP renders a self-hosted relay setting.
+func describeDERP(d config.DERPConfig) string {
+	s := d.Host
+	if d.Port != 0 {
+		s = fmt.Sprintf("%s:%d", d.Host, d.Port)
+	}
+	if d.STUNPort != 0 {
+		s += fmt.Sprintf(" (stun %d)", d.STUNPort)
+	}
+	if d.CertSHA256 != "" {
+		s += " (self-signed cert " + tailcat.Mask(d.CertSHA256) + ")"
+	}
+	return s
+}
+
+// remoteTarget renders where a configured server is reached, masking
+// tailcat addresses since they are secrets.
+func remoteTarget(server config.WebDAVServer) string {
+	if server.Tailcat != "" {
+		return "tailcat " + tailcat.Mask(server.Tailcat)
+	}
+	return server.URL
 }
 
 // vget config path - show config file path
@@ -77,11 +137,25 @@ Supported keys:
   server.port        Server listen port
   server.max_concurrent  Max concurrent downloads
   server.api_key     Server API key
+  serve.dir          Library directory for 'vget serve'
+  serve.user         Account name clients of 'vget serve' must present
+  serve.password     Account password (re-read on every request)
+  serve.tailcat      Open a tailcat address (true/false, default true)
+  serve.listen       Extra plain-HTTP listen address, e.g. :7777
+  serve.rw           Let clients write to the library (true/false)
+  serve.inbox        Write-only upload directory exposed at /inbox
+  serve.derp.host    Self-hosted relay host or IP
+  serve.derp.port    Self-hosted relay port (default 443)
+  serve.derp.stun_port    Self-hosted relay STUN port (default 3478)
+  serve.derp.cert_sha256  Relay certificate fingerprint (self-signed)
+  serve.allow        Allowed client keys, comma-separated (see 'vget identity')
 
 Examples:
   vget config set language en
   vget config set output_dir ~/Videos
-  vget config set twitter.auth_token YOUR_TOKEN`,
+  vget config set twitter.auth_token YOUR_TOKEN
+  vget config set serve.user alice
+  vget config set serve.derp.host 1.2.3.4`,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		key := args[0]
@@ -192,6 +266,66 @@ func setConfigValue(cfg *config.Config, key, value string) error {
 		cfg.Server.MaxConcurrent = n
 	case "server.api_key":
 		cfg.Server.APIKey = value
+	case "serve.dir":
+		cfg.Serve.Dir = value
+	case "serve.user":
+		cfg.Serve.User = value
+	case "serve.password":
+		cfg.Serve.Password = value
+	case "serve.tailcat":
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("serve.tailcat must be true or false, got %q", value)
+		}
+		cfg.Serve.Tailcat = &b
+	case "serve.listen":
+		cfg.Serve.Listen = value
+	case "serve.rw":
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("serve.rw must be true or false, got %q", value)
+		}
+		cfg.Serve.RW = b
+	case "serve.inbox":
+		cfg.Serve.Inbox = value
+	case "serve.derp.host":
+		host, port, err := tailcat.ParseHostPort(value)
+		if err != nil {
+			return err
+		}
+		cfg.Serve.DERP.Host = host
+		if port != 0 {
+			cfg.Serve.DERP.Port = port
+		}
+	case "serve.derp.port":
+		n, err := strconv.Atoi(value)
+		if err != nil || n < 0 || n > 65535 {
+			return fmt.Errorf("invalid port number: %s", value)
+		}
+		cfg.Serve.DERP.Port = n
+	case "serve.derp.stun_port":
+		n, err := strconv.Atoi(value)
+		if err != nil || n < -1 || n > 65535 {
+			return fmt.Errorf("invalid port number: %s", value)
+		}
+		cfg.Serve.DERP.STUNPort = n
+	case "serve.derp.cert_sha256":
+		fp := tailcat.NormalizeFingerprint(value)
+		if len(fp) != 64 {
+			return fmt.Errorf("serve.derp.cert_sha256 must be 64 hex characters (see 'vget derp test')")
+		}
+		cfg.Serve.DERP.CertSHA256 = fp
+	case "serve.allow":
+		var keys []string
+		for _, k := range strings.Split(value, ",") {
+			if k = strings.TrimSpace(k); k != "" {
+				keys = append(keys, k)
+			}
+		}
+		if _, err := tailcat.ParseAllowedKeys(keys); err != nil {
+			return err
+		}
+		cfg.Serve.Allow = keys
 	default:
 		return fmt.Errorf("unknown config key: %s\nRun 'vget config set --help' to see supported keys", key)
 	}
@@ -217,6 +351,30 @@ func getConfigValue(cfg *config.Config, key string) (string, error) {
 		return fmt.Sprintf("%d", cfg.Server.MaxConcurrent), nil
 	case "server.api_key":
 		return cfg.Server.APIKey, nil
+	case "serve.dir":
+		return cfg.Serve.Dir, nil
+	case "serve.user":
+		return cfg.Serve.User, nil
+	case "serve.password":
+		return cfg.Serve.Password, nil
+	case "serve.tailcat":
+		return strconv.FormatBool(cfg.Serve.TailcatEnabled()), nil
+	case "serve.listen":
+		return cfg.Serve.Listen, nil
+	case "serve.rw":
+		return strconv.FormatBool(cfg.Serve.RW), nil
+	case "serve.inbox":
+		return cfg.Serve.Inbox, nil
+	case "serve.derp.host":
+		return cfg.Serve.DERP.Host, nil
+	case "serve.derp.port":
+		return strconv.Itoa(cfg.Serve.DERP.Port), nil
+	case "serve.derp.stun_port":
+		return strconv.Itoa(cfg.Serve.DERP.STUNPort), nil
+	case "serve.derp.cert_sha256":
+		return cfg.Serve.DERP.CertSHA256, nil
+	case "serve.allow":
+		return strings.Join(cfg.Serve.Allow, ","), nil
 	default:
 		return "", fmt.Errorf("unknown config key: %s\nRun 'vget config get --help' to see supported keys", key)
 	}
@@ -241,6 +399,30 @@ func unsetConfigValue(cfg *config.Config, key string) error {
 		cfg.Server.MaxConcurrent = 0
 	case "server.api_key":
 		cfg.Server.APIKey = ""
+	case "serve.dir":
+		cfg.Serve.Dir = ""
+	case "serve.user":
+		cfg.Serve.User = ""
+	case "serve.password":
+		cfg.Serve.Password = ""
+	case "serve.tailcat":
+		cfg.Serve.Tailcat = nil
+	case "serve.listen":
+		cfg.Serve.Listen = ""
+	case "serve.rw":
+		cfg.Serve.RW = false
+	case "serve.inbox":
+		cfg.Serve.Inbox = ""
+	case "serve.derp.host", "serve.derp":
+		cfg.Serve.DERP = config.DERPConfig{}
+	case "serve.derp.port":
+		cfg.Serve.DERP.Port = 0
+	case "serve.derp.stun_port":
+		cfg.Serve.DERP.STUNPort = 0
+	case "serve.derp.cert_sha256":
+		cfg.Serve.DERP.CertSHA256 = ""
+	case "serve.allow":
+		cfg.Serve.Allow = nil
 	default:
 		return fmt.Errorf("unknown config key: %s\nRun 'vget config unset --help' to see supported keys", key)
 	}
@@ -270,26 +452,35 @@ var configWebdavListCmd = &cobra.Command{
 		fmt.Println("WebDAV servers:")
 		for name, server := range cfg.WebDAVServers {
 			if server.Username != "" {
-				fmt.Printf("  %s: %s (user: %s)\n", name, server.URL, server.Username)
+				fmt.Printf("  %s: %s (user: %s)\n", name, remoteTarget(server), server.Username)
 			} else {
-				fmt.Printf("  %s: %s\n", name, server.URL)
+				fmt.Printf("  %s: %s\n", name, remoteTarget(server))
 			}
 		}
 	},
 }
 
+var (
+	webdavAddUser string
+	webdavAddPass string
+)
+
 var configWebdavAddCmd = &cobra.Command{
-	Use:   "add <name>",
-	Short: "Add a new WebDAV server",
-	Long: `Add a new WebDAV server configuration.
+	Use:   "add <name> [tc-address | url]",
+	Short: "Add a WebDAV server or a library shared with 'vget serve'",
+	Long: `Add a WebDAV server configuration. The target is either a WebDAV URL or
+the tailcat address printed by 'vget serve' on another machine (no public IP
+needed). Anything not given on the command line is asked for interactively.
 
 Examples:
   vget config webdav add pikpak
-  vget config webdav add nextcloud
+  vget config webdav add nas https://nas.example.com/dav --user me --pass secret
+  vget config webdav add alice tcomFwWC... --user friend --pass p1
 
-After adding, download files like:
-  vget pikpak:/Movies/video.mp4`,
-	Args: cobra.ExactArgs(1),
+After adding, browse and download like:
+  vget ls alice:/
+  vget alice:/Movies/video.mp4`,
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		cfg := config.LoadOrDefault()
@@ -302,23 +493,41 @@ After adding, download files like:
 
 		reader := bufio.NewReader(os.Stdin)
 
-		// Get URL
-		fmt.Print("WebDAV URL: ")
-		urlStr, _ := reader.ReadString('\n')
-		urlStr = strings.TrimSpace(urlStr)
-		if urlStr == "" {
-			fmt.Fprintln(os.Stderr, "URL is required")
+		// Get the target: a URL or a tailcat address
+		var target string
+		if len(args) == 2 {
+			target = strings.TrimSpace(args[1])
+		} else {
+			fmt.Print("WebDAV URL or tailcat address: ")
+			line, _ := reader.ReadString('\n')
+			target = strings.TrimSpace(line)
+		}
+		if target == "" {
+			fmt.Fprintln(os.Stderr, "A URL or tailcat address is required")
 			os.Exit(1)
+		}
+		server := config.WebDAVServer{}
+		switch {
+		case tailcat.IsAddr(target):
+			server.Tailcat = target
+		case strings.HasPrefix(target, "tc") && !strings.Contains(target, "://"):
+			fmt.Fprintln(os.Stderr, tailcat.Validate(target))
+			os.Exit(1)
+		default:
+			server.URL = target
 		}
 
 		// Get username
-		fmt.Print("Username (enter to skip): ")
-		username, _ := reader.ReadString('\n')
-		username = strings.TrimSpace(username)
+		username := webdavAddUser
+		if !cmd.Flags().Changed("user") {
+			fmt.Print("Username (enter to skip): ")
+			line, _ := reader.ReadString('\n')
+			username = strings.TrimSpace(line)
+		}
 
 		// Get password
-		var password string
-		if username != "" {
+		password := webdavAddPass
+		if username != "" && !cmd.Flags().Changed("pass") {
 			fmt.Print("Password: ")
 			passwordBytes, err := term.ReadPassword(int(syscall.Stdin))
 			fmt.Println()
@@ -328,20 +537,101 @@ After adding, download files like:
 			}
 			password = string(passwordBytes)
 		}
+		server.Username = username
+		server.Password = password
 
-		cfg.SetWebDAVServer(name, config.WebDAVServer{
-			URL:      urlStr,
-			Username: username,
-			Password: password,
-		})
+		cfg.SetWebDAVServer(name, server)
 
 		if err := config.Save(cfg); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to save: %v\n", err)
 			os.Exit(1)
 		}
 
-		fmt.Printf("\nWebDAV server '%s' added.\n", name)
-		fmt.Printf("Usage: vget %s:/path/to/file.mp4\n", name)
+		if server.Tailcat != "" {
+			fmt.Printf("\nLibrary '%s' added (tailcat, relay %s).\n", name, tailcat.RelayOf(server.Tailcat))
+			fmt.Printf("Usage: vget ls %s:/\n", name)
+			fmt.Printf("       vget config webdav ping %s\n", name)
+		} else {
+			fmt.Printf("\nWebDAV server '%s' added.\n", name)
+			fmt.Printf("Usage: vget %s:/path/to/file.mp4\n", name)
+		}
+	},
+}
+
+var (
+	webdavPingUntilDirect bool
+	webdavPingTimeout     time.Duration
+	webdavShowFull        bool
+)
+
+var configWebdavPingCmd = &cobra.Command{
+	Use:   "ping <name | tc-address>",
+	Short: "Check the connection to a library: relay round trip and whether it is direct",
+	Long: `Reach a library and report how. For a tailcat library each pong says
+whether it came back over a direct path (NAT traversal worked) or through the
+relay. --until-direct keeps pinging until a direct path works, bounded by
+--timeout, and exits non-zero otherwise.
+
+Examples:
+  vget config webdav ping alice
+  vget config webdav ping alice --until-direct --timeout 30s
+  vget config webdav ping tcomFwWC...`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg := config.LoadOrDefault()
+		t := i18n.T(cfg.Language)
+		target := args[0]
+
+		addr := ""
+		if tailcat.IsAddr(target) {
+			addr = target
+		} else {
+			server := cfg.GetWebDAVServer(target)
+			if server == nil {
+				return fmt.Errorf("WebDAV server '%s' not found", target)
+			}
+			if server.Tailcat == "" {
+				// A plain URL: just time a request.
+				client, err := webdav.NewClientFromConfig(server)
+				if err != nil {
+					return err
+				}
+				t0 := time.Now()
+				if _, err := client.Stat(context.Background(), "/"); err != nil {
+					return err
+				}
+				fmt.Printf("ok in %s (http, %s)\n", time.Since(t0).Round(time.Millisecond), server.URL)
+				return nil
+			}
+			addr = server.Tailcat
+		}
+
+		timeout := webdavPingTimeout
+		if webdavPingUntilDirect && !cmd.Flags().Changed("timeout") {
+			timeout = 30 * time.Second
+		}
+		defer closeTunnels()
+		first := true
+		res, err := tailcat.Ping(context.Background(), addr, webdavPingUntilDirect, timeout, func(r tailcat.PingResult) {
+			if first {
+				fmt.Printf("%s: %s (%s)\n", t.Tailcat.PingRelayRTT, r.RelayRTT.Round(time.Millisecond), r.Relay)
+				first = false
+			}
+			if r.Direct {
+				fmt.Printf("pong in %s %s via %s\n", r.Latency, t.Tailcat.PingDirect, r.Endpoint)
+			} else {
+				fmt.Printf("pong in %s %s %s\n", r.Latency, t.Tailcat.PingViaRelay, r.Relay)
+			}
+		})
+		if errors.Is(err, tailcat.ErrNoDirectPath) {
+			fmt.Fprintln(os.Stderr, fmt.Sprintf(t.Tailcat.PingNoDirect, timeout))
+			os.Exit(1)
+		}
+		if err != nil {
+			return err
+		}
+		_ = res
+		return nil
 	},
 }
 
@@ -385,7 +675,17 @@ var configWebdavShowCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Name:     %s\n", name)
-		fmt.Printf("URL:      %s\n", server.URL)
+		if server.Tailcat != "" {
+			fmt.Printf("Transport: tailcat\n")
+			if webdavShowFull {
+				fmt.Printf("Address:  %s\n", server.Tailcat)
+			} else {
+				fmt.Printf("Address:  %s  (--full to show)\n", tailcat.Mask(server.Tailcat))
+			}
+			fmt.Printf("Relay:    %s\n", tailcat.RelayOf(server.Tailcat))
+		} else {
+			fmt.Printf("URL:      %s\n", server.URL)
+		}
 		if server.Username != "" {
 			fmt.Printf("Username: %s\n", server.Username)
 			fmt.Printf("Password: %s\n", strings.Repeat("*", len(server.Password)))
@@ -451,10 +751,16 @@ func init() {
 	configCmd.AddCommand(configUnsetCmd)
 
 	// config webdav subcommands
+	configWebdavAddCmd.Flags().StringVar(&webdavAddUser, "user", "", "account name (skips the prompt)")
+	configWebdavAddCmd.Flags().StringVar(&webdavAddPass, "pass", "", "account password (skips the prompt)")
+	configWebdavShowCmd.Flags().BoolVar(&webdavShowFull, "full", false, "show the full tailcat address")
+	configWebdavPingCmd.Flags().BoolVar(&webdavPingUntilDirect, "until-direct", false, "keep pinging until a direct path works")
+	configWebdavPingCmd.Flags().DurationVar(&webdavPingTimeout, "timeout", 10*time.Second, "give up after this long")
 	configWebdavCmd.AddCommand(configWebdavListCmd)
 	configWebdavCmd.AddCommand(configWebdavAddCmd)
 	configWebdavCmd.AddCommand(configWebdavDeleteCmd)
 	configWebdavCmd.AddCommand(configWebdavShowCmd)
+	configWebdavCmd.AddCommand(configWebdavPingCmd)
 	configCmd.AddCommand(configWebdavCmd)
 
 	// config twitter subcommands

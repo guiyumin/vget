@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -12,20 +11,24 @@ import (
 	"github.com/guiyumin/vget/internal/core/downloader"
 	"github.com/guiyumin/vget/internal/core/extractor"
 	"github.com/guiyumin/vget/internal/core/i18n"
+	"github.com/guiyumin/vget/internal/core/tailcat"
 	"github.com/guiyumin/vget/internal/core/version"
 	"github.com/guiyumin/vget/internal/core/webdav"
 	"github.com/spf13/cobra"
 )
 
 var (
-	output    string
-	quality   string
-	info      bool
-	inputFile string
+	output      string
+	quality     string
+	info        bool
+	inputFile   string
+	downloadAll bool   // vget <tc-address> --all
+	remoteUser  string // account for a one-time address that requires one
+	remotePass  string
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "vget [url]",
+	Use:     "vget [url | remote:/path | tc-address]",
 	Short:   "Versatile command-line toolkit for downloading audio, video, podcasts, and more",
 	Version: version.Version,
 	Args:    cobra.MaximumNArgs(1),
@@ -55,6 +58,9 @@ func init() {
 	rootCmd.Flags().StringVarP(&quality, "quality", "q", "", "preferred quality (e.g., 1080p, 720p)")
 	rootCmd.Flags().BoolVar(&info, "info", false, "show video info without downloading")
 	rootCmd.Flags().StringVarP(&inputFile, "file", "f", "", "read URLs from file (one per line)")
+	rootCmd.Flags().BoolVar(&downloadAll, "all", false, "download everything a tc-address offers without asking")
+	rootCmd.Flags().StringVar(&remoteUser, "user", "", "account name, if the tc-address requires one")
+	rootCmd.Flags().StringVar(&remotePass, "pass", "", "account password")
 }
 
 func Execute() error {
@@ -68,6 +74,11 @@ func runDownload(url string) error {
 	// Check for config file and warn if missing
 	if !config.Exists() {
 		fmt.Fprintf(os.Stderr, "\033[33m%s. Run 'vget init'.\033[0m\n", t.Errors.ConfigNotFound)
+	}
+
+	// A one-time address from "vget send"
+	if tailcat.IsAddr(url) {
+		return runTailcatDownload(url, cfg)
 	}
 
 	// Handle WebDAV URLs specially
@@ -129,98 +140,6 @@ func runDownload(url string) error {
 	default:
 		return fmt.Errorf("unsupported media type")
 	}
-}
-
-func runWebDAVDownload(rawURL, lang string) error {
-	ctx := context.Background()
-	cfg := config.LoadOrDefault()
-
-	var client *webdav.Client
-	var filePath string
-	var serverName string
-	var err error
-
-	// Check if it's a remote path (e.g., "pikpak:/path/to/file")
-	if webdav.IsRemotePath(rawURL) {
-		serverName, filePath, err = webdav.ParseRemotePath(rawURL)
-		if err != nil {
-			return err
-		}
-
-		server := cfg.GetWebDAVServer(serverName)
-		if server == nil {
-			return fmt.Errorf("WebDAV server '%s' not found. Add it with 'vget config webdav add %s'", serverName, serverName)
-		}
-
-		client, err = webdav.NewClientFromConfig(server)
-		if err != nil {
-			return fmt.Errorf("failed to create WebDAV client: %w", err)
-		}
-	} else {
-		// Create WebDAV client from URL
-		client, err = webdav.NewClient(rawURL)
-		if err != nil {
-			return fmt.Errorf("failed to create WebDAV client: %w", err)
-		}
-
-		// Parse the file path from URL
-		filePath, err = webdav.ParseURL(rawURL)
-		if err != nil {
-			return fmt.Errorf("invalid WebDAV URL: %w", err)
-		}
-		serverName = "webdav" // Default name for direct URLs
-	}
-
-	// Get file info
-	fileInfo, err := client.Stat(ctx, filePath)
-	if err != nil {
-		return fmt.Errorf("failed to get file info: %w", err)
-	}
-
-	// If it's a directory, open the TUI browser
-	if fileInfo.IsDir {
-		result, err := RunBrowseTUI(client, serverName, filePath)
-		if err != nil {
-			return fmt.Errorf("browse failed: %w", err)
-		}
-		if result.Cancelled {
-			return nil // User cancelled, no error
-		}
-		// User selected a file, update filePath and continue with download
-		filePath = result.SelectedFile
-		// Re-fetch file info for the selected file
-		fileInfo, err = client.Stat(ctx, filePath)
-		if err != nil {
-			return fmt.Errorf("failed to get file info: %w", err)
-		}
-	}
-
-	// Determine output filename
-	outputFile := output
-	if outputFile == "" {
-		outputFile = webdav.ExtractFilename(filePath)
-		// Prepend outputDir if configured
-		if cfg.OutputDir != "" {
-			outputFile = filepath.Join(cfg.OutputDir, outputFile)
-		}
-	}
-
-	fmt.Printf("  WebDAV: %s (%s)\n", fileInfo.Name, formatSize(fileInfo.Size))
-
-	// Use multi-stream download for better performance
-	fileURL := client.GetFileURL(filePath)
-	authHeader := client.GetAuthHeader()
-	msConfig := downloader.DefaultMultiStreamConfig()
-
-	return downloader.RunMultiStreamDownloadWithAuthTUI(
-		fileURL,
-		authHeader,
-		outputFile,
-		fileInfo.Name,
-		lang,
-		fileInfo.Size,
-		msConfig,
-	)
 }
 
 func formatSize(b int64) string {

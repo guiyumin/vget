@@ -22,6 +22,60 @@ type Translations struct {
 	Twitter      TwitterTranslations      `yaml:"twitter"`
 	UI           UITranslations           `yaml:"ui"`
 	Server       ServerTranslations       `yaml:"server"`
+	Tailcat      TailcatTranslations      `yaml:"tailcat"`
+}
+
+// TailcatTranslations holds translations for vget serve / send / recv / push
+// and the tailcat transport.
+type TailcatTranslations struct {
+	Serving            string `yaml:"serving"`
+	ReadOnly           string `yaml:"read_only"`
+	ReadWrite          string `yaml:"read_write"`
+	InboxAt            string `yaml:"inbox_at"`
+	ServingFiles       string `yaml:"serving_files"`
+	ExitsAfterDownload string `yaml:"exits_after_download"`
+	Receiving          string `yaml:"receiving"`
+	AddressLabel       string `yaml:"address_label"`
+	Relay              string `yaml:"relay"`
+	RelayDirectHint    string `yaml:"relay_direct_hint"`
+	RelayNoReply       string `yaml:"relay_no_reply"`
+	AlsoListening      string `yaml:"also_listening"`
+	OnOtherMachine     string `yaml:"on_other_machine"`
+	OnOtherSide        string `yaml:"on_other_side"`
+	NoAuthWarning      string `yaml:"no_auth_warning"`
+	AuthRequired       string `yaml:"auth_required"`
+	PressCtrlC         string `yaml:"press_ctrl_c"`
+	Sent               string `yaml:"sent"`
+	Received           string `yaml:"received"`
+	AuthFailed         string `yaml:"auth_failed"`
+	TransferComplete   string `yaml:"transfer_complete"`
+	Stopping           string `yaml:"stopping"`
+	IdentityCreated    string `yaml:"identity_created"`
+	RelayChanged       string `yaml:"relay_changed"`
+	Pushing            string `yaml:"pushing"`
+	PushedTo           string `yaml:"pushed_to"`
+	PushForbidden      string `yaml:"push_forbidden"`
+	PingRelayRTT       string `yaml:"ping_relay_rtt"`
+	PingDirect         string `yaml:"ping_direct"`
+	PingViaRelay       string `yaml:"ping_via_relay"`
+	PingNoDirect       string `yaml:"ping_no_direct"`
+	IdentityAddress    string `yaml:"identity_address"`
+	IdentityFullHint   string `yaml:"identity_full_hint"`
+	IdentityClientKey  string `yaml:"identity_client_key"`
+	IdentityClientHint string `yaml:"identity_client_key_hint"`
+	IdentityRotated    string `yaml:"identity_rotated"`
+	IdentityCreating   string `yaml:"identity_creating"`
+	IdentityNone       string `yaml:"identity_none"`
+	SelectHint         string `yaml:"select_hint"`
+	DownloadingN       string `yaml:"downloading_n"`
+	NothingSelected    string `yaml:"nothing_selected"`
+	DerpReachable      string `yaml:"derp_reachable"`
+	DerpUnreachable    string `yaml:"derp_unreachable"`
+	DerpCertTrusted    string `yaml:"derp_cert_trusted"`
+	DerpCertSelfSigned string `yaml:"derp_cert_self_signed"`
+	DerpCertHint       string `yaml:"derp_cert_hint"`
+	DerpStunOK         string `yaml:"derp_stun_ok"`
+	DerpStunFailed     string `yaml:"derp_stun_failed"`
 }
 
 type ConfigTranslations struct {
@@ -98,69 +152,69 @@ type SearchTranslations struct {
 }
 
 type TwitterTranslations struct {
-	EnterAuthToken    string `yaml:"enter_auth_token"`
-	AuthSaved         string `yaml:"auth_saved"`
-	AuthCanDownload   string `yaml:"auth_can_download"`
-	AuthCleared       string `yaml:"auth_cleared"`
-	AuthRequired      string `yaml:"auth_required"`
-	NsfwLoginRequired string `yaml:"nsfw_login_required"`
-	ProtectedTweet    string `yaml:"protected_tweet"`
-	TweetUnavailable  string `yaml:"tweet_unavailable"`
-	AuthHint             string `yaml:"auth_hint"`
-	DeprecatedSet        string `yaml:"deprecated_set"`
-	DeprecatedClear      string `yaml:"deprecated_clear"`
-	DeprecatedUseNew     string `yaml:"deprecated_use_new"`
+	EnterAuthToken        string `yaml:"enter_auth_token"`
+	AuthSaved             string `yaml:"auth_saved"`
+	AuthCanDownload       string `yaml:"auth_can_download"`
+	AuthCleared           string `yaml:"auth_cleared"`
+	AuthRequired          string `yaml:"auth_required"`
+	NsfwLoginRequired     string `yaml:"nsfw_login_required"`
+	ProtectedTweet        string `yaml:"protected_tweet"`
+	TweetUnavailable      string `yaml:"tweet_unavailable"`
+	AuthHint              string `yaml:"auth_hint"`
+	DeprecatedSet         string `yaml:"deprecated_set"`
+	DeprecatedClear       string `yaml:"deprecated_clear"`
+	DeprecatedUseNew      string `yaml:"deprecated_use_new"`
 	DeprecatedUseNewUnset string `yaml:"deprecated_use_new_unset"`
 }
 
 // UITranslations holds translations for the web UI
 type UITranslations struct {
-	DownloadTo       string `yaml:"download_to" json:"download_to"`
-	Edit             string `yaml:"edit" json:"edit"`
-	Save             string `yaml:"save" json:"save"`
-	Cancel           string `yaml:"cancel" json:"cancel"`
-	PasteURL         string `yaml:"paste_url" json:"paste_url"`
-	Download         string `yaml:"download" json:"download"`
-	BulkDownload     string `yaml:"bulk_download" json:"bulk_download"`
-	ComingSoon       string `yaml:"coming_soon" json:"coming_soon"`
-	BulkPasteURLs    string `yaml:"bulk_paste_urls" json:"bulk_paste_urls"`
-	BulkSelectFile   string `yaml:"bulk_select_file" json:"bulk_select_file"`
-	BulkDragDrop     string `yaml:"bulk_drag_drop" json:"bulk_drag_drop"`
-	BulkURLCount     string `yaml:"bulk_url_count" json:"bulk_url_count"`
-	BulkSubmitAll    string `yaml:"bulk_submit_all" json:"bulk_submit_all"`
-	BulkSubmitting   string `yaml:"bulk_submitting" json:"bulk_submitting"`
-	BulkClear        string `yaml:"bulk_clear" json:"bulk_clear"`
-	BulkInvalidHint  string `yaml:"bulk_invalid_hint" json:"bulk_invalid_hint"`
-	Adding           string `yaml:"adding" json:"adding"`
-	Jobs             string `yaml:"jobs" json:"jobs"`
-	Total            string `yaml:"total" json:"total"`
-	NoDownloads      string `yaml:"no_downloads" json:"no_downloads"`
-	PasteHint        string `yaml:"paste_hint" json:"paste_hint"`
-	Queued           string `yaml:"queued" json:"queued"`
-	Downloading      string `yaml:"downloading" json:"downloading"`
-	Completed        string `yaml:"completed" json:"completed"`
-	Failed           string `yaml:"failed" json:"failed"`
-	Cancelled        string `yaml:"cancelled" json:"cancelled"`
-	Settings         string `yaml:"settings" json:"settings"`
-	Language         string `yaml:"language" json:"language"`
-	Format           string `yaml:"format" json:"format"`
-	Quality          string `yaml:"quality" json:"quality"`
-	TwitterAuth      string `yaml:"twitter_auth" json:"twitter_auth"`
-	ServerPort       string `yaml:"server_port" json:"server_port"`
-	MaxConcurrent    string `yaml:"max_concurrent" json:"max_concurrent"`
-	APIKey           string `yaml:"api_key" json:"api_key"`
-	WebDAVServers    string `yaml:"webdav_servers" json:"webdav_servers"`
-	Add              string `yaml:"add" json:"add"`
-	Delete           string `yaml:"delete" json:"delete"`
-	Name             string `yaml:"name" json:"name"`
-	URL              string `yaml:"url" json:"url"`
-	Username         string `yaml:"username" json:"username"`
-	Password         string `yaml:"password" json:"password"`
-	NoWebDAVServers  string `yaml:"no_webdav_servers" json:"no_webdav_servers"`
-	Configured       string `yaml:"configured" json:"configured"`
-	NotConfigured    string `yaml:"not_configured" json:"not_configured"`
-	ClearHistory     string `yaml:"clear_history" json:"clear_history"`
-	ClearAll         string `yaml:"clear_all" json:"clear_all"`
+	DownloadTo      string `yaml:"download_to" json:"download_to"`
+	Edit            string `yaml:"edit" json:"edit"`
+	Save            string `yaml:"save" json:"save"`
+	Cancel          string `yaml:"cancel" json:"cancel"`
+	PasteURL        string `yaml:"paste_url" json:"paste_url"`
+	Download        string `yaml:"download" json:"download"`
+	BulkDownload    string `yaml:"bulk_download" json:"bulk_download"`
+	ComingSoon      string `yaml:"coming_soon" json:"coming_soon"`
+	BulkPasteURLs   string `yaml:"bulk_paste_urls" json:"bulk_paste_urls"`
+	BulkSelectFile  string `yaml:"bulk_select_file" json:"bulk_select_file"`
+	BulkDragDrop    string `yaml:"bulk_drag_drop" json:"bulk_drag_drop"`
+	BulkURLCount    string `yaml:"bulk_url_count" json:"bulk_url_count"`
+	BulkSubmitAll   string `yaml:"bulk_submit_all" json:"bulk_submit_all"`
+	BulkSubmitting  string `yaml:"bulk_submitting" json:"bulk_submitting"`
+	BulkClear       string `yaml:"bulk_clear" json:"bulk_clear"`
+	BulkInvalidHint string `yaml:"bulk_invalid_hint" json:"bulk_invalid_hint"`
+	Adding          string `yaml:"adding" json:"adding"`
+	Jobs            string `yaml:"jobs" json:"jobs"`
+	Total           string `yaml:"total" json:"total"`
+	NoDownloads     string `yaml:"no_downloads" json:"no_downloads"`
+	PasteHint       string `yaml:"paste_hint" json:"paste_hint"`
+	Queued          string `yaml:"queued" json:"queued"`
+	Downloading     string `yaml:"downloading" json:"downloading"`
+	Completed       string `yaml:"completed" json:"completed"`
+	Failed          string `yaml:"failed" json:"failed"`
+	Cancelled       string `yaml:"cancelled" json:"cancelled"`
+	Settings        string `yaml:"settings" json:"settings"`
+	Language        string `yaml:"language" json:"language"`
+	Format          string `yaml:"format" json:"format"`
+	Quality         string `yaml:"quality" json:"quality"`
+	TwitterAuth     string `yaml:"twitter_auth" json:"twitter_auth"`
+	ServerPort      string `yaml:"server_port" json:"server_port"`
+	MaxConcurrent   string `yaml:"max_concurrent" json:"max_concurrent"`
+	APIKey          string `yaml:"api_key" json:"api_key"`
+	WebDAVServers   string `yaml:"webdav_servers" json:"webdav_servers"`
+	Add             string `yaml:"add" json:"add"`
+	Delete          string `yaml:"delete" json:"delete"`
+	Name            string `yaml:"name" json:"name"`
+	URL             string `yaml:"url" json:"url"`
+	Username        string `yaml:"username" json:"username"`
+	Password        string `yaml:"password" json:"password"`
+	NoWebDAVServers string `yaml:"no_webdav_servers" json:"no_webdav_servers"`
+	Configured      string `yaml:"configured" json:"configured"`
+	NotConfigured   string `yaml:"not_configured" json:"not_configured"`
+	ClearHistory    string `yaml:"clear_history" json:"clear_history"`
+	ClearAll        string `yaml:"clear_all" json:"clear_all"`
 	// WebDAV
 	WebDAVBrowser    string `yaml:"webdav_browser" json:"webdav_browser"`
 	SelectRemote     string `yaml:"select_remote" json:"select_remote"`
@@ -210,12 +264,12 @@ type UITranslations struct {
 	TokenUsage             string `yaml:"token_usage" json:"token_usage"`
 	TokenInvalidJSON       string `yaml:"token_invalid_json" json:"token_invalid_json"`
 	// History
-	History              string `yaml:"history" json:"history"`
-	HistoryTitle         string `yaml:"history_title" json:"history_title"`
-	HistoryEmpty         string `yaml:"history_empty" json:"history_empty"`
-	HistoryEmptyHint     string `yaml:"history_empty_hint" json:"history_empty_hint"`
-	HistoryClearAll      string `yaml:"history_clear_all" json:"history_clear_all"`
-	HistoryStats         string `yaml:"history_stats" json:"history_stats"`
+	History                string `yaml:"history" json:"history"`
+	HistoryTitle           string `yaml:"history_title" json:"history_title"`
+	HistoryEmpty           string `yaml:"history_empty" json:"history_empty"`
+	HistoryEmptyHint       string `yaml:"history_empty_hint" json:"history_empty_hint"`
+	HistoryClearAll        string `yaml:"history_clear_all" json:"history_clear_all"`
+	HistoryStats           string `yaml:"history_stats" json:"history_stats"`
 	HistoryTotalDownloaded string `yaml:"history_total_downloaded" json:"history_total_downloaded"`
 }
 

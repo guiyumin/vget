@@ -77,9 +77,16 @@ See [sites.md](sites.md) for native extractors. Beyond those, any WebDAV server 
 | `vget config get <key>`                | Get config value                         |
 | `vget config path`                     | Show config file path                    |
 | `vget config webdav list`              | List configured WebDAV servers           |
-| `vget config webdav add <name>`        | Add a WebDAV server                      |
+| `vget config webdav add <name> [tc…]`  | Add a WebDAV server or a shared library  |
 | `vget config webdav show <name>`       | Show server details                      |
 | `vget config webdav delete <name>`     | Delete a server                          |
+| `vget config webdav ping <name>`       | Relay round trip, direct or relayed      |
+| `vget serve [dir]`                     | Share a directory, no public IP needed   |
+| `vget send <file>...`                  | Send files through a one-time address    |
+| `vget recv [dir]`                      | Receive files into a write-only inbox    |
+| `vget push <file> <tc…\|remote:/dir/>` | Push files to an inbox or a library      |
+| `vget identity`                        | This machine's address and client key    |
+| `vget derp test <host[:port]>`         | Check a self-hosted relay                |
 
 ### Examples
 
@@ -95,7 +102,20 @@ vget search --podcast "tech news"
 vget config webdav add pikpak       # add a library (url + user + pass)
 vget ls pikpak:/Movies              # browse it
 vget pikpak:/path/to/file.mp4       # download from it
+
+# Share your own library: no public IP, domain, certificate or account needed
+vget serve ~/library --user friend --pass p1      # prints a tc... address
+vget config webdav add alice tc... --user friend  # on the other machine
+vget ls alice:/
+
+# Send a file to someone once
+vget send big.iso                   # prints a one-time tc... address
+vget tc...                          # on the other side; resumes if interrupted
+vget recv ~/inbox                   # or the other way round:
+vget push reply.zip tc...
 ```
+
+`vget serve` uses [tailcat](https://github.com/tailscale/tailcat) (Tailscale's WireGuard + NAT traversal, without accounts). The two machines meet through a relay and then connect directly whenever NAT traversal succeeds; see [docs/tailcat.md](docs/tailcat.md) for details, running your own relay, and troubleshooting.
 
 ## Configuration
 

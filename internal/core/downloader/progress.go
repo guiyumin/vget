@@ -26,16 +26,17 @@ var (
 
 // downloadState holds the shared download state
 type downloadState struct {
-	mu          sync.RWMutex
-	current     int64
-	total       int64
-	speed       float64
-	done        bool
-	err         error
-	startTime   time.Time
-	endTime     time.Time
-	finalSpeed  float64
-	finalPath   string
+	mu         sync.RWMutex
+	current    int64
+	total      int64
+	baseline   int64 // bytes already present before this run (resumed download)
+	speed      float64
+	done       bool
+	err        error
+	startTime  time.Time
+	endTime    time.Time
+	finalSpeed float64
+	finalPath  string
 }
 
 func (s *downloadState) update(current, total int64) {
@@ -45,8 +46,16 @@ func (s *downloadState) update(current, total int64) {
 	s.total = total
 	elapsed := time.Since(s.startTime).Seconds()
 	if elapsed > 0 {
-		s.speed = float64(current) / elapsed
+		s.speed = float64(current-s.baseline) / elapsed
 	}
+}
+
+// setBaseline records bytes that were already downloaded by a previous run,
+// so speed and ETA only count this run's transfer.
+func (s *downloadState) setBaseline(n int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.baseline = n
 }
 
 func (s *downloadState) setDone() {
@@ -55,7 +64,7 @@ func (s *downloadState) setDone() {
 	s.endTime = time.Now()
 	elapsed := s.endTime.Sub(s.startTime).Seconds()
 	if elapsed > 0 {
-		s.finalSpeed = float64(s.current) / elapsed
+		s.finalSpeed = float64(s.current-s.baseline) / elapsed
 	}
 	s.done = true
 }
@@ -109,6 +118,13 @@ type downloadModel struct {
 	output  string
 	videoID string
 
+	// verb and savedLabel replace the "Downloading" / "File saved to" texts
+	// when the same progress view is used for an upload.
+	verb       string
+	savedLabel string
+	// remoteTarget, if set, is shown as the destination instead of a local path.
+	remoteTarget string
+
 	state *downloadState
 }
 
@@ -124,13 +140,16 @@ func newDownloadModel(output, videoID, lang string, state *downloadState) downlo
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
+	t := i18n.T(lang)
 	return downloadModel{
-		progress: p,
-		spinner:  s,
-		t:        i18n.T(lang),
-		output:   output,
-		videoID:  videoID,
-		state:    state,
+		progress:   p,
+		spinner:    s,
+		t:          t,
+		output:     output,
+		videoID:    videoID,
+		verb:       t.Download.Downloading,
+		savedLabel: t.Download.FileSaved,
+		state:      state,
 	}
 }
 
@@ -206,13 +225,15 @@ func (m downloadModel) View() string {
 		if finalPath := m.state.getFinalPath(); finalPath != "" {
 			displayPath = finalPath
 		}
-		if absPath, err := filepath.Abs(displayPath); err == nil {
+		if m.remoteTarget != "" {
+			displayPath = m.remoteTarget
+		} else if absPath, err := filepath.Abs(displayPath); err == nil {
 			displayPath = absPath
 		}
 		return fmt.Sprintf("\n  %s %s\n  %s: %s (%s)\n  %s: %s  |  %s: %s/s\n\n",
 			doneStyle.Render("✓"),
 			m.t.Download.Completed,
-			m.t.Download.FileSaved,
+			m.savedLabel,
 			displayPath,
 			formatBytes(current),
 			m.t.Download.Elapsed,
@@ -228,7 +249,7 @@ func (m downloadModel) View() string {
 	// Video ID with spinner
 	s += fmt.Sprintf("  %s %s: %s\n\n",
 		m.spinner.View(),
-		m.t.Download.Downloading,
+		m.verb,
 		infoStyle.Render(m.videoID),
 	)
 
@@ -450,6 +471,52 @@ func downloadFromReaderWithProgress(reader io.ReadCloser, total int64, output st
 	file.Close()
 	state.setFinalPath(RenameByMagicBytes(output))
 
+	return nil
+}
+
+// RunUploadTUI runs an upload with the progress view. run performs the
+// transfer and reports bytes sent through the progress callback; target is
+// shown as the destination when it completes.
+func RunUploadTUI(displayName, target, lang string, total int64, run func(ctx context.Context, progress func(n int64)) error) error {
+	t := i18n.T(lang)
+	state := &downloadState{startTime: time.Now()}
+	state.update(0, total)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		var sent int64
+		err := run(ctx, func(n int64) {
+			sent += n
+			state.update(sent, total)
+		})
+		if err != nil {
+			state.setError(err)
+		} else {
+			state.setDone()
+		}
+	}()
+
+	model := newDownloadModel(displayName, displayName, lang, state)
+	model.verb = t.Tailcat.Pushing
+	model.savedLabel = t.Tailcat.PushedTo
+	model.remoteTarget = target
+
+	p := tea.NewProgram(model)
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+	m := finalModel.(downloadModel)
+	_, _, _, done, uploadErr := m.state.get()
+	if uploadErr != nil {
+		return uploadErr
+	}
+	if !done {
+		cancel()
+		return fmt.Errorf("upload cancelled")
+	}
 	return nil
 }
 

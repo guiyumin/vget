@@ -77,7 +77,18 @@ Extractors are auto-registered via `init()` functions. See `xiaoyuzhou.go` or `t
 - `vget config show` - Show current configuration
 - `vget config set <key> <value>` - Set config value (non-interactive)
 - `vget config get <key>` - Get config value
-- `vget config webdav ...` - Manage WebDAV servers
+- `vget config webdav ...` - Manage WebDAV servers (`add` accepts a URL or a tailcat address; `ping` reports relay/direct)
+- `vget serve [dir]` - Share a directory as a WebDAV library over a tailcat address (no public IP) and/or `--listen`
+- `vget send <file>...` / `vget recv [dir]` - One-time share / one-time write-only inbox
+- `vget <tc...>` / `vget push <file> <tc...|remote:/dir/>` - Pull from / push to the other side
+- `vget identity` - This machine's tailcat address (masked) and client key
+- `vget derp test <host[:port]>` - Check a self-hosted relay
+
+### Library server and tailcat transport
+
+- `internal/core/serve/` - WebDAV handler (`golang.org/x/net/webdav`) + Basic Auth + policies (read-only, `--rw`, write-only inbox). Transport-agnostic: it is served on any `net.Listener`.
+- `internal/core/tailcat/` - The only package importing `tailscale.com` / `github.com/tailscale/tailcat`. Identity files (`~/.config/vget/tailcat/{server,client}.json`, 0600), `net.Listener` adapter, `http.Transport` dialer, ping, relay test, DERP map cache (`~/.cache/vget/`). Keep the boundary: other packages only see `net.Listener` / `net.Conn` / `http.RoundTripper`.
+- tailcat needs Go 1.27.1 (`go.mod`); an older local toolchain auto-downloads it. Design notes: `docs/PRD-tailcat.md`, user docs: `docs/tailcat.md`.
 
 ### i18n
 
